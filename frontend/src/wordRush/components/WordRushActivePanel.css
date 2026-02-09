@@ -1,0 +1,24 @@
+/* WordRushActivePanel component styles */
+.wordrush-active-panel {
+  @apply text-center space-y-4;
+}
+
+.wordrush-active-tags {
+  @apply flex justify-center gap-2 flex-wrap;
+}
+
+.wordrush-active-last-chance {
+  @apply bg-red-200 text-red-800;
+}
+
+.wordrush-active-status {
+  @apply text-gray-600;
+}
+
+.wordrush-active-connection {
+  @apply text-sm text-gray-500;
+}
+
+.wordrush-active-eliminated {
+  @apply text-gray-600 bg-gray-100 p-3 rounded-lg;
+}

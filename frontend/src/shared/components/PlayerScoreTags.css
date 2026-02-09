@@ -1,0 +1,4 @@
+/* PlayerScoreTags component styles */
+.player-score-tags {
+  @apply flex justify-center gap-2 flex-wrap;
+}

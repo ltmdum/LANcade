@@ -1,0 +1,23 @@
+/* JoinPanel component styles */
+.join-panel-form {
+  @apply space-y-3;
+}
+
+.join-panel-field {
+}
+
+.join-panel-label {
+  @apply block text-sm font-medium text-gray-700 mb-1;
+}
+
+.join-panel-error {
+  @apply text-sm text-red-600;
+}
+
+.join-panel-submit {
+  @apply btn btn-primary w-full;
+}
+
+.join-panel-status {
+  @apply text-sm text-green-600;
+}

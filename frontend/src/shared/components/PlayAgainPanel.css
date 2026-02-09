@@ -1,0 +1,8 @@
+/* PlayAgainPanel component styles */
+.play-again-actions {
+  @apply flex gap-2;
+}
+
+.play-again-status {
+  @apply text-sm text-gray-600 mt-2;
+}

@@ -1,0 +1,12 @@
+/* VoteCountdown component styles */
+.vote-countdown {
+  @apply text-center mb-4;
+}
+
+.vote-countdown-label {
+  @apply text-sm text-gray-500;
+}
+
+.vote-countdown-time {
+  @apply font-mono font-bold;
+}

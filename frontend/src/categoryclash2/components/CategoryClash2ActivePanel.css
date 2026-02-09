@@ -1,0 +1,16 @@
+/* CategoryClash2ActivePanel component styles */
+.categoryclash2-active-panel {
+  @apply text-center space-y-4;
+}
+
+.categoryclash2-status-message {
+  @apply text-gray-600;
+}
+
+.categoryclash2-connection {
+  @apply text-sm text-gray-500;
+}
+
+.categoryclash2-categories {
+  @apply space-y-3 text-left;
+}

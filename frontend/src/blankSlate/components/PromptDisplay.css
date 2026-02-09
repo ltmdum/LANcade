@@ -1,0 +1,16 @@
+.blankslate-prompt {
+  font-size: 2rem;
+  font-weight: bold;
+  text-align: center;
+  margin: 1.5rem 0;
+  padding: 1rem;
+  background: #f0f0f0;
+  border-radius: 8px;
+}
+
+.blankslate-prompt .blank {
+  display: inline-block;
+  min-width: 100px;
+  border-bottom: 3px solid #333;
+  margin: 0 0.5rem;
+}

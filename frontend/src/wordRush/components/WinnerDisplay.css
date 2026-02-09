@@ -1,0 +1,4 @@
+/* WinnerDisplay component styles */
+.winner-display {
+  @apply text-4xl font-bold text-center text-green-600;
+}

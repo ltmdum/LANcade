@@ -1,0 +1,4 @@
+/* PlayerResultsTable component styles */
+.player-results-header-row {
+  @apply border-b;
+}

@@ -1,0 +1,46 @@
+.vote-panel-claim {
+  text-align: center;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background: #f5f5f5;
+  border-radius: 8px;
+}
+
+.vote-panel-question {
+  font-size: 1.1rem;
+  margin-bottom: 0.5rem;
+}
+
+.vote-panel-target {
+  color: #666;
+  font-size: 0.875rem;
+}
+
+.vote-panel-buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin: 1rem 0;
+}
+
+.vote-panel-buttons .btn {
+  min-width: 100px;
+}
+
+.vote-panel-waiting {
+  text-align: center;
+  color: #666;
+  font-style: italic;
+  margin: 1rem 0;
+}
+
+.vote-panel-tally {
+  text-align: center;
+  font-size: 0.875rem;
+  color: #666;
+}
+
+.vote-panel-status {
+  text-align: center;
+  margin-top: 0.5rem;
+}

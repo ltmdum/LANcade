@@ -1,0 +1,32 @@
+/* CategorySelector component styles */
+.category-selector-grid {
+  @apply grid grid-cols-2 gap-2 max-h-48 overflow-y-auto mb-3;
+}
+
+.category-selector-label {
+  @apply flex items-start gap-2 cursor-pointer text-sm;
+}
+
+.category-selector-checkbox {
+  @apply w-4 h-4 mt-0.5 flex-shrink-0;
+}
+
+.category-selector-name {
+  @apply text-gray-700 break-words;
+}
+
+.category-selector-actions {
+  @apply flex items-center gap-2;
+}
+
+.category-selector-count {
+  @apply text-sm text-gray-600;
+}
+
+.category-selector-row {
+  @apply flex gap-2;
+}
+
+.category-selector-status {
+  @apply text-sm text-gray-600 mt-2;
+}

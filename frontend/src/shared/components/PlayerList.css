@@ -1,0 +1,16 @@
+/* PlayerList component styles */
+.player-list {
+  @apply space-y-1;
+}
+
+.player-list-item {
+  @apply flex items-center justify-between text-gray-700;
+}
+
+.player-list-eject {
+  @apply btn btn-danger text-xs py-0.5 px-2;
+}
+
+.player-list-empty {
+  @apply text-sm text-gray-500;
+}

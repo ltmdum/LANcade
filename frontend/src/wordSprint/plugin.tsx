@@ -1,0 +1,72 @@
+import type { GamePlugin, GameComponentProps } from '../plugins/types';
+import type { WordSprintState } from '@lancade/shared';
+import { WordSprintGame } from './WordSprintGame';
+
+/**
+ * Check if the wordsprint plugin can render this server state.
+ * @param serverState Current server state.
+ * @param gameId Current game id.
+ * @returns True when the plugin can render.
+ */
+function canRender(serverState: unknown, gameId: string): boolean {
+  if (gameId !== 'wordsprint') return false;
+  return serverState !== null && typeof serverState === 'object' && 'match' in serverState;
+}
+
+/**
+ * Get the match phase from server state.
+ * @param serverState Current server state.
+ * @returns Phase string.
+ */
+function getPhase(serverState: unknown): string {
+  if (!serverState || typeof serverState !== 'object' || !('match' in serverState)) {
+    return 'idle';
+  }
+  return (serverState as WordSprintState).match.state;
+}
+
+/**
+ * Get header category text for the UI.
+ * @param _serverState Current server state.
+ * @returns Header category label.
+ */
+function getHeaderCategory(_serverState: unknown): string {
+  return 'Guess the Word';
+}
+
+/**
+ * Render the Word Sprint game component.
+ * @param props Shared game component props.
+ * @returns React element.
+ */
+function render(props: GameComponentProps) {
+  return (
+    <WordSprintGame
+      serverState={props.serverState as WordSprintState}
+      connection={props.connection}
+      playerId={props.playerId}
+      playerName={props.playerName}
+      playerPassword={props.playerPassword}
+      adminSessionId={props.adminSessionId}
+      isAdmin={props.isAdmin}
+      setShowConfig={props.setShowConfig}
+    />
+  );
+}
+
+export const plugin: GamePlugin = {
+  config: {
+    id: 'wordsprint',
+    name: 'Word Sprint',
+    slogan: 'Race to guess the word before anyone else!',
+    description: 'A competitive Guess-style racing game. Everyone plays Guess simultaneously, racing to guess a 5-letter word in 6 tries. Green = correct letter in correct position, yellow = correct letter in wrong position. First to solve wins! A mini display shows how well other players are doing on each row.',
+    hideTimer: true,
+    roundControlTitle: 'Game Control',
+    joinPanelTitle: 'Join the Game',
+    minPlayers: 1,
+  },
+  canRender,
+  getPhase,
+  getHeaderCategory,
+  render,
+};

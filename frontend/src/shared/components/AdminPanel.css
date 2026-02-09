@@ -1,0 +1,16 @@
+/* AdminPanel component styles */
+.admin-panel-form {
+  @apply flex gap-2;
+}
+
+.admin-panel-input {
+  @apply input flex-1;
+}
+
+.admin-panel-status {
+  @apply text-sm text-gray-600 mt-2;
+}
+
+.admin-panel-active {
+  @apply text-sm text-green-600 mt-1;
+}

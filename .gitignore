@@ -1,0 +1,22 @@
+node_modules/
+dist/
+*.tsbuildinfo
+certs/
+*.log
+*.swp
+*.swo
+*Zone.Identifier
+AGENTS.md
+
+# Build outputs
+frontend/dist/
+backend/dist/
+shared/dist/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db

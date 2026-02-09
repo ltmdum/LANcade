@@ -1,0 +1,97 @@
+.game-result {
+  text-align: center;
+  padding: 1rem;
+}
+
+.game-result-message {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+
+.game-result-emoji {
+  font-size: 2rem;
+}
+
+.game-result-win {
+  color: #6aaa64;
+}
+
+.game-result-lose {
+  color: #787c7e;
+}
+
+.game-result-word {
+  font-size: 1.1rem;
+  color: var(--color-text, #333);
+  margin-bottom: 1rem;
+}
+
+.game-result-word strong {
+  letter-spacing: 0.1em;
+  font-size: 1.3rem;
+}
+
+/* Player summary */
+.game-result-summary {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--color-border, #ddd);
+}
+
+.game-result-summary-title {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  color: var(--color-text, #333);
+}
+
+.game-result-players {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.game-result-player {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--color-bg-light, #f5f5f5);
+  border-radius: 6px;
+  font-size: 0.95rem;
+}
+
+.game-result-player-winner {
+  background: rgba(106, 170, 100, 0.15);
+  border: 1px solid rgba(106, 170, 100, 0.3);
+}
+
+.game-result-player-rank {
+  font-weight: 600;
+  color: var(--color-text-secondary, #666);
+  min-width: 1.5rem;
+}
+
+.game-result-player-name {
+  flex: 1;
+  text-align: left;
+  font-weight: 500;
+}
+
+.game-result-player-status {
+  font-size: 0.85rem;
+}
+
+.game-result-solved {
+  color: #6aaa64;
+  font-weight: 500;
+}
+
+.game-result-failed {
+  color: #787c7e;
+}

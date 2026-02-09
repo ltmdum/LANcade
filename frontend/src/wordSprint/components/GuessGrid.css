@@ -1,0 +1,178 @@
+.guess-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin: 0.5rem auto;
+  width: fit-content;
+}
+
+.guess-row {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+
+.guess-cell {
+  width: 52px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.75rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  border: 2px solid var(--color-border, #d3d6da);
+  background: var(--color-bg, #fff);
+  color: var(--color-text, #1a1a1b);
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.guess-cell-correct {
+  background-color: #6aaa64;
+  border-color: #6aaa64;
+  color: white;
+}
+
+.guess-cell-present {
+  background-color: #c9b458;
+  border-color: #c9b458;
+  color: white;
+}
+
+.guess-cell-absent {
+  background-color: #787c7e;
+  border-color: #787c7e;
+  color: white;
+}
+
+.guess-cell-empty {
+  background-color: transparent;
+  border-color: var(--color-border, #d3d6da);
+}
+
+.guess-cell-input {
+  border-color: var(--color-border, #878a8c);
+}
+
+.guess-cell-filled {
+  border-color: var(--color-border-dark, #565758);
+  animation: pop 0.1s ease;
+}
+
+.guess-cell-disabled {
+  opacity: 0.6;
+}
+
+.guess-row-submitted .guess-cell {
+  animation: flip 0.3s ease;
+}
+
+@keyframes pop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+@keyframes flip {
+  0% { transform: rotateX(0deg); }
+  50% { transform: rotateX(90deg); }
+  100% { transform: rotateX(0deg); }
+}
+
+/* Row best mini display */
+.row-best-mini {
+  display: flex;
+  gap: 2px;
+  margin-left: 12px;
+  padding: 4px;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 4px;
+}
+
+.row-best-mini-empty {
+  width: 58px;
+  height: 18px;
+  visibility: hidden;
+}
+
+.row-best-cell {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+
+.row-best-cell-correct {
+  background-color: #6aaa64;
+}
+
+.row-best-cell-present {
+  background-color: #c9b458;
+}
+
+.row-best-cell-absent {
+  background-color: #787c7e;
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 400px) {
+  .guess-grid {
+    gap: 4px;
+  }
+
+  .guess-row {
+    gap: 4px;
+  }
+
+  .guess-cell {
+    width: 44px;
+    height: 44px;
+    font-size: 1.5rem;
+  }
+
+  .row-best-mini {
+    margin-left: 8px;
+    padding: 3px;
+    gap: 1px;
+  }
+
+  .row-best-cell {
+    width: 8px;
+    height: 8px;
+  }
+
+  .row-best-mini-empty {
+    width: 48px;
+    height: 14px;
+  }
+}
+
+@media (max-width: 320px) {
+  .guess-grid {
+    gap: 3px;
+  }
+
+  .guess-row {
+    gap: 3px;
+  }
+
+  .guess-cell {
+    width: 38px;
+    height: 38px;
+    font-size: 1.25rem;
+  }
+
+  .row-best-mini {
+    margin-left: 6px;
+    padding: 2px;
+  }
+
+  .row-best-cell {
+    width: 6px;
+    height: 6px;
+  }
+
+  .row-best-mini-empty {
+    width: 38px;
+    height: 10px;
+  }
+}

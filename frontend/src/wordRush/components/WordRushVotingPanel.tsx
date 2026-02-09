@@ -1,0 +1,61 @@
+import { Panel } from '../../shared/components/Panel';
+import { VoteCountdown } from './VoteCountdown';
+import './WordRushVotingPanel.css';
+
+interface WordRushVotingPanelProps {
+  pendingWord: string;
+  pendingWordPlayer: string;
+  voteEndsAt: number | null | undefined;
+  clockSkewMs: number;
+  isCurrentPlayer: boolean;
+  hasVoted: boolean;
+  voteStatus: string;
+  onVote: (decision: 'accept' | 'reject') => void;
+}
+
+/**
+ * Voting panel for WordRush decisions.
+ * @param props Voting panel props.
+ * @returns Voting panel element.
+ */
+export function WordRushVotingPanel({
+  pendingWord,
+  pendingWordPlayer,
+  voteEndsAt,
+  clockSkewMs,
+  isCurrentPlayer,
+  hasVoted,
+  voteStatus,
+  onVote,
+}: WordRushVotingPanelProps) {
+  return (
+    <Panel title="Vote on the Word">
+      <p className="wordrush-voting-submitter">{pendingWordPlayer} submitted:</p>
+      <div className="wordrush-voting-word">{pendingWord || '-'}</div>
+      {voteEndsAt && <VoteCountdown voteEndsAt={voteEndsAt} clockSkewMs={clockSkewMs} />}
+      {isCurrentPlayer ? (
+        <p className="wordrush-voting-waiting">Waiting for votes...</p>
+      ) : (
+        <div className="wordrush-voting-buttons">
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={() => onVote('accept')}
+            disabled={hasVoted}
+          >
+            {hasVoted ? 'Vote Submitted' : 'Accept'}
+          </button>
+          <button
+            type="button"
+            className="btn btn-danger"
+            onClick={() => onVote('reject')}
+            disabled={hasVoted}
+          >
+            Reject
+          </button>
+        </div>
+      )}
+      {voteStatus && <p className="wordrush-voting-status">{voteStatus}</p>}
+    </Panel>
+  );
+}

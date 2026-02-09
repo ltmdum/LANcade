@@ -1,0 +1,41 @@
+/* GameSelector component styles */
+.game-selector-list {
+  @apply space-y-2;
+}
+
+.game-selector-row {
+  @apply flex items-center justify-between gap-2;
+}
+
+.game-selector-label {
+  @apply flex items-center gap-2 cursor-pointer flex-1 min-w-0;
+}
+
+.game-selector-radio {
+  @apply w-4 h-4 flex-shrink-0;
+}
+
+.game-selector-name {
+  @apply text-gray-700;
+}
+
+.game-selector-info-container {
+  @apply relative flex-shrink-0 self-center;
+}
+
+.game-selector-info-button {
+  @apply w-5 h-5 rounded-full border border-gray-400 text-gray-500 
+         flex items-center justify-center cursor-help
+         hover:border-gray-600 hover:text-gray-700 hover:bg-gray-100
+         text-sm font-serif italic;
+}
+
+.game-selector-tooltip {
+  @apply absolute right-0 top-full mt-1 z-10
+         bg-gray-800 text-white text-sm rounded px-3 py-2
+         whitespace-normal w-48 shadow-lg;
+}
+
+.game-selector-status {
+  @apply text-sm text-gray-600 mt-2;
+}
