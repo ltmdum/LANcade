@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { Panel } from '../shared/components/Panel';
 import { PlayAgainPanel } from '../shared/components/PlayAgainPanel';
 import { WordRushActivePanel } from './components/WordRushActivePanel';
 import { WordRushVotingPanel } from './components/WordRushVotingPanel';
@@ -60,6 +61,7 @@ export function WordRushGame({
   const isCurrentPlayer = playerId && match.currentPlayerId === playerId;
   const eliminatedIds = match.eliminatedPlayerIds || [];
   const isEliminated = playerId && eliminatedIds.includes(playerId);
+  const isInMatch = !playerId || match.order.includes(playerId);
   const currentPlayerName = match.currentPlayerId ? playerLookup[match.currentPlayerId] || 'Unknown' : '-';
   const pendingWord = match.pendingWord?.word || '';
   const pendingWordPlayer = match.pendingWord ? playerLookup[match.pendingWord.playerId] || 'Unknown' : '';
@@ -162,6 +164,29 @@ export function WordRushGame({
 
   if (match.state === 'idle') return null;
 
+  if (isAdmin && !players.some(p => p.id === playerId)) {
+    if (match.state === 'finished') {
+      return (
+        <PlayAgainPanel
+          onPlayAgain={onRestart}
+          onBackToConfig={() => setShowConfig(true)}
+          status={adminStatus}
+          playAgainText="Play Again (Same Config)"
+          title="Next Steps"
+        />
+      );
+    }
+    return null;
+  }
+
+  if (!isInMatch && !isAdmin) {
+    return (
+      <Panel title="Game in Progress">
+        <p>Waiting for next game...</p>
+      </Panel>
+    );
+  }
+
   const statusMessage = status || (timeUp ? 'Time is up. Waiting for update...' : '');
   const winnerName = match.winnerId ? playerLookup[match.winnerId] || 'Unknown' : '-';
 
@@ -199,7 +224,7 @@ export function WordRushGame({
 
       {match.state === 'finished' && <WinnerDisplay winnerName={winnerName} />}
 
-      <PlayerTagList players={players} eliminatedIds={eliminatedIds} />
+      <PlayerTagList players={players.filter((p) => match.order.includes(p.id))} eliminatedIds={eliminatedIds} />
 
       {isAdmin && match.state === 'finished' && (
         <PlayAgainPanel

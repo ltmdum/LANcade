@@ -96,6 +96,21 @@ export function WordSprintGame({
 
   if (match.state === 'idle') return null;
 
+  if (isAdmin && !serverState.players?.some(p => p.id === playerId)) {
+    if (match.state === 'finished') {
+      return (
+        <PlayAgainPanel
+          onPlayAgain={handlePlayAgain}
+          onBackToConfig={() => setShowConfig(true)}
+          status={adminStatus}
+          playAgainText="Play Again"
+          title="Next Steps"
+        />
+      );
+    }
+    return null;
+  }
+
   // Determine if input should be enabled
   const isInputEnabled = match.state === 'active' && myState && !myState.solved && myState.grid.length < 6;
 

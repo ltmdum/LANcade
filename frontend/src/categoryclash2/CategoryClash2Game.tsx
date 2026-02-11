@@ -231,6 +231,19 @@ export function CategoryClash2Game({
   const showView = round.letter && ['active', 'voting', 'results'].includes(round.state);
   if (!showView) return null;
 
+  if (isAdmin && !serverState.players?.some(p => p.id === playerId)) {
+    if (round.state === 'results') {
+      return (
+        <PlayAgainPanel
+          onPlayAgain={onPlayAgain}
+          onBackToConfig={() => setShowConfig(true)}
+          status={actionStatus}
+        />
+      );
+    }
+    return null;
+  }
+
   const statusMessage = status || (timeUp ? 'Time is up.' : '');
 
   return (

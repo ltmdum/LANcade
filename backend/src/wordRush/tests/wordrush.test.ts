@@ -330,6 +330,59 @@ describe('wordrush', () => {
     });
   });
 
+  it('does not include late joiner in match order or active players', async () => {
+    await withFakeTimers((_timers) =>
+      withStubbedRandom(0, () => {
+        const store = createPlayerStore();
+        store.joinPlayer({ name: 'Alex' });
+        store.joinPlayer({ name: 'Bri' });
+
+        const game = createGame({ playerStore: store });
+        game.startRound(5000);
+
+        // Late joiner joins after round has started
+        const late = store.joinPlayer({ name: 'Late' }).playerId!;
+
+        const state = game.getState();
+        expect(state.match.state).toBe('active');
+        expect(state.match.order).not.toContain(late);
+        expect(state.match.activePlayerIds).not.toContain(late);
+        // But the player IS in the global player list
+        expect(state.players.some((p) => p.id === late)).toBe(true);
+      })
+    );
+  });
+
+  it('rejects vote from late-joining player', async () => {
+    await withFakeTimers((_timers) =>
+      withStubbedRandom(0, () => {
+        const store = createPlayerStore();
+        store.joinPlayer({ name: 'Alex' });
+        store.joinPlayer({ name: 'Bri' });
+
+        const game = createGame({ playerStore: store });
+        game.startRound(5000);
+
+        // Late joiner joins after round has started
+        const late = store.joinPlayer({ name: 'Late' }).playerId!;
+
+        // Current player submits a word to enter voting
+        let state = game.getState();
+        const currentPlayer = state.match.currentPlayerId!;
+        const word = `${state.match.currentLetter}word`;
+        game.submitWord(currentPlayer, word);
+
+        state = game.getState();
+        expect(state.match.state).toBe('voting');
+
+        // Late joiner tries to vote
+        const voteResult = game.submitVotes(late, 'accept');
+        expect(voteResult.ok).toBe(false);
+        expect(voteResult.reason).toBe('not_eligible');
+      })
+    );
+  });
+
   it('clears pending timers when ending game', async () => {
     await withFakeTimers((timers) => {
       const store = createPlayerStore();

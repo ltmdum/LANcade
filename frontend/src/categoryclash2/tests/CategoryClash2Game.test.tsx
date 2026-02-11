@@ -284,6 +284,81 @@ describe('CategoryClash2Game', () => {
       expect(screen.getByRole('button', { name: /back to config/i })).toBeInTheDocument();
     });
 
+    it('admin non-player sees controls in results state', () => {
+      const state = createBaseState();
+      state.round.state = 'results';
+      state.round.letter = 'A';
+      state.round.durationMs = 60000;
+      state.round.resultsByPlayer = {};
+
+      const props = createDefaultProps(state);
+      props.playerId = '';
+      props.playerName = '';
+      props.isAdmin = true;
+      props.adminSessionId = 'admin-123';
+
+      render(<CategoryClash2Game {...props} />);
+
+      expect(screen.getByRole('button', { name: /play again/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /back to config/i })).toBeInTheDocument();
+      // Non-playing admin should NOT see leaderboard or results text
+      expect(screen.queryByText(/no results/i)).not.toBeInTheDocument();
+      expect(screen.queryByText('Leaderboard')).not.toBeInTheDocument();
+    });
+
+    it('admin non-player renders nothing during active state', () => {
+      const state = createBaseState();
+      state.round.state = 'active';
+      state.round.letter = 'A';
+      state.round.durationMs = 60000;
+
+      const props = createDefaultProps(state);
+      props.playerId = '';
+      props.playerName = '';
+      props.isAdmin = true;
+      props.adminSessionId = 'admin-123';
+
+      const { container } = render(<CategoryClash2Game {...props} />);
+
+      expect(container.firstChild).toBeNull();
+    });
+
+    it('admin with stale playerId renders nothing during active state', () => {
+      const state = createBaseState();
+      state.round.state = 'active';
+      state.round.letter = 'A';
+      state.round.durationMs = 60000;
+
+      const props = createDefaultProps(state);
+      props.playerId = 'stale-id';
+      props.playerName = 'Stale';
+      props.isAdmin = true;
+      props.adminSessionId = 'admin-123';
+
+      const { container } = render(<CategoryClash2Game {...props} />);
+
+      expect(container.firstChild).toBeNull();
+    });
+
+    it('admin with stale playerId sees controls in results state', () => {
+      const state = createBaseState();
+      state.round.state = 'results';
+      state.round.letter = 'A';
+      state.round.durationMs = 60000;
+      state.round.resultsByPlayer = {};
+
+      const props = createDefaultProps(state);
+      props.playerId = 'stale-id';
+      props.playerName = 'Stale';
+      props.isAdmin = true;
+      props.adminSessionId = 'admin-123';
+
+      render(<CategoryClash2Game {...props} />);
+
+      expect(screen.getByRole('button', { name: /play again/i })).toBeInTheDocument();
+      expect(screen.queryByText(/no results/i)).not.toBeInTheDocument();
+    });
+
     it('renders leaderboard for a player who did not submit any words', () => {
       const state = createBaseState();
       state.round.state = 'results';
