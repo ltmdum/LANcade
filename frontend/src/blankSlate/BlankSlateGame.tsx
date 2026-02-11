@@ -80,6 +80,21 @@ export function BlankSlateGame({
     return null;
   }
 
+  if (isAdmin && !serverState.players?.some(p => p.id === playerId)) {
+    if (round.state === 'results' || serverState.winnerId) {
+      return (
+        <PlayAgainPanel
+          onPlayAgain={onRestart}
+          onBackToConfig={() => setShowConfig(true)}
+          status={adminStatus}
+          playAgainText={serverState.winnerId ? 'New Game' : 'Next Round'}
+          title={serverState.winnerId ? 'Game Over' : 'Next Steps'}
+        />
+      );
+    }
+    return null;
+  }
+
   return (
     <div className="blankslate-container">
       {serverState.winnerId && (

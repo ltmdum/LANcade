@@ -276,6 +276,86 @@ describe('BlankSlateGame', () => {
     });
   });
 
+  describe('admin non-player', () => {
+    it('admin non-player sees controls in results state', () => {
+      const state = createBaseState();
+      state.round.state = 'results';
+      state.round.prompt = { id: 1, text: 'body', blankPosition: 'before' };
+      state.round.durationMs = 30000;
+      state.round.result = {
+        groups: [],
+        scoreChanges: {},
+      };
+
+      const props = createDefaultProps(state);
+      props.playerId = '';
+      props.playerName = '';
+      props.isAdmin = true;
+      props.adminSessionId = 'admin-123';
+
+      render(<BlankSlateGame {...props} />);
+
+      expect(screen.getByRole('button', { name: /next round/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /back to config/i })).toBeInTheDocument();
+      // Non-playing admin should NOT see round results text
+      expect(screen.queryByText(/Round Results/)).not.toBeInTheDocument();
+    });
+
+    it('admin non-player renders nothing during submitting state', () => {
+      const state = createBaseState();
+      state.round.state = 'submitting';
+      state.round.prompt = { id: 1, text: 'body', blankPosition: 'before' };
+
+      const props = createDefaultProps(state);
+      props.playerId = '';
+      props.playerName = '';
+      props.isAdmin = true;
+      props.adminSessionId = 'admin-123';
+
+      const { container } = render(<BlankSlateGame {...props} />);
+
+      expect(container.firstChild).toBeNull();
+    });
+
+    it('admin with stale playerId renders nothing during submitting state', () => {
+      const state = createBaseState();
+      state.round.state = 'submitting';
+      state.round.prompt = { id: 1, text: 'body', blankPosition: 'before' };
+
+      const props = createDefaultProps(state);
+      props.playerId = 'stale-id';
+      props.playerName = 'Stale';
+      props.isAdmin = true;
+      props.adminSessionId = 'admin-123';
+
+      const { container } = render(<BlankSlateGame {...props} />);
+
+      expect(container.firstChild).toBeNull();
+    });
+
+    it('admin with stale playerId sees controls in results state', () => {
+      const state = createBaseState();
+      state.round.state = 'results';
+      state.round.prompt = { id: 1, text: 'body', blankPosition: 'before' };
+      state.round.durationMs = 30000;
+      state.round.result = {
+        groups: [],
+        scoreChanges: {},
+      };
+
+      const props = createDefaultProps(state);
+      props.playerId = 'stale-id';
+      props.playerName = 'Stale';
+      props.isAdmin = true;
+      props.adminSessionId = 'admin-123';
+
+      render(<BlankSlateGame {...props} />);
+
+      expect(screen.getByRole('button', { name: /next round/i })).toBeInTheDocument();
+      expect(screen.queryByText(/Round Results/)).not.toBeInTheDocument();
+    });
+  });
+
   describe('winner state', () => {
     it('renders winner display', () => {
       const state = createBaseState();

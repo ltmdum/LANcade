@@ -83,7 +83,8 @@ function App() {
   }, [isAdminPage, phase, showConfig]);
 
   const renderGameView = () => {
-    if (!serverState || !isKnownPlayer || !activePlugin) return null;
+    const isActiveAdmin = isAdminPage && !!adminSessionId;
+    if (!serverState || (!isKnownPlayer && !isActiveAdmin) || !activePlugin) return null;
     
     return activePlugin.render({
       serverState,
@@ -221,7 +222,7 @@ function App() {
           {(!showConfig || !isAdminPage) && renderGameView()}
 
           {/* Admin End Game Button - shown during any active game phase (not idle or finished) */}
-          {isAdminPage && adminSessionId && !showConfig && phase !== 'idle' && phase !== 'finished' && (
+          {isAdminPage && adminSessionId && !showConfig && phase !== 'idle' && phase !== 'finished' && phase !== 'results' && (
             <EndGameButton
               adminSessionId={adminSessionId}
               onExpired={handleAdminExpired}

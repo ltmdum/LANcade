@@ -271,4 +271,168 @@ describe('WordRushGame', () => {
       expect(screen.queryByRole('button', { name: /back to config/i })).not.toBeInTheDocument();
     });
   });
+
+  describe('late joiner', () => {
+    it('shows waiting message for player not in match.order during active state', () => {
+      const state = createBaseState();
+      state.match.state = 'active';
+      state.match.currentLetter = 'A';
+      state.match.currentPlayerId = 'player-2';
+      state.match.order = ['player-2', 'player-3'];
+      state.match.activePlayerIds = ['player-2', 'player-3'];
+      state.match.turnEndsAt = Date.now() + 10000;
+
+      const props = createDefaultProps(state);
+      props.playerId = 'player-1';
+
+      render(<WordRushGame {...props} />);
+
+      expect(screen.getByText(/waiting for next game/i)).toBeInTheDocument();
+      expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+    });
+
+    it('shows waiting message during voting state', () => {
+      const state = createBaseState();
+      state.match.state = 'voting';
+      state.match.currentLetter = 'A';
+      state.match.currentPlayerId = 'player-2';
+      state.match.order = ['player-2', 'player-3'];
+      state.match.activePlayerIds = ['player-2', 'player-3'];
+      state.match.pendingWord = { word: 'Apple', playerId: 'player-2' };
+      state.match.votes = {
+        submittedIds: [],
+        rejectCount: 0,
+        acceptCount: 0,
+        totalEligible: 1,
+        voteEndsAt: Date.now() + 5000,
+      };
+
+      const props = createDefaultProps(state);
+      props.playerId = 'player-1';
+
+      render(<WordRushGame {...props} />);
+
+      expect(screen.getByText(/waiting for next game/i)).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /accept/i })).not.toBeInTheDocument();
+    });
+
+    it('shows waiting message during finished state', () => {
+      const state = createBaseState();
+      state.match.state = 'finished';
+      state.match.winnerId = 'player-2';
+      state.match.order = ['player-2', 'player-3'];
+      state.match.activePlayerIds = ['player-2', 'player-3'];
+
+      const props = createDefaultProps(state);
+      props.playerId = 'player-1';
+
+      render(<WordRushGame {...props} />);
+
+      expect(screen.getByText(/waiting for next game/i)).toBeInTheDocument();
+    });
+
+    it('only shows match participants in player tag list', () => {
+      const state = createBaseState();
+      state.match.state = 'active';
+      state.match.currentLetter = 'A';
+      state.match.currentPlayerId = 'player-2';
+      state.match.order = ['player-2', 'player-3'];
+      state.match.activePlayerIds = ['player-2', 'player-3'];
+      state.match.turnEndsAt = Date.now() + 10000;
+
+      const props = createDefaultProps(state);
+      props.playerId = 'player-2';
+      props.playerName = 'Bob';
+
+      render(<WordRushGame {...props} />);
+
+      // player-1 (Alice) is NOT in match.order — should not appear in player tags
+      expect(screen.queryByText('Alice')).not.toBeInTheDocument();
+      // player-2 and player-3 ARE in match.order — should appear
+      expect(screen.getByText('Bob')).toBeInTheDocument();
+      expect(screen.getByText('Charlie')).toBeInTheDocument();
+    });
+
+    it('admin sees finished state even when not in match order', () => {
+      const state = createBaseState();
+      state.match.state = 'finished';
+      state.match.winnerId = 'player-2';
+      state.match.order = ['player-2', 'player-3'];
+      state.match.activePlayerIds = ['player-2', 'player-3'];
+      state.match.timeLimitMs = 10000;
+
+      const props = createDefaultProps(state);
+      props.playerId = '';
+      props.playerName = '';
+      props.isAdmin = true;
+      props.adminSessionId = 'admin-123';
+
+      render(<WordRushGame {...props} />);
+
+      expect(screen.getByRole('button', { name: /play again/i })).toBeInTheDocument();
+      // Non-playing admin should NOT see winner display
+      expect(screen.queryByText(/winner/i)).not.toBeInTheDocument();
+    });
+
+    it('admin non-player renders nothing during active state', () => {
+      const state = createBaseState();
+      state.match.state = 'active';
+      state.match.currentLetter = 'A';
+      state.match.currentPlayerId = 'player-2';
+      state.match.order = ['player-2', 'player-3'];
+      state.match.activePlayerIds = ['player-2', 'player-3'];
+      state.match.turnEndsAt = Date.now() + 10000;
+
+      const props = createDefaultProps(state);
+      props.playerId = '';
+      props.playerName = '';
+      props.isAdmin = true;
+      props.adminSessionId = 'admin-123';
+
+      const { container } = render(<WordRushGame {...props} />);
+
+      expect(container.firstChild).toBeNull();
+    });
+
+    it('admin with stale playerId renders nothing during active state', () => {
+      const state = createBaseState();
+      state.match.state = 'active';
+      state.match.currentLetter = 'A';
+      state.match.currentPlayerId = 'player-2';
+      state.match.order = ['player-2', 'player-3'];
+      state.match.activePlayerIds = ['player-2', 'player-3'];
+      state.match.turnEndsAt = Date.now() + 10000;
+
+      const props = createDefaultProps(state);
+      props.playerId = 'stale-id';
+      props.playerName = 'Stale';
+      props.isAdmin = true;
+      props.adminSessionId = 'admin-123';
+
+      const { container } = render(<WordRushGame {...props} />);
+
+      expect(container.firstChild).toBeNull();
+    });
+
+    it('admin with stale playerId sees PlayAgainPanel in finished state', () => {
+      const state = createBaseState();
+      state.match.state = 'finished';
+      state.match.winnerId = 'player-2';
+      state.match.order = ['player-2', 'player-3'];
+      state.match.activePlayerIds = ['player-2', 'player-3'];
+      state.match.timeLimitMs = 10000;
+
+      const props = createDefaultProps(state);
+      props.playerId = 'stale-id';
+      props.playerName = 'Stale';
+      props.isAdmin = true;
+      props.adminSessionId = 'admin-123';
+
+      render(<WordRushGame {...props} />);
+
+      expect(screen.getByRole('button', { name: /play again/i })).toBeInTheDocument();
+      expect(screen.queryByText(/winner/i)).not.toBeInTheDocument();
+      expect(screen.queryByText(/waiting for next game/i)).not.toBeInTheDocument();
+    });
+  });
 });

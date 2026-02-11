@@ -273,6 +273,78 @@ describe('WordSprintGame', () => {
       expect(screen.queryByRole('button', { name: /play again/i })).not.toBeInTheDocument();
     });
 
+    it('admin non-player sees controls in finished state', () => {
+      const state = createBaseState();
+      state.match.state = 'finished';
+      state.match.winnerId = 'player-1';
+      state.match.winnerName = 'Alice';
+      state.match.targetWord = 'APPLE';
+
+      const props = createDefaultProps(state);
+      props.playerId = '';
+      props.playerName = '';
+      props.isAdmin = true;
+      props.adminSessionId = 'admin-123';
+
+      render(<WordSprintGame {...props} />);
+
+      expect(screen.getByRole('button', { name: /play again/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /back to config/i })).toBeInTheDocument();
+      // Non-playing admin should NOT see game result UI
+      expect(screen.queryByText(/You won/)).not.toBeInTheDocument();
+      expect(screen.queryByText('APPLE')).not.toBeInTheDocument();
+    });
+
+    it('admin non-player renders nothing during active state', () => {
+      const state = createBaseState();
+      state.match.state = 'active';
+
+      const props = createDefaultProps(state);
+      props.playerId = '';
+      props.playerName = '';
+      props.isAdmin = true;
+      props.adminSessionId = 'admin-123';
+
+      const { container } = render(<WordSprintGame {...props} />);
+
+      expect(container.firstChild).toBeNull();
+    });
+
+    it('admin with stale playerId renders nothing during active state', () => {
+      const state = createBaseState();
+      state.match.state = 'active';
+
+      const props = createDefaultProps(state);
+      props.playerId = 'stale-id';
+      props.playerName = 'Stale';
+      props.isAdmin = true;
+      props.adminSessionId = 'admin-123';
+
+      const { container } = render(<WordSprintGame {...props} />);
+
+      expect(container.firstChild).toBeNull();
+    });
+
+    it('admin with stale playerId sees PlayAgainPanel in finished state', () => {
+      const state = createBaseState();
+      state.match.state = 'finished';
+      state.match.winnerId = 'player-1';
+      state.match.winnerName = 'Alice';
+      state.match.targetWord = 'APPLE';
+
+      const props = createDefaultProps(state);
+      props.playerId = 'stale-id';
+      props.playerName = 'Stale';
+      props.isAdmin = true;
+      props.adminSessionId = 'admin-123';
+
+      render(<WordSprintGame {...props} />);
+
+      expect(screen.getByRole('button', { name: /play again/i })).toBeInTheDocument();
+      expect(screen.queryByText(/You won/)).not.toBeInTheDocument();
+      expect(screen.queryByText('APPLE')).not.toBeInTheDocument();
+    });
+
     it('renders player summary in multiplayer', () => {
       const state = createBaseState();
       state.match.state = 'finished';
