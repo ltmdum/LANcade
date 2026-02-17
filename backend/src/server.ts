@@ -561,7 +561,9 @@ app.post('/api/admin/end', (req: Request, res: Response) => {
 });
 
 // Serve static files from frontend build in production
-const frontendDistPath = path.join(__dirname, '..', '..', 'frontend', 'dist');
+const frontendDistPath = 
+  process.env.STATIC_DIR ||              // ← mobile bridge sets this
+  path.join(__dirname, '..', '..', 'frontend', 'dist');
 if (fs.existsSync(frontendDistPath)) {
   app.use(express.static(frontendDistPath));
   app.get('*', (req: Request, res: Response) => {

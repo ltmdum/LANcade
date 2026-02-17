@@ -15,6 +15,15 @@ export interface GamesConfig {
  * Works both in development (src/) and production (dist/).
  */
 function findConfigPath(): string {
+  // Allow override via environment variable (used by mobile builds)
+  if (process.env.GAMES_CONFIG_PATH) {
+    const envPath = process.env.GAMES_CONFIG_PATH;
+    if (fs.existsSync(envPath)) {
+      return envPath;
+    }
+    console.warn(`GAMES_CONFIG_PATH set but file not found: ${envPath}`);
+  }
+
   // Possible locations relative to this file
   const candidates = [
     // From src/plugins/ -> root (development via tsx)
