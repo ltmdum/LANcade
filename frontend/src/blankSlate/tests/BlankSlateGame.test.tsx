@@ -30,6 +30,7 @@ function createBaseState(): BlankSlateState {
       durationMs: null,
       startedAt: null,
       endsAt: null,
+      claimableTargets: {},
       claims: [],
       currentClaimIndex: 0,
       result: null,
@@ -115,34 +116,76 @@ describe('BlankSlateGame', () => {
   });
 
   describe('claiming state', () => {
-    it('renders claim panel for players with unique words', () => {
+    it('renders claim panel for players with claimable targets', () => {
       const state = createBaseState();
       state.round.state = 'claiming';
       state.round.prompt = { id: 1, text: 'body', blankPosition: 'before' };
       state.round.submissions = [
-        { playerId: 'player-1', playerName: 'Alice', word: 'unique' },
+        { playerId: 'player-1', playerName: 'Alice', word: 'sane' },
         { playerId: 'player-2', playerName: 'Bob', word: 'same' },
         { playerId: 'player-3', playerName: 'Charlie', word: 'same' },
       ];
+      state.round.claimableTargets = {
+        'player-1': ['same'],
+      };
 
       render(<BlankSlateGame {...createDefaultProps(state)} />);
 
       expect(screen.getByText(/Make a Claim/)).toBeInTheDocument();
     });
 
-    it('shows waiting message for players whose words matched', () => {
+    it('shows claim buttons only for similar words', () => {
+      const state = createBaseState();
+      state.round.state = 'claiming';
+      state.round.prompt = { id: 1, text: 'body', blankPosition: 'before' };
+      state.round.submissions = [
+        { playerId: 'player-1', playerName: 'Alice', word: 'sane' },
+        { playerId: 'player-2', playerName: 'Bob', word: 'same' },
+        { playerId: 'player-3', playerName: 'Charlie', word: 'same' },
+      ];
+      state.round.claimableTargets = {
+        'player-1': ['same'],
+      };
+
+      render(<BlankSlateGame {...createDefaultProps(state)} />);
+
+      expect(screen.getByRole('button', { name: /Claim "same"/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Skip/i })).toBeInTheDocument();
+    });
+
+    it('shows waiting message for players without claimable targets', () => {
       const state = createBaseState();
       state.round.state = 'claiming';
       state.round.prompt = { id: 1, text: 'body', blankPosition: 'before' };
       state.round.submissions = [
         { playerId: 'player-1', playerName: 'Alice', word: 'same' },
         { playerId: 'player-2', playerName: 'Bob', word: 'same' },
-        { playerId: 'player-3', playerName: 'Charlie', word: 'unique' },
+        { playerId: 'player-3', playerName: 'Charlie', word: 'sane' },
       ];
+      state.round.claimableTargets = {
+        'player-3': ['same'],
+      };
 
       render(<BlankSlateGame {...createDefaultProps(state)} />);
 
-      expect(screen.getByText(/Your word matched/)).toBeInTheDocument();
+      expect(screen.getByText(/Waiting for players with unique words/)).toBeInTheDocument();
+    });
+
+    it('shows waiting message for players with unique words but no similar targets', () => {
+      const state = createBaseState();
+      state.round.state = 'claiming';
+      state.round.prompt = { id: 1, text: 'body', blankPosition: 'before' };
+      state.round.submissions = [
+        { playerId: 'player-1', playerName: 'Alice', word: 'zebra' },
+        { playerId: 'player-2', playerName: 'Bob', word: 'same' },
+        { playerId: 'player-3', playerName: 'Charlie', word: 'same' },
+      ];
+      // Player-1 has unique word but no similar targets
+      state.round.claimableTargets = {};
+
+      render(<BlankSlateGame {...createDefaultProps(state)} />);
+
+      expect(screen.getByText(/Waiting for players with unique words/)).toBeInTheDocument();
     });
   });
 
@@ -155,7 +198,7 @@ describe('BlankSlateGame', () => {
         {
           claimantId: 'player-3',
           claimantName: 'Charlie',
-          claimantWord: 'similar',
+          claimantWord: 'sane',
           targetWord: 'same',
           targetPlayerIds: ['player-1', 'player-2'],
           votes: {},
@@ -169,11 +212,10 @@ describe('BlankSlateGame', () => {
       render(<BlankSlateGame {...createDefaultProps(state)} />);
 
       expect(screen.getByText(/Vote on Claim/)).toBeInTheDocument();
-      // Charlie appears in both vote panel and scoreboard, use getAllByText
       expect(screen.getAllByText(/Charlie/).length).toBeGreaterThanOrEqual(1);
     });
 
-    it('renders accept and reject buttons for non-claimant', () => {
+    it('renders accept and reject buttons for eligible voters', () => {
       const state = createBaseState();
       state.round.state = 'voting';
       state.round.prompt = { id: 1, text: 'body', blankPosition: 'before' };
@@ -181,7 +223,7 @@ describe('BlankSlateGame', () => {
         {
           claimantId: 'player-3',
           claimantName: 'Charlie',
-          claimantWord: 'similar',
+          claimantWord: 'sane',
           targetWord: 'same',
           targetPlayerIds: ['player-1', 'player-2'],
           votes: {},
@@ -206,10 +248,10 @@ describe('BlankSlateGame', () => {
         {
           claimantId: 'player-2',
           claimantName: 'Bob',
-          claimantWord: 'answer1',
-          targetWord: 'answer2',
+          claimantWord: 'car',
+          targetWord: 'cat',
           targetPlayerIds: ['player-1'],
-          votes: { 'player-1': 'accept', 'player-2': 'accept' },
+          votes: {},
           resolved: false,
           accepted: false,
           isMutual: true,
@@ -220,6 +262,31 @@ describe('BlankSlateGame', () => {
       render(<BlankSlateGame {...createDefaultProps(state)} />);
 
       expect(screen.getByText(/You both claimed each other's words/)).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /accept/i })).not.toBeInTheDocument();
+    });
+
+    it('shows waiting message for claimant on non-mutual claim', () => {
+      const state = createBaseState();
+      state.round.state = 'voting';
+      state.round.prompt = { id: 1, text: 'body', blankPosition: 'before' };
+      state.round.claims = [
+        {
+          claimantId: 'player-1',
+          claimantName: 'Alice',
+          claimantWord: 'sane',
+          targetWord: 'same',
+          targetPlayerIds: ['player-2', 'player-3'],
+          votes: {},
+          resolved: false,
+          accepted: false,
+          isMutual: false,
+        },
+      ];
+      state.round.currentClaimIndex = 0;
+
+      render(<BlankSlateGame {...createDefaultProps(state)} />);
+
+      expect(screen.getByText(/Waiting for others to vote/)).toBeInTheDocument();
       expect(screen.queryByRole('button', { name: /accept/i })).not.toBeInTheDocument();
     });
   });
@@ -297,7 +364,6 @@ describe('BlankSlateGame', () => {
 
       expect(screen.getByRole('button', { name: /next round/i })).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /back to config/i })).toBeInTheDocument();
-      // Non-playing admin should NOT see round results text
       expect(screen.queryByText(/Round Results/)).not.toBeInTheDocument();
     });
 

@@ -8,6 +8,7 @@ interface ClaimPanelProps {
   playerId: string;
   playerPassword: string;
   canMakeClaim: boolean;
+  claimableTargets: string[];
   submissions: BlankSlateSubmission[];
   playerSubmission?: BlankSlateSubmission;
   roundId: number;
@@ -22,6 +23,7 @@ export function ClaimPanel({
   playerId,
   playerPassword,
   canMakeClaim,
+  claimableTargets,
   submissions,
   playerSubmission,
   roundId,
@@ -29,7 +31,7 @@ export function ClaimPanel({
   const [status, setStatus] = useState('');
   const [claimed, setClaimed] = useState(false);
 
-  // Group submissions by word (case-insensitive)
+  // Group submissions by word (case-insensitive) to get player counts
   const groups = new Map<string, BlankSlateSubmission[]>();
   for (const sub of submissions) {
     const key = sub.word.toLowerCase();
@@ -38,25 +40,35 @@ export function ClaimPanel({
     groups.set(key, existing);
   }
 
-  // Filter out own word and find claimable targets
-  const claimableGroups = Array.from(groups.entries())
-    .filter(([key]) => {
-      if (!playerSubmission) return false;
-      return key !== playerSubmission.word.toLowerCase();
-    })
-    .map(([, subs]) => subs);
+  // Build claimable groups from server-provided targets
+  const claimableGroups: BlankSlateSubmission[][] = [];
+  for (const targetWord of claimableTargets) {
+    const key = targetWord.toLowerCase();
+    const group = groups.get(key);
+    if (group) {
+      claimableGroups.push(group);
+    }
+  }
 
   async function handleClaim(targetWord: string) {
     setStatus('');
     try {
-      // Submit the target word - in claiming phase this creates a claim
       const { response, data } = await submitWord(playerId, targetWord, playerPassword);
       if (!response.ok) {
-        setStatus(data.reason === 'not_unique' ? 'Your word is not unique.' : 'Could not submit claim.');
+        const reason = data.reason;
+        if (reason === 'target_not_similar_enough') {
+          setStatus('That word is not similar enough to claim.');
+        } else if (reason === 'already_claimed') {
+          setStatus('You have already made a claim.');
+        } else if (reason === 'no_claimable_targets') {
+          setStatus('You have no words similar enough to claim.');
+        } else {
+          setStatus('Could not submit claim.');
+        }
         return;
       }
       setClaimed(true);
-      setStatus('Claim submitted! Waiting for votes...');
+      setStatus('Claim submitted! Waiting for other players...');
     } catch {
       setStatus('Could not submit claim.');
     }
@@ -65,8 +77,12 @@ export function ClaimPanel({
   async function handleSkip() {
     setStatus('');
     try {
-      const { response } = await finishRound(playerId, roundId, playerPassword);
+      const { response, data } = await finishRound(playerId, roundId, playerPassword);
       if (!response.ok) {
+        const reason = data?.reason;
+        if (reason === 'no_action_required') {
+          return;
+        }
         setStatus('Could not skip.');
         return;
       }
@@ -81,9 +97,8 @@ export function ClaimPanel({
     return (
       <Panel title="Claim Phase">
         <p className="claim-panel-info">
-          Your word matched with others! Waiting for players with unique words to make claims...
+          Waiting for players with unique words to make claims...
         </p>
-        <SubmissionList submissions={submissions} />
       </Panel>
     );
   }
@@ -92,7 +107,6 @@ export function ClaimPanel({
     return (
       <Panel title="Claim Phase">
         <p className="claim-panel-info">{status}</p>
-        <SubmissionList submissions={submissions} />
       </Panel>
     );
   }
@@ -100,12 +114,10 @@ export function ClaimPanel({
   return (
     <Panel title="Make a Claim">
       <p className="claim-panel-info">
-        Your word "{playerSubmission?.word}" was unique. You can claim to have the same answer
-        as another group, or skip.
+        Your word "{playerSubmission?.word}" was unique. Select a similar word to claim,
+        or skip if none apply.
       </p>
-      <SubmissionList submissions={submissions} />
       <div className="claim-panel-options">
-        <p className="claim-panel-prompt">Select a group to claim:</p>
         {claimableGroups.map((group) => (
           <button
             key={group[0].word}
@@ -121,31 +133,5 @@ export function ClaimPanel({
       </div>
       {status && <p className="claim-panel-status">{status}</p>}
     </Panel>
-  );
-}
-
-/**
- * Display all submissions grouped by word.
- */
-function SubmissionList({ submissions }: { submissions: BlankSlateSubmission[] }) {
-  const groups = new Map<string, BlankSlateSubmission[]>();
-  for (const sub of submissions) {
-    const key = sub.word.toLowerCase();
-    const existing = groups.get(key) || [];
-    existing.push(sub);
-    groups.set(key, existing);
-  }
-
-  return (
-    <div className="submission-list">
-      {Array.from(groups.entries()).map(([key, subs]) => (
-        <div key={key} className="submission-group">
-          <span className="submission-word">"{subs[0].word}"</span>
-          <span className="submission-players">
-            {subs.map((s) => s.playerName).join(', ')}
-          </span>
-        </div>
-      ))}
-    </div>
   );
 }

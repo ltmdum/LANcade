@@ -14,6 +14,7 @@ import promptsData from './prompts.json' with { type: 'json' };
 const WINNING_SCORE = 25;
 const POINTS_FOR_PAIR = 3;
 const POINTS_FOR_GROUP = 1;
+const SIMILARITY_THRESHOLD = 0.6; // Minimum similarity ratio (0-1) for claim eligibility
 
 export interface BlankSlateGameOptions {
   onStateChange?: () => void;
@@ -37,6 +38,7 @@ interface Round {
   finishDeadline: number | null;
   pendingClaims: PendingClaim[];
   claimedOrSkippedPlayers: Set<string>;
+  claimableTargets: Map<string, string[]>;
   claims: BlankSlateClaim[];
   currentClaimIndex: number;
   result: BlankSlateRoundResult | null;
@@ -109,6 +111,7 @@ function createEmptyRound(): Round {
     finishDeadline: null,
     pendingClaims: [],
     claimedOrSkippedPlayers: new Set(),
+    claimableTargets: new Map(),
     claims: [],
     currentClaimIndex: 0,
     result: null,
@@ -123,6 +126,63 @@ function createEmptyRound(): Round {
  */
 function normalizeWord(word: string): string {
   return word.trim().toLowerCase();
+}
+
+/**
+ * Calculate the Damerau-Levenshtein distance between two strings.
+ * Measures minimum edits (insertions, deletions, substitutions, transpositions).
+ * @param a First string.
+ * @param b Second string.
+ * @returns Edit distance.
+ */
+function damerauLevenshteinDistance(a: string, b: string): number {
+  const lenA = a.length;
+  const lenB = b.length;
+
+  if (lenA === 0) return lenB;
+  if (lenB === 0) return lenA;
+
+  // Create distance matrix
+  const matrix: number[][] = Array.from({ length: lenA + 1 }, () =>
+    Array.from({ length: lenB + 1 }, () => 0)
+  );
+
+  // Initialize first row and column
+  for (let i = 0; i <= lenA; i++) matrix[i][0] = i;
+  for (let j = 0; j <= lenB; j++) matrix[0][j] = j;
+
+  // Fill in the rest of the matrix
+  for (let i = 1; i <= lenA; i++) {
+    for (let j = 1; j <= lenB; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+
+      matrix[i][j] = Math.min(
+        matrix[i - 1][j] + 1, // deletion
+        matrix[i][j - 1] + 1, // insertion
+        matrix[i - 1][j - 1] + cost // substitution
+      );
+
+      // Transposition
+      if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) {
+        matrix[i][j] = Math.min(matrix[i][j], matrix[i - 2][j - 2] + cost);
+      }
+    }
+  }
+
+  return matrix[lenA][lenB];
+}
+
+/**
+ * Calculate similarity ratio between two words.
+ * @param word1 First word (should be normalized).
+ * @param word2 Second word (should be normalized).
+ * @returns Similarity ratio from 0 (completely different) to 1 (identical).
+ */
+function calculateSimilarity(word1: string, word2: string): number {
+  const maxLen = Math.max(word1.length, word2.length);
+  if (maxLen === 0) return 1; // Both empty strings are identical
+  const distance = damerauLevenshteinDistance(word1, word2);
+  return 1 - distance / maxLen;
 }
 
 /**
@@ -222,6 +282,12 @@ export function createGame(options: BlankSlateGameOptions = {}): BlankSlateGame 
       }
     }
 
+    // Convert claimableTargets Map to plain object for serialization
+    const claimableTargets: Record<string, string[]> = {};
+    for (const [playerId, targets] of round.claimableTargets.entries()) {
+      claimableTargets[playerId] = targets;
+    }
+
     return {
       id: round.id,
       state: round.state,
@@ -234,6 +300,7 @@ export function createGame(options: BlankSlateGameOptions = {}): BlankSlateGame 
       claims: round.claims,
       currentClaimIndex: round.currentClaimIndex,
       result: round.result,
+      claimableTargets,
     };
   }
 
@@ -295,6 +362,32 @@ export function createGame(options: BlankSlateGameOptions = {}): BlankSlateGame 
       }
     }
     return uniquePlayers;
+  }
+
+  /**
+   * Find similar words for a given word from all submissions.
+   * @param playerWord The player's word (will be normalized internally).
+   * @param groups All word groups.
+   * @returns Array of original words that meet similarity threshold.
+   */
+  function findSimilarClaimTargets(
+    playerWord: string,
+    groups: Map<string, string[]>
+  ): string[] {
+    const similarWords: string[] = [];
+    const normalizedPlayerWord = normalizeWord(playerWord);
+
+    for (const [normalizedWord] of groups) {
+      if (normalizedWord === normalizedPlayerWord) continue;
+
+      const similarity = calculateSimilarity(normalizedPlayerWord, normalizedWord);
+      if (similarity >= SIMILARITY_THRESHOLD) {
+        const originalWord = findOriginalWord(normalizedWord);
+        similarWords.push(originalWord);
+      }
+    }
+
+    return similarWords;
   }
 
   /**
@@ -374,6 +467,7 @@ export function createGame(options: BlankSlateGameOptions = {}): BlankSlateGame 
 
   /**
    * Move to claiming phase or skip to results.
+   * Only enters claiming if there are unique words with similar claim targets.
    */
   function moveToClaiming(): void {
     if (round.state !== 'submitting') {
@@ -390,6 +484,27 @@ export function createGame(options: BlankSlateGameOptions = {}): BlankSlateGame 
       return;
     }
 
+    // Build claimable targets for each unique player based on similarity
+    round.claimableTargets = new Map();
+    let anyClaimableTargets = false;
+
+    for (const playerId of uniquePlayers) {
+      const playerWord = round.submissions.get(playerId);
+      if (!playerWord) continue;
+
+      const similarWords = findSimilarClaimTargets(playerWord, groups);
+      if (similarWords.length > 0) {
+        round.claimableTargets.set(playerId, similarWords);
+        anyClaimableTargets = true;
+      }
+    }
+
+    // If no unique player has any similar words to claim, skip to results
+    if (!anyClaimableTargets) {
+      finalizeResults();
+      return;
+    }
+
     round.state = 'claiming';
     round.pendingClaims = [];
     round.claimedOrSkippedPlayers = new Set();
@@ -399,18 +514,45 @@ export function createGame(options: BlankSlateGameOptions = {}): BlankSlateGame 
   }
 
   /**
-   * Check if all unique word players have claimed or skipped.
-   * @returns True if all unique players have acted.
+   * Check if all unique word players (with claimable targets) have claimed or skipped.
+   * @returns True if all eligible unique players have acted.
    */
   function allUniquePlayersActed(): boolean {
-    const groups = groupSubmissions();
-    const uniquePlayers = findUniqueWordPlayers(groups);
-    return uniquePlayers.every((id) => round.claimedOrSkippedPlayers.has(id));
+    // Only consider players who have claimable targets
+    for (const playerId of round.claimableTargets.keys()) {
+      if (!round.claimedOrSkippedPlayers.has(playerId)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  /**
+   * Determine which players benefit from a claim being accepted.
+   * @param claimantId The player making the claim.
+   * @param targetPlayerIds Players in the target group.
+   * @returns Set of player IDs who benefit.
+   */
+  function getBeneficiaries(claimantId: string, targetPlayerIds: string[]): Set<string> {
+    const beneficiaries = new Set<string>();
+
+    // Claimant always benefits (goes from 0 points to either 3 or 1)
+    beneficiaries.add(claimantId);
+
+    // Target group members benefit only if they currently have a unique word
+    // (going from 0 points to 3 points when paired)
+    if (targetPlayerIds.length === 1) {
+      beneficiaries.add(targetPlayerIds[0]);
+    }
+    // Groups of 2+ don't benefit (they either lose points or stay the same)
+
+    return beneficiaries;
   }
 
   /**
    * Process pending claims and move to voting or results.
-   * Handles mutual claim validation for unique-to-unique claims.
+   * Claims on unique words are auto-rejected unless mutual.
+   * Mutual claims go to voting but beneficiaries cannot vote.
    */
   function processPendingClaims(): void {
     if (round.state !== 'claiming') {
@@ -420,7 +562,7 @@ export function createGame(options: BlankSlateGameOptions = {}): BlankSlateGame 
     const groups = groupSubmissions();
     const validClaims: BlankSlateClaim[] = [];
 
-    // Track which claims are mutual (both players claimed each other)
+    // Track mutual claims (both players claimed each other)
     const mutualPairs = new Set<string>();
 
     for (const pending of round.pendingClaims) {
@@ -429,13 +571,14 @@ export function createGame(options: BlankSlateGameOptions = {}): BlankSlateGame 
 
       if (!targetGroup) continue;
 
+      const playerWord = round.submissions.get(pending.claimantId);
+      if (!playerWord) continue;
+
       // Check if target is a unique word (single player)
       if (targetGroup.length === 1) {
         const targetPlayerId = targetGroup[0];
-        // Check if the target player also claimed this player's word
-        const playerWord = round.submissions.get(pending.claimantId);
-        if (!playerWord) continue;
 
+        // Check if the target player also claimed this player's word
         const reverseClaimExists = round.pendingClaims.some(
           (c) =>
             c.claimantId === targetPlayerId &&
@@ -443,7 +586,7 @@ export function createGame(options: BlankSlateGameOptions = {}): BlankSlateGame 
         );
 
         if (reverseClaimExists) {
-          // Mutual claim - create a single merged claim with pre-accepted votes
+          // Mutual claim - goes to voting (but both parties are beneficiaries and can't vote)
           const pairKey = [pending.claimantId, targetPlayerId].sort().join('|');
           if (!mutualPairs.has(pairKey)) {
             mutualPairs.add(pairKey);
@@ -453,10 +596,7 @@ export function createGame(options: BlankSlateGameOptions = {}): BlankSlateGame 
               claimantWord: playerWord,
               targetWord: pending.targetWord,
               targetPlayerIds: [targetPlayerId],
-              votes: {
-                [pending.claimantId]: 'accept',
-                [targetPlayerId]: 'accept',
-              },
+              votes: {},
               resolved: false,
               accepted: false,
               isMutual: true,
@@ -477,13 +617,11 @@ export function createGame(options: BlankSlateGameOptions = {}): BlankSlateGame 
           });
         }
       } else {
-        // Target is a group (2+ players) - no mutual requirement
-        const claimantWord = round.submissions.get(pending.claimantId);
-        if (!claimantWord) continue;
+        // Target is a group (2+ players) - requires voting
         validClaims.push({
           claimantId: pending.claimantId,
           claimantName: getPlayerName(pending.claimantId),
-          claimantWord,
+          claimantWord: playerWord,
           targetWord: pending.targetWord,
           targetPlayerIds: targetGroup,
           votes: {},
@@ -528,35 +666,47 @@ export function createGame(options: BlankSlateGameOptions = {}): BlankSlateGame 
 
   /**
    * Process the current vote and move to next claim or results.
+   * Only non-benefiting players' votes are counted.
    */
   function processVoteResult(): void {
     const claim = round.claims[round.currentClaimIndex];
     if (!claim) return;
 
-    // For mutual claims, exclude both claimant and target from eligible voters
-    const excludedVoters = claim.isMutual
-      ? [claim.claimantId, ...claim.targetPlayerIds]
-      : [claim.claimantId];
-    const eligibleVoters = getPlayerIds().filter((id) => !excludedVoters.includes(id));
-    const totalVotes = Object.keys(claim.votes).filter((id) => !excludedVoters.includes(id)).length;
+    // Determine who benefits from this claim
+    const beneficiaries = getBeneficiaries(claim.claimantId, claim.targetPlayerIds);
 
-    if (totalVotes < eligibleVoters.length) {
-      return; // Not all votes in yet
+    // Eligible voters are all players except beneficiaries
+    const eligibleVoters = getPlayerIds().filter((id) => !beneficiaries.has(id));
+
+    // If no eligible voters, auto-accept (no one is harmed)
+    if (eligibleVoters.length === 0) {
+      claim.accepted = true;
+      claim.resolved = true;
+    } else {
+      // Count votes from eligible voters only
+      const eligibleVoteEntries = Object.entries(claim.votes).filter(
+        ([voterId]) => !beneficiaries.has(voterId)
+      );
+      const totalVotes = eligibleVoteEntries.length;
+
+      if (totalVotes < eligibleVoters.length) {
+        return; // Not all votes in yet
+      }
+
+      // Count accepts from eligible voters
+      const accepts = eligibleVoteEntries.filter(([, vote]) => vote === 'accept').length;
+
+      // 50% or more of eligible voters must accept
+      claim.accepted = accepts >= eligibleVoters.length / 2;
+      claim.resolved = true;
     }
-
-    // Count accepts (including pre-populated votes from mutual claimants)
-    const accepts = Object.values(claim.votes).filter((v) => v === 'accept').length;
-    const totalVoters = eligibleVoters.length + (claim.isMutual ? 2 : 0);
-    const threshold = Math.ceil(totalVoters / 2);
-    claim.accepted = accepts >= threshold;
-    claim.resolved = true;
 
     // If accepted, merge the claimant into the target group
     if (claim.accepted) {
-      const targetPlayerId = claim.targetPlayerIds[0];
       if (claim.isMutual) {
-        // Randomly choose which word both players will share
-        const useTargetWord = Math.round(Math.random()) === 1;
+        // Mutual claim - randomly choose which word both players will share
+        const targetPlayerId = claim.targetPlayerIds[0];
+        const useTargetWord = Math.random() < 0.5;
         const sharedWord = useTargetWord
           ? round.submissions.get(targetPlayerId)
           : round.submissions.get(claim.claimantId);
@@ -566,6 +716,7 @@ export function createGame(options: BlankSlateGameOptions = {}): BlankSlateGame 
         }
       } else {
         // Non-mutual: claimant adopts target's word
+        const targetPlayerId = claim.targetPlayerIds[0];
         const targetWord = round.submissions.get(targetPlayerId);
         if (targetWord) {
           round.submissions.set(claim.claimantId, targetWord);
@@ -575,12 +726,20 @@ export function createGame(options: BlankSlateGameOptions = {}): BlankSlateGame 
 
     // Move to next claim or finalize
     round.currentClaimIndex++;
+
+    // Find next unresolved claim
+    while (
+      round.currentClaimIndex < round.claims.length &&
+      round.claims[round.currentClaimIndex].resolved
+    ) {
+      round.currentClaimIndex++;
+    }
+
     if (round.currentClaimIndex < round.claims.length) {
-      round.state = 'claiming';
+      notifyChange();
     } else {
       finalizeResults();
     }
-    notifyChange();
   }
 
   /**
@@ -632,6 +791,7 @@ export function createGame(options: BlankSlateGameOptions = {}): BlankSlateGame 
       currentClaimIndex: 0,
       result: null,
       finishedByPlayer: new Set(),
+      claimableTargets: new Map(),
     };
 
     notifyChange();
@@ -684,6 +844,7 @@ export function createGame(options: BlankSlateGameOptions = {}): BlankSlateGame 
 
   /**
    * Submit a claim to join another word group.
+   * Only allows claiming words that meet the similarity threshold.
    * @param playerId Claimant player ID.
    * @param targetWord Word the claimant wants to join.
    * @returns Claim result.
@@ -693,17 +854,10 @@ export function createGame(options: BlankSlateGameOptions = {}): BlankSlateGame 
       return { ok: false, reason: 'not_claiming_phase' };
     }
 
-    // Check if this player has a unique word
-    const groups = groupSubmissions();
-    const playerWord = round.submissions.get(playerId);
-    if (!playerWord) {
-      return { ok: false, reason: 'no_submission' };
-    }
-
-    const normalizedPlayerWord = normalizeWord(playerWord);
-    const playerGroup = groups.get(normalizedPlayerWord);
-    if (!playerGroup || playerGroup.length !== 1) {
-      return { ok: false, reason: 'not_unique' };
+    // Check if this player has claimable targets
+    const allowedTargets = round.claimableTargets.get(playerId);
+    if (!allowedTargets || allowedTargets.length === 0) {
+      return { ok: false, reason: 'no_claimable_targets' };
     }
 
     // Check if player already submitted a claim or skipped
@@ -711,16 +865,21 @@ export function createGame(options: BlankSlateGameOptions = {}): BlankSlateGame 
       return { ok: false, reason: 'already_claimed' };
     }
 
-    // Find the target group
+    // Validate the target word is in the player's allowed targets
     const normalizedTarget = normalizeWord(targetWord);
+    const isAllowedTarget = allowedTargets.some(
+      (allowed) => normalizeWord(allowed) === normalizedTarget
+    );
+
+    if (!isAllowedTarget) {
+      return { ok: false, reason: 'target_not_similar_enough' };
+    }
+
+    // Find the target group
+    const groups = groupSubmissions();
     const targetGroup = groups.get(normalizedTarget);
     if (!targetGroup) {
       return { ok: false, reason: 'target_not_found' };
-    }
-
-    // Can't claim your own word
-    if (normalizedTarget === normalizedPlayerWord) {
-      return { ok: false, reason: 'cannot_claim_own' };
     }
 
     // Add to pending claims
@@ -742,6 +901,7 @@ export function createGame(options: BlankSlateGameOptions = {}): BlankSlateGame 
 
   /**
    * Submit a vote on the current claim.
+   * Only non-benefiting players can vote.
    * @param playerId Voter player ID.
    * @param payload Vote payload with decision.
    * @returns Vote result.
@@ -756,9 +916,12 @@ export function createGame(options: BlankSlateGameOptions = {}): BlankSlateGame 
       return { ok: false, reason: 'no_claim' };
     }
 
-    // Claimant cannot vote
-    if (playerId === claim.claimantId) {
-      return { ok: false, reason: 'claimant_cannot_vote' };
+    // Determine beneficiaries
+    const beneficiaries = getBeneficiaries(claim.claimantId, claim.targetPlayerIds);
+
+    // Beneficiaries cannot vote
+    if (beneficiaries.has(playerId)) {
+      return { ok: false, reason: 'beneficiary_cannot_vote' };
     }
 
     // Already voted
@@ -766,9 +929,10 @@ export function createGame(options: BlankSlateGameOptions = {}): BlankSlateGame 
       return { ok: false, reason: 'already_voted' };
     }
 
-    const decision = payload && typeof payload === 'object' && 'decision' in payload
-      ? (payload as { decision: string }).decision
-      : payload;
+    const decision =
+      payload && typeof payload === 'object' && 'decision' in payload
+        ? (payload as { decision: string }).decision
+        : payload;
 
     if (decision !== 'accept' && decision !== 'reject') {
       return { ok: false, reason: 'invalid_vote' };
@@ -787,6 +951,11 @@ export function createGame(options: BlankSlateGameOptions = {}): BlankSlateGame 
   function skipClaim(playerId: string): { ok: boolean; reason?: string } {
     if (round.state !== 'claiming') {
       return { ok: false, reason: 'not_claiming_phase' };
+    }
+
+    // Check if player has claimable targets (only they need to act)
+    if (!round.claimableTargets.has(playerId)) {
+      return { ok: false, reason: 'no_action_required' };
     }
 
     // Check if player already acted

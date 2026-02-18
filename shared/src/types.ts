@@ -224,6 +224,7 @@ export interface BlankSlateRoundState {
   durationMs: number | null;
   startedAt: number | null;
   endsAt: number | null;
+  claimableTargets: Record<string, string[]>;
   claims: BlankSlateClaim[];
   currentClaimIndex: number;
   result: BlankSlateRoundResult | null;

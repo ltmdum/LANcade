@@ -45,20 +45,13 @@ export function BlankSlateGame({
   const hasSubmitted = round.submittedPlayerIds?.includes(playerId) || false;
   const playerSubmission = round.submissions?.find((s) => s.playerId === playerId);
 
-  // Check if current player can make a claim
-  const canMakeClaim = useMemo(() => {
-    if (round.state !== 'claiming') return false;
-    if (!playerSubmission) return false;
+  // Check if current player can make a claim (has claimable targets from server)
+  const claimableTargets = useMemo(() => {
+    if (round.state !== 'claiming') return [];
+    return round.claimableTargets?.[playerId] || [];
+  }, [round.state, round.claimableTargets, playerId]);
 
-    // Check if this player's word is unique
-    const wordCounts = new Map<string, number>();
-    for (const sub of round.submissions || []) {
-      const key = sub.word.toLowerCase();
-      wordCounts.set(key, (wordCounts.get(key) || 0) + 1);
-    }
-    const myWord = playerSubmission.word.toLowerCase();
-    return wordCounts.get(myWord) === 1;
-  }, [round.state, round.submissions, playerSubmission]);
+  const canMakeClaim = claimableTargets.length > 0;
 
   // Reset admin status when round changes
   useEffect(() => {
@@ -123,6 +116,7 @@ export function BlankSlateGame({
           playerId={playerId}
           playerPassword={playerPassword}
           canMakeClaim={canMakeClaim}
+          claimableTargets={claimableTargets}
           submissions={round.submissions || []}
           playerSubmission={playerSubmission}
           roundId={round.id}
