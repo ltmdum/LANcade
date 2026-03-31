@@ -17,6 +17,7 @@ export interface CategoryManager {
   getSettings(): CategorySettings;
   selectCategory(category: string): CategorySelectResult;
   selectRandomCategory(): CategorySelectResult;
+  addCategory(name: string): CategorySelectResult;
 }
 
 /**
@@ -88,10 +89,31 @@ export function createCategoryManager(options: CategoryManagerOptions): Category
     };
   }
 
+  /**
+   * Add a custom category and select it.
+   * @param name Category name to add.
+   * @returns Result payload.
+   */
+  function addCategory(name: string): CategorySelectResult {
+    if (!canChange()) {
+      return { ok: false, reason: 'round_active' };
+    }
+    const trimmed = name.trim();
+    if (!trimmed) {
+      return { ok: false, reason: 'empty_name' };
+    }
+    if (categories.includes(trimmed)) {
+      return { ok: false, reason: 'duplicate' };
+    }
+    categories.push(trimmed);
+    return setSelected(trimmed);
+  }
+
   return {
     getSelectedCategory,
     getSettings,
     selectCategory,
     selectRandomCategory,
+    addCategory,
   };
 }

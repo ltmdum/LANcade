@@ -22,6 +22,32 @@ describe('multi-category manager', () => {
     expect(result.reason).toBe('round_active');
   });
 
+  it('adds a custom category', () => {
+    const manager = createMultiCategoryManager({ categories: ['A', 'B', 'C'] });
+    const result = (manager as unknown as { addCategory: (name: string) => { ok: boolean; category?: string; reason?: string } }).addCategory('Custom');
+    expect(result.ok).toBe(true);
+    expect(result.category).toBe('Custom');
+    expect(manager.getSettings().categories).toContain('Custom');
+  });
+
+  it('rejects duplicate custom category', () => {
+    const manager = createMultiCategoryManager({ categories: ['A', 'B'] });
+    (manager as unknown as { addCategory: (name: string) => { ok: boolean; reason?: string } }).addCategory('New');
+    const duplicate = (manager as unknown as { addCategory: (name: string) => { ok: boolean; reason?: string } }).addCategory('New');
+    expect(duplicate.ok).toBe(false);
+    expect(duplicate.reason).toBe('duplicate');
+  });
+
+  it('rejects custom category when round is active', () => {
+    const manager = createMultiCategoryManager({
+      categories: ['A', 'B'],
+      canChange: () => false,
+    });
+    const result = (manager as unknown as { addCategory: (name: string) => { ok: boolean; reason?: string } }).addCategory('Custom');
+    expect(result.ok).toBe(false);
+    expect(result.reason).toBe('round_active');
+  });
+
   it('selects random categories', async () => {
     await withStubbedRandom(0, () => {
       const manager = createMultiCategoryManager({ categories: ['A', 'B', 'C'] });

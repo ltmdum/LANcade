@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Panel } from './Panel';
-import { selectCategory, selectRandomCategory, selectCategories } from '../utils/api';
+import { selectCategory, selectRandomCategory, selectCategories, addCustomCategory } from '../utils/api';
 import './CategorySelector.css';
 
 interface CategorySelectorProps {
@@ -26,6 +26,7 @@ export function CategorySelector({
   onExpired,
 }: CategorySelectorProps) {
   const [status, setStatus] = useState('');
+  const [customCategory, setCustomCategory] = useState('');
 
   /**
    * Select a specific category via the admin API.
@@ -124,6 +125,41 @@ export function CategorySelector({
     }
   }
 
+  /**
+   * Add a custom category via the admin API.
+   */
+  async function handleAddCustomCategory() {
+    if (!adminSessionId) {
+      setStatus('Claim admin before adding a category.');
+      return;
+    }
+    const trimmed = customCategory.trim();
+    if (!trimmed) {
+      setStatus('Enter a category name.');
+      return;
+    }
+    setStatus('');
+    try {
+      const { response, data } = await addCustomCategory(trimmed, adminSessionId);
+      if (response.status === 401) {
+        onExpired();
+        return;
+      }
+      if (!response.ok) {
+        if (data.reason === 'duplicate') {
+          setStatus('Category already exists.');
+          return;
+        }
+        setStatus('Could not add category.');
+        return;
+      }
+      setCustomCategory('');
+      setStatus('Category added.');
+    } catch {
+      setStatus('Could not add category.');
+    }
+  }
+
   if (categoryMode === 'multi') {
     return (
       <Panel title="Categories">
@@ -152,6 +188,24 @@ export function CategorySelector({
           </button>
           <span className="category-selector-count">{selectedCategories.length} selected</span>
         </div>
+        <div className="category-selector-row" style={{ marginTop: '0.5rem' }}>
+          <input
+            type="text"
+            className="input flex-1"
+            value={customCategory}
+            onChange={(e) => setCustomCategory(e.target.value)}
+            placeholder="New category..."
+            disabled={!adminSessionId}
+          />
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={handleAddCustomCategory}
+            disabled={!adminSessionId || !customCategory.trim()}
+          >
+            Add
+          </button>
+        </div>
         {status && <p className="category-selector-status">{status}</p>}
       </Panel>
     );
@@ -179,6 +233,24 @@ export function CategorySelector({
           disabled={!adminSessionId}
         >
           Random
+        </button>
+      </div>
+      <div className="category-selector-row" style={{ marginTop: '0.5rem' }}>
+        <input
+          type="text"
+          className="input flex-1"
+          value={customCategory}
+          onChange={(e) => setCustomCategory(e.target.value)}
+          placeholder="New category..."
+          disabled={!adminSessionId}
+        />
+        <button
+          type="button"
+          className="btn btn-secondary"
+          onClick={handleAddCustomCategory}
+          disabled={!adminSessionId || !customCategory.trim()}
+        >
+          Add
         </button>
       </div>
       {status && <p className="category-selector-status">{status}</p>}

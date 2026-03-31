@@ -9,17 +9,21 @@
  */
 
 import { gamePluginRegistry } from './registry';
-import { plugin as categoryclash1Plugin } from '../categoryclash1/plugin';
-import { plugin as categoryclash2Plugin } from '../categoryclash2/plugin';
-import { plugin as wordrushPlugin } from '../wordRush/plugin';
-import { plugin as wordSprintPlugin } from '../wordSprint/plugin';
-import { plugin as blankSlatePlugin } from '../blankSlate/plugin';
+import { plugin as quickFirePlugin } from '../quickFire/plugin';
+import { plugin as multicatPlugin } from '../multicat/plugin';
+import { plugin as lastWordStandingPlugin } from '../lastWordStanding/plugin';
+import { plugin as fiveLetterWordPlugin } from '../fiveLetterWord/plugin';
+import { plugin as mindMatchPlugin } from '../mindMatch/plugin';
+import { plugin as alphabetRacePlugin } from '../alphabetRace/plugin';
+import { plugin as undercoverAgentPlugin } from '../undercoverAgent/plugin';
 
 // Register all available game plugins
-gamePluginRegistry.register(categoryclash1Plugin);
-gamePluginRegistry.register(categoryclash2Plugin);
-gamePluginRegistry.register(wordrushPlugin);
-gamePluginRegistry.register(wordSprintPlugin);
-gamePluginRegistry.register(blankSlatePlugin);
+gamePluginRegistry.register(quickFirePlugin);
+gamePluginRegistry.register(multicatPlugin);
+gamePluginRegistry.register(lastWordStandingPlugin);
+gamePluginRegistry.register(fiveLetterWordPlugin);
+gamePluginRegistry.register(mindMatchPlugin);
+gamePluginRegistry.register(alphabetRacePlugin);
+gamePluginRegistry.register(undercoverAgentPlugin);
 
 export { gamePluginRegistry };

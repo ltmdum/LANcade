@@ -1,0 +1,89 @@
+/* AlphabetRaceGame component styles */
+
+.alphabet-race-container {
+  @apply flex flex-col gap-4;
+}
+
+.alphabet-race-letter {
+  @apply text-5xl font-bold text-center text-blue-500;
+}
+
+.alphabet-race-category {
+  @apply text-center text-lg text-gray-500 mb-2;
+}
+
+.letter-progress {
+  @apply flex flex-wrap gap-1 justify-center my-2;
+}
+
+.letter-progress-item {
+  @apply w-6 h-6 flex items-center justify-center text-xs font-bold rounded bg-gray-100 text-gray-500;
+}
+
+.letter-progress-item--completed {
+  @apply bg-green-500 text-white;
+}
+
+.letter-progress-item--current {
+  @apply bg-blue-500 text-white scale-125;
+}
+
+.alphabet-vote-panel {
+  @apply text-center;
+}
+
+.alphabet-vote-word {
+  @apply text-3xl font-bold my-2;
+}
+
+.alphabet-vote-submitter {
+  @apply text-sm text-gray-600 mb-2;
+}
+
+.alphabet-vote-buttons {
+  @apply flex gap-2 justify-center my-4;
+}
+
+.alphabet-vote-status {
+  @apply text-sm text-gray-600 mt-2;
+}
+
+.alphabet-vote-waiting {
+  @apply text-gray-600;
+}
+
+.alphabet-vote-counts {
+  @apply text-sm text-gray-500 mt-2;
+}
+
+.alphabet-score-list {
+  @apply list-none p-0 m-0;
+}
+
+.alphabet-score-item {
+  @apply flex justify-between py-1;
+}
+
+.alphabet-score-item--ineligible {
+  @apply opacity-50;
+}
+
+.alphabet-winner-name {
+  @apply text-4xl font-bold text-center text-blue-500;
+}
+
+.alphabet-race-ineligible {
+  @apply text-gray-600 bg-gray-100 p-3 rounded-lg text-center;
+}
+
+.alphabet-race-status {
+  @apply text-gray-600 text-center;
+}
+
+.alphabet-progress-count {
+  @apply text-sm text-gray-500 text-center;
+}
+
+.alphabet-game-over {
+  @apply text-2xl font-bold text-center text-gray-700 mb-2;
+}

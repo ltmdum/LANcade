@@ -1,0 +1,416 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import { AlphabetRaceGame } from '../AlphabetRaceGame';
+import type { AlphabetRaceState } from '@lancade/shared';
+
+vi.stubGlobal('fetch', vi.fn());
+
+/**
+ * Create a base server state for testing.
+ * @returns Default AlphabetRaceState with three players and idle match.
+ */
+function createBaseState(): AlphabetRaceState {
+  return {
+    serverTime: Date.now(),
+    players: [
+      { id: 'player-1', name: 'Alice' },
+      { id: 'player-2', name: 'Bob' },
+      { id: 'player-3', name: 'Charlie' },
+    ],
+    settings: {
+      categories: ['Animals'],
+      selectedCategory: 'Animals',
+    },
+    match: {
+      id: 0,
+      state: 'idle',
+      category: 'Animals',
+      letterSequence: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''),
+      currentLetterIndex: 0,
+      currentLetter: null,
+      submittedWord: null,
+      submittedBy: null,
+      submittedByName: null,
+      voteTimeoutMs: 10000,
+      voteEndsAt: null,
+      votesAccept: 0,
+      votesReject: 0,
+      votedPlayerIds: [],
+      eligibleVoterCount: 0,
+      scores: { 'player-1': 0, 'player-2': 0, 'player-3': 0 },
+      ineligiblePlayerIds: [],
+      completedCount: 0,
+      participants: ['player-1', 'player-2', 'player-3'],
+      winnerId: null,
+      winnerName: null,
+    },
+    game: { id: 'alphabetrace', name: 'Alphabet Race' },
+    games: [{ id: 'alphabetrace', name: 'Alphabet Race' }],
+  };
+}
+
+/**
+ * Create default props for the AlphabetRaceGame component.
+ * @param serverState Server state to use.
+ * @returns Props object.
+ */
+function createDefaultProps(serverState: AlphabetRaceState) {
+  return {
+    serverState,
+    connection: 'connected' as const,
+    playerId: 'player-1',
+    playerName: 'Alice',
+    playerPassword: 'password123',
+    adminSessionId: '',
+    isAdmin: false,
+    setShowConfig: vi.fn(),
+  };
+}
+
+describe('AlphabetRaceGame', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  describe('idle state', () => {
+    it('renders nothing when idle', () => {
+      const state = createBaseState();
+      state.match.state = 'idle';
+
+      const { container } = render(
+        <AlphabetRaceGame {...createDefaultProps(state)} />
+      );
+
+      expect(container.firstChild).toBeNull();
+    });
+  });
+
+  describe('racing state', () => {
+    it('renders current letter prominently', () => {
+      const state = createBaseState();
+      state.match.state = 'racing';
+      state.match.currentLetter = 'M';
+
+      const { container } = render(<AlphabetRaceGame {...createDefaultProps(state)} />);
+
+      const letterEl = container.querySelector('.alphabet-race-letter');
+      expect(letterEl).not.toBeNull();
+      expect(letterEl!.textContent).toBe('M');
+    });
+
+    it('shows word input for eligible players', () => {
+      const state = createBaseState();
+      state.match.state = 'racing';
+      state.match.currentLetter = 'A';
+
+      render(<AlphabetRaceGame {...createDefaultProps(state)} />);
+
+      expect(screen.getByRole('textbox')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /submit/i })).toBeInTheDocument();
+    });
+
+    it('shows ineligible message for penalized players', () => {
+      const state = createBaseState();
+      state.match.state = 'racing';
+      state.match.currentLetter = 'B';
+      state.match.ineligiblePlayerIds = ['player-1'];
+
+      render(<AlphabetRaceGame {...createDefaultProps(state)} />);
+
+      expect(screen.getByText(/sitting out/i)).toBeInTheDocument();
+      expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+    });
+
+    it('shows letter progress', () => {
+      const state = createBaseState();
+      state.match.state = 'racing';
+      state.match.currentLetter = 'C';
+      state.match.completedCount = 2;
+
+      render(<AlphabetRaceGame {...createDefaultProps(state)} />);
+
+      expect(screen.getByText(/2 of 26 completed/)).toBeInTheDocument();
+    });
+
+    it('shows scores', () => {
+      const state = createBaseState();
+      state.match.state = 'racing';
+      state.match.currentLetter = 'A';
+      state.match.scores = { 'player-1': 5, 'player-2': 3, 'player-3': 1 };
+
+      render(<AlphabetRaceGame {...createDefaultProps(state)} />);
+
+      expect(screen.getByText('Scores')).toBeInTheDocument();
+      expect(screen.getByText('5')).toBeInTheDocument();
+      expect(screen.getByText('3')).toBeInTheDocument();
+      expect(screen.getByText('1')).toBeInTheDocument();
+    });
+
+    it('shows category when set', () => {
+      const state = createBaseState();
+      state.match.state = 'racing';
+      state.match.currentLetter = 'A';
+      state.match.category = 'Animals';
+
+      render(<AlphabetRaceGame {...createDefaultProps(state)} />);
+
+      expect(screen.getByText(/Category: Animals/)).toBeInTheDocument();
+    });
+  });
+
+  describe('voting state', () => {
+    it('shows submitted word and submitter name', () => {
+      const state = createBaseState();
+      state.match.state = 'voting';
+      state.match.currentLetter = 'A';
+      state.match.submittedWord = 'Antelope';
+      state.match.submittedBy = 'player-2';
+      state.match.submittedByName = 'Bob';
+      state.match.eligibleVoterCount = 2;
+
+      render(<AlphabetRaceGame {...createDefaultProps(state)} />);
+
+      expect(screen.getByText('Antelope')).toBeInTheDocument();
+      expect(screen.getByText(/Bob submitted/i)).toBeInTheDocument();
+    });
+
+    it('shows accept/reject buttons for non-submitters', () => {
+      const state = createBaseState();
+      state.match.state = 'voting';
+      state.match.currentLetter = 'A';
+      state.match.submittedWord = 'Antelope';
+      state.match.submittedBy = 'player-2';
+      state.match.submittedByName = 'Bob';
+      state.match.eligibleVoterCount = 2;
+
+      render(<AlphabetRaceGame {...createDefaultProps(state)} />);
+
+      expect(screen.getByRole('button', { name: /accept/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /reject/i })).toBeInTheDocument();
+    });
+
+    it('shows waiting message for submitter', () => {
+      const state = createBaseState();
+      state.match.state = 'voting';
+      state.match.currentLetter = 'A';
+      state.match.submittedWord = 'Antelope';
+      state.match.submittedBy = 'player-1';
+      state.match.submittedByName = 'Alice';
+      state.match.eligibleVoterCount = 2;
+
+      render(<AlphabetRaceGame {...createDefaultProps(state)} />);
+
+      expect(screen.getByText(/waiting for votes/i)).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /accept/i })).not.toBeInTheDocument();
+    });
+
+    it('shows ineligible message for penalized players during voting', () => {
+      const state = createBaseState();
+      state.match.state = 'voting';
+      state.match.currentLetter = 'A';
+      state.match.submittedWord = 'Antelope';
+      state.match.submittedBy = 'player-2';
+      state.match.submittedByName = 'Bob';
+      state.match.eligibleVoterCount = 1;
+      state.match.ineligiblePlayerIds = ['player-1'];
+
+      render(<AlphabetRaceGame {...createDefaultProps(state)} />);
+
+      expect(screen.getByText(/sitting out/i)).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /accept/i })).not.toBeInTheDocument();
+    });
+
+    it('shows vote counts', () => {
+      const state = createBaseState();
+      state.match.state = 'voting';
+      state.match.currentLetter = 'A';
+      state.match.submittedWord = 'Antelope';
+      state.match.submittedBy = 'player-2';
+      state.match.submittedByName = 'Bob';
+      state.match.votesAccept = 1;
+      state.match.votesReject = 0;
+      state.match.eligibleVoterCount = 2;
+
+      render(<AlphabetRaceGame {...createDefaultProps(state)} />);
+
+      expect(screen.getByText(/Votes: 1 \/ 2/)).toBeInTheDocument();
+    });
+  });
+
+  describe('finished state', () => {
+    it('shows winner name before game over text', () => {
+      const state = createBaseState();
+      state.match.state = 'finished';
+      state.match.winnerId = 'player-1';
+      state.match.winnerName = 'Alice';
+      state.match.completedCount = 26;
+
+      const { container } = render(<AlphabetRaceGame {...createDefaultProps(state)} />);
+
+      expect(screen.getByText(/Game Over/)).toBeInTheDocument();
+      const winnerEl = container.querySelector('.alphabet-winner-name');
+      expect(winnerEl).not.toBeNull();
+      expect(winnerEl!.textContent).toBe('Alice');
+
+      // Winner name should appear before "Game Over!" in the DOM
+      const bodyHtml = container.innerHTML;
+      expect(bodyHtml.indexOf('alphabet-winner-name')).toBeLessThan(bodyHtml.indexOf('alphabet-game-over'));
+    });
+
+    it('shows final scores', () => {
+      const state = createBaseState();
+      state.match.state = 'finished';
+      state.match.winnerId = 'player-1';
+      state.match.winnerName = 'Alice';
+      state.match.scores = { 'player-1': 15, 'player-2': 8, 'player-3': 3 };
+      state.match.completedCount = 26;
+
+      render(<AlphabetRaceGame {...createDefaultProps(state)} />);
+
+      expect(screen.getByText('Scores')).toBeInTheDocument();
+      expect(screen.getByText('15')).toBeInTheDocument();
+      expect(screen.getByText('8')).toBeInTheDocument();
+      expect(screen.getByText('3')).toBeInTheDocument();
+    });
+
+    it('admin sees play again controls', () => {
+      const state = createBaseState();
+      state.match.state = 'finished';
+      state.match.winnerId = 'player-1';
+      state.match.winnerName = 'Alice';
+      state.match.completedCount = 26;
+
+      const props = createDefaultProps(state);
+      props.isAdmin = true;
+      props.adminSessionId = 'admin-123';
+
+      render(<AlphabetRaceGame {...props} />);
+
+      expect(screen.getByRole('button', { name: /play again/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /back to configuration/i })).toBeInTheDocument();
+    });
+  });
+
+  describe('admin non-player', () => {
+    it('shows play again panel in finished state', () => {
+      const state = createBaseState();
+      state.match.state = 'finished';
+      state.match.winnerId = 'player-2';
+      state.match.winnerName = 'Bob';
+      state.match.completedCount = 26;
+
+      const props = createDefaultProps(state);
+      props.playerId = '';
+      props.playerName = '';
+      props.isAdmin = true;
+      props.adminSessionId = 'admin-123';
+
+      render(<AlphabetRaceGame {...props} />);
+
+      expect(screen.getByRole('button', { name: /play again/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /back to configuration/i })).toBeInTheDocument();
+    });
+
+    it('renders nothing during racing', () => {
+      const state = createBaseState();
+      state.match.state = 'racing';
+      state.match.currentLetter = 'A';
+
+      const props = createDefaultProps(state);
+      props.playerId = '';
+      props.playerName = '';
+      props.isAdmin = true;
+      props.adminSessionId = 'admin-123';
+
+      const { container } = render(<AlphabetRaceGame {...props} />);
+
+      expect(container.firstChild).toBeNull();
+    });
+
+    it('admin with stale playerId renders nothing during racing', () => {
+      const state = createBaseState();
+      state.match.state = 'racing';
+      state.match.currentLetter = 'A';
+
+      const props = createDefaultProps(state);
+      props.playerId = 'stale-id';
+      props.playerName = 'Stale';
+      props.isAdmin = true;
+      props.adminSessionId = 'admin-123';
+
+      const { container } = render(<AlphabetRaceGame {...props} />);
+
+      expect(container.firstChild).toBeNull();
+    });
+
+    it('admin with stale playerId sees controls in finished state', () => {
+      const state = createBaseState();
+      state.match.state = 'finished';
+      state.match.winnerId = 'player-1';
+      state.match.winnerName = 'Alice';
+      state.match.completedCount = 26;
+
+      const props = createDefaultProps(state);
+      props.playerId = 'stale-id';
+      props.playerName = 'Stale';
+      props.isAdmin = true;
+      props.adminSessionId = 'admin-123';
+
+      render(<AlphabetRaceGame {...props} />);
+
+      expect(screen.getByRole('button', { name: /play again/i })).toBeInTheDocument();
+    });
+  });
+
+  describe('scoreboard', () => {
+    it('shows all player scores sorted descending', () => {
+      const state = createBaseState();
+      state.match.state = 'racing';
+      state.match.currentLetter = 'D';
+      state.match.scores = { 'player-1': 2, 'player-2': 5, 'player-3': 1 };
+
+      render(<AlphabetRaceGame {...createDefaultProps(state)} />);
+
+      expect(screen.getByText('Scores')).toBeInTheDocument();
+
+      const listItems = screen.getAllByRole('listitem');
+      expect(listItems).toHaveLength(3);
+
+      // Bob (5) should be first, then Alice (2), then Charlie (1)
+      expect(listItems[0]).toHaveTextContent('Bob');
+      expect(listItems[0]).toHaveTextContent('5');
+      expect(listItems[1]).toHaveTextContent('Alice');
+      expect(listItems[1]).toHaveTextContent('2');
+      expect(listItems[2]).toHaveTextContent('Charlie');
+      expect(listItems[2]).toHaveTextContent('1');
+    });
+
+    it('shows ineligible players with out indicator', () => {
+      const state = createBaseState();
+      state.match.state = 'racing';
+      state.match.currentLetter = 'A';
+      state.match.ineligiblePlayerIds = ['player-2'];
+
+      render(<AlphabetRaceGame {...createDefaultProps(state)} />);
+
+      expect(screen.getByText(/Bob.*\(out\)/)).toBeInTheDocument();
+    });
+  });
+
+  describe('non-participant view', () => {
+    it('shows waiting message for non-participant non-admin', () => {
+      const state = createBaseState();
+      state.match.state = 'racing';
+      state.match.currentLetter = 'A';
+
+      const props = createDefaultProps(state);
+      props.playerId = 'late-joiner';
+      props.playerName = 'Late';
+      props.isAdmin = false;
+
+      render(<AlphabetRaceGame {...props} />);
+
+      expect(screen.getByText(/Waiting for next game/i)).toBeInTheDocument();
+    });
+  });
+});

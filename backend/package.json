@@ -6,7 +6,7 @@
   "main": "./dist/server.js",
   "scripts": {
     "build": "tsc && npm run copy-assets",
-    "copy-assets": "cp src/wordSprint/guess-words.json dist/wordSprint/",
+    "copy-assets": "cp src/fiveLetterWord/guess-words.json dist/fiveLetterWord/",
     "dev": "tsx watch src/server.ts",
     "start": "node dist/server.js",
     "test": "vitest run",

@@ -81,6 +81,13 @@ export interface BaseGame {
     reason?: string;
   };
 
+  /** Add a custom category to the game's category list */
+  addCategory?: (category: string) => {
+    ok: boolean;
+    category?: string;
+    reason?: string;
+  };
+
   /** End the current game/round early (admin action) */
   endGame?: () => {
     ok: boolean;

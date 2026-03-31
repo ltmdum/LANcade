@@ -1,9 +1,11 @@
 {
   "games": [
-    "categoryclash1",
-    "categoryclash2",
-    "wordrush",
-    "wordsprint",
-    "blankslate"
+    "quickfire",
+    "multicat",
+    "lastwordstanding",
+    "fiveletterword",
+    "mindmatch",
+    "alphabetrace",
+    "undercoveragent"
   ]
 }

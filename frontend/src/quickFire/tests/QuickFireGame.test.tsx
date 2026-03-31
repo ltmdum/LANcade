@@ -1,0 +1,370 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import { QuickFireGame } from '../QuickFireGame';
+import type { CategoryClashState } from '@lancade/shared';
+
+// Mock fetch globally to prevent API calls
+vi.stubGlobal('fetch', vi.fn());
+
+/**
+ * Create a base server state for testing.
+ */
+function createBaseState(): CategoryClashState {
+  return {
+    serverTime: Date.now(),
+    players: [
+      { id: 'player-1', name: 'Alice' },
+      { id: 'player-2', name: 'Bob' },
+    ],
+    settings: {
+      categories: ['Animals', 'Food', 'Countries'],
+      selectedCategory: 'Animals',
+    },
+    round: {
+      id: 1,
+      state: 'idle',
+      letter: null,
+      category: 'Animals',
+      categories: ['Animals'],
+      durationMs: null,
+      startedAt: null,
+      endsAt: null,
+      participants: [],
+      scoresByPlayer: {},
+      wordsByPlayer: [],
+      votesSubmittedIds: [],
+      resultsByPlayer: null,
+    },
+    game: { id: 'quickfire', name: 'Category Clash: Quick Fire' },
+    games: [{ id: 'quickfire', name: 'Category Clash: Quick Fire' }],
+  };
+}
+
+/**
+ * Default props for the game component.
+ */
+function createDefaultProps(serverState: CategoryClashState) {
+  return {
+    serverState,
+    connection: 'connected' as const,
+    playerId: 'player-1',
+    playerName: 'Alice',
+    playerPassword: 'password123',
+    adminSessionId: '',
+    isAdmin: false,
+    setShowConfig: vi.fn(),
+  };
+}
+
+describe('QuickFireGame', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  describe('idle state', () => {
+    it('renders nothing when round is idle', () => {
+      const state = createBaseState();
+      state.round.state = 'idle';
+
+      const { container } = render(
+        <QuickFireGame {...createDefaultProps(state)} />
+      );
+
+      expect(container.firstChild).toBeNull();
+    });
+  });
+
+  describe('active state', () => {
+    it('renders the active panel with letter display', () => {
+      const state = createBaseState();
+      state.round.state = 'active';
+      state.round.letter = 'A';
+      state.round.durationMs = 60000;
+      state.round.startedAt = Date.now();
+      state.round.endsAt = Date.now() + 60000;
+
+      render(<QuickFireGame {...createDefaultProps(state)} />);
+
+      expect(screen.getByText('A')).toBeInTheDocument();
+    });
+
+    it('renders word submit form during active state', () => {
+      const state = createBaseState();
+      state.round.state = 'active';
+      state.round.letter = 'B';
+      state.round.durationMs = 60000;
+
+      render(<QuickFireGame {...createDefaultProps(state)} />);
+
+      expect(screen.getByRole('textbox')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /submit/i })).toBeInTheDocument();
+    });
+
+    it('does not render admin controls during active state for non-admin', () => {
+      const state = createBaseState();
+      state.round.state = 'active';
+      state.round.letter = 'C';
+      state.round.durationMs = 60000;
+
+      render(<QuickFireGame {...createDefaultProps(state)} />);
+
+      expect(screen.queryByText(/play again/i)).not.toBeInTheDocument();
+      expect(screen.queryByText(/back to config/i)).not.toBeInTheDocument();
+    });
+  });
+
+  describe('voting state', () => {
+    it('renders voting panel with words anonymously', () => {
+      const state = createBaseState();
+      state.round.state = 'voting';
+      state.round.letter = 'A';
+      state.round.wordsByPlayer = [
+        {
+          playerId: 'player-2',
+          playerName: 'Bob',
+          words: [{ id: 'word-1', word: 'Apple', category: 'Animals' }],
+        },
+      ];
+      state.round.anonymousWords = [
+        { id: 'word-1', word: 'Apple', category: 'Animals' },
+      ];
+
+      render(<QuickFireGame {...createDefaultProps(state)} />);
+
+      // The word is visible but the author's name is not
+      expect(screen.getByText('Apple')).toBeInTheDocument();
+      expect(screen.queryByText('Bob')).not.toBeInTheDocument();
+    });
+
+    it('does not show other players names during voting', () => {
+      const state = createBaseState();
+      state.round.state = 'voting';
+      state.round.letter = 'A';
+      state.round.wordsByPlayer = [
+        {
+          playerId: 'player-2',
+          playerName: 'Bob',
+          words: [{ id: 'word-1', word: 'Apple', category: 'Animals' }],
+        },
+      ];
+      state.round.anonymousWords = [
+        { id: 'word-1', word: 'Apple', category: 'Animals' },
+      ];
+
+      render(<QuickFireGame {...createDefaultProps(state)} />);
+
+      // The word itself must be visible
+      expect(screen.getByText('Apple')).toBeInTheDocument();
+      // But Bob's name must not appear anywhere
+      expect(screen.queryByText('Bob')).not.toBeInTheDocument();
+    });
+
+    it('renders submit votes button', () => {
+      const state = createBaseState();
+      state.round.state = 'voting';
+      state.round.letter = 'A';
+      state.round.wordsByPlayer = [];
+
+      render(<QuickFireGame {...createDefaultProps(state)} />);
+
+      expect(screen.getByRole('button', { name: /submit downvotes/i })).toBeInTheDocument();
+    });
+
+    it('does not render admin controls during voting state', () => {
+      const state = createBaseState();
+      state.round.state = 'voting';
+      state.round.letter = 'A';
+
+      const props = createDefaultProps(state);
+      props.isAdmin = true;
+      props.adminSessionId = 'admin-123';
+
+      render(<QuickFireGame {...props} />);
+
+      expect(screen.queryByText(/play again/i)).not.toBeInTheDocument();
+      expect(screen.queryByText(/back to config/i)).not.toBeInTheDocument();
+    });
+  });
+
+  describe('results state', () => {
+    it('renders leaderboard and results when player has results', () => {
+      const state = createBaseState();
+      state.round.state = 'results';
+      state.round.letter = 'A';
+      state.round.resultsByPlayer = {
+        'player-1': {
+          name: 'Alice',
+          totalSubmitted: 2,
+          rejected: 0,
+          votedOut: 0,
+          finalScore: 2,
+          words: [
+            {
+              word: 'Apple',
+              category: 'Animals',
+              status: 'accepted',
+              blockedByName: null,
+              downvotedByNames: [],
+            },
+          ],
+        },
+        'player-2': {
+          name: 'Bob',
+          totalSubmitted: 1,
+          rejected: 0,
+          votedOut: 0,
+          finalScore: 1,
+          words: [],
+        },
+      };
+
+      render(<QuickFireGame {...createDefaultProps(state)} />);
+
+      expect(screen.getByText('Apple')).toBeInTheDocument();
+      expect(screen.getByText('Your Results')).toBeInTheDocument();
+    });
+
+    it('renders "no results" message when nobody submitted words', () => {
+      const state = createBaseState();
+      state.round.state = 'results';
+      state.round.letter = 'A';
+      state.round.resultsByPlayer = {};
+
+      render(<QuickFireGame {...createDefaultProps(state)} />);
+
+      expect(screen.getByText(/no results/i)).toBeInTheDocument();
+      expect(screen.getByText(/nobody submitted any words/i)).toBeInTheDocument();
+    });
+
+    it('renders admin controls in results state for admin', () => {
+      const state = createBaseState();
+      state.round.state = 'results';
+      state.round.letter = 'A';
+      state.round.durationMs = 60000;
+      state.round.resultsByPlayer = {
+        'player-1': {
+          name: 'Alice',
+          totalSubmitted: 1,
+          rejected: 0,
+          votedOut: 0,
+          finalScore: 1,
+          words: [],
+        },
+      };
+
+      const props = createDefaultProps(state);
+      props.isAdmin = true;
+      props.adminSessionId = 'admin-123';
+
+      render(<QuickFireGame {...props} />);
+
+      expect(screen.getByRole('button', { name: /play again/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /back to config/i })).toBeInTheDocument();
+    });
+
+    it('renders admin controls even when no results exist', () => {
+      const state = createBaseState();
+      state.round.state = 'results';
+      state.round.letter = 'A';
+      state.round.durationMs = 60000;
+      state.round.resultsByPlayer = {};
+
+      const props = createDefaultProps(state);
+      props.isAdmin = true;
+      props.adminSessionId = 'admin-123';
+
+      render(<QuickFireGame {...props} />);
+
+      expect(screen.getByText(/no results/i)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /play again/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /back to config/i })).toBeInTheDocument();
+    });
+
+    it('admin non-player sees controls in results state', () => {
+      const state = createBaseState();
+      state.round.state = 'results';
+      state.round.letter = 'A';
+      state.round.durationMs = 60000;
+      state.round.resultsByPlayer = {};
+
+      const props = createDefaultProps(state);
+      props.playerId = '';
+      props.playerName = '';
+      props.isAdmin = true;
+      props.adminSessionId = 'admin-123';
+
+      render(<QuickFireGame {...props} />);
+
+      expect(screen.getByRole('button', { name: /play again/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /back to config/i })).toBeInTheDocument();
+      // Non-playing admin should NOT see leaderboard or results text
+      expect(screen.queryByText(/no results/i)).not.toBeInTheDocument();
+      expect(screen.queryByText('Leaderboard')).not.toBeInTheDocument();
+    });
+
+    it('admin non-player renders nothing during active state', () => {
+      const state = createBaseState();
+      state.round.state = 'active';
+      state.round.letter = 'A';
+      state.round.durationMs = 60000;
+
+      const props = createDefaultProps(state);
+      props.playerId = '';
+      props.playerName = '';
+      props.isAdmin = true;
+      props.adminSessionId = 'admin-123';
+
+      const { container } = render(<QuickFireGame {...props} />);
+
+      expect(container.firstChild).toBeNull();
+    });
+
+    it('admin with stale playerId renders nothing during active state', () => {
+      const state = createBaseState();
+      state.round.state = 'active';
+      state.round.letter = 'A';
+      state.round.durationMs = 60000;
+
+      const props = createDefaultProps(state);
+      props.playerId = 'stale-id';
+      props.playerName = 'Stale';
+      props.isAdmin = true;
+      props.adminSessionId = 'admin-123';
+
+      const { container } = render(<QuickFireGame {...props} />);
+
+      expect(container.firstChild).toBeNull();
+    });
+
+    it('admin with stale playerId sees controls in results state', () => {
+      const state = createBaseState();
+      state.round.state = 'results';
+      state.round.letter = 'A';
+      state.round.durationMs = 60000;
+      state.round.resultsByPlayer = {};
+
+      const props = createDefaultProps(state);
+      props.playerId = 'stale-id';
+      props.playerName = 'Stale';
+      props.isAdmin = true;
+      props.adminSessionId = 'admin-123';
+
+      render(<QuickFireGame {...props} />);
+
+      expect(screen.getByRole('button', { name: /play again/i })).toBeInTheDocument();
+      expect(screen.queryByText(/no results/i)).not.toBeInTheDocument();
+    });
+
+    it('does not render admin controls for non-admin in results state', () => {
+      const state = createBaseState();
+      state.round.state = 'results';
+      state.round.letter = 'A';
+      state.round.resultsByPlayer = {};
+
+      render(<QuickFireGame {...createDefaultProps(state)} />);
+
+      expect(screen.queryByRole('button', { name: /play again/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /back to config/i })).not.toBeInTheDocument();
+    });
+  });
+});

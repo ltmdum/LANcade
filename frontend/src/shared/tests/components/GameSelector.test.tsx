@@ -9,11 +9,11 @@ vi.stubGlobal('fetch', mockFetch);
 describe('GameSelector component', () => {
   const defaultProps = {
     games: [
-      { id: 'categoryclash1', name: 'Category Clash v1.0' },
-      { id: 'categoryclash2', name: 'Category Clash v2.0' },
-      { id: 'wordrush', name: 'WordRush' },
+      { id: 'quickfire', name: 'Category Clash: Quick Fire' },
+      { id: 'multicat', name: 'Category Clash: Multicat' },
+      { id: 'lastwordstanding', name: 'Last Word Standing' },
     ],
-    selectedGameId: 'categoryclash1',
+    selectedGameId: 'quickfire',
     adminSessionId: 'admin-123',
     onExpired: vi.fn(),
   };
@@ -29,9 +29,9 @@ describe('GameSelector component', () => {
   it('renders all game options', () => {
     render(<GameSelector {...defaultProps} />);
 
-    expect(screen.getByText('Category Clash v1.0')).toBeInTheDocument();
-    expect(screen.getByText('Category Clash v2.0')).toBeInTheDocument();
-    expect(screen.getByText('WordRush')).toBeInTheDocument();
+    expect(screen.getByText('Category Clash: Quick Fire')).toBeInTheDocument();
+    expect(screen.getByText('Category Clash: Multicat')).toBeInTheDocument();
+    expect(screen.getByText('Last Word Standing')).toBeInTheDocument();
   });
 
   it('shows selected game as checked', () => {
@@ -64,7 +64,7 @@ describe('GameSelector component', () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       status: 200,
-      json: () => Promise.resolve({ ok: true, selectedGameId: 'wordrush' }),
+      json: () => Promise.resolve({ ok: true, selectedGameId: 'lastwordstanding' }),
     });
 
     render(<GameSelector {...defaultProps} />);
@@ -75,7 +75,7 @@ describe('GameSelector component', () => {
     await waitFor(() => {
       expect(mockFetch).toHaveBeenCalledWith('/api/admin/game', expect.objectContaining({
         method: 'POST',
-        body: JSON.stringify({ gameId: 'wordrush' }),
+        body: JSON.stringify({ gameId: 'lastwordstanding' }),
       }));
     });
   });
@@ -117,7 +117,7 @@ describe('GameSelector component', () => {
 
   it('shows info button when game description is provided', () => {
     const getGameDescription = (id: string) => {
-      if (id === 'wordrush') return 'A fast-paced word game';
+      if (id === 'lastwordstanding') return 'A fast-paced word game';
       return undefined;
     };
 

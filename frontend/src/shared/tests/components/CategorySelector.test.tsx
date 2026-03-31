@@ -196,6 +196,33 @@ describe('CategorySelector component', () => {
       });
     });
 
+    it('shows custom category input in multi mode', () => {
+      render(<CategorySelector {...multiProps} />);
+
+      expect(screen.getByPlaceholderText(/new category/i)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /add/i })).toBeInTheDocument();
+    });
+
+    it('calls add category API in multi mode', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({ ok: true, category: 'Custom' }),
+      });
+
+      render(<CategorySelector {...multiProps} />);
+
+      fireEvent.change(screen.getByPlaceholderText(/new category/i), { target: { value: 'Custom' } });
+      fireEvent.click(screen.getByRole('button', { name: /add/i }));
+
+      await waitFor(() => {
+        expect(mockFetch).toHaveBeenCalledWith('/api/admin/category', expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify({ addCustom: 'Custom' }),
+        }));
+      });
+    });
+
     it('calls random API with count in multi mode', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,

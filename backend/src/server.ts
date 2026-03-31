@@ -354,7 +354,7 @@ app.post('/api/round/submit', (req: Request, res: Response) => {
     return;
   }
 
-  res.json({ ok: true, accepted: true });
+  res.json({ ...result, accepted: true });
 });
 
 app.post('/api/round/finish', (req: Request, res: Response) => {
@@ -479,6 +479,8 @@ app.post('/api/admin/category', (req: Request, res: Response) => {
     result = gameInstance!.selectRandomCategories(payload.count);
   } else if (payload && payload.random && typeof gameInstance!.selectRandomCategory === 'function') {
     result = gameInstance!.selectRandomCategory();
+  } else if (payload && payload.addCustom && typeof gameInstance!.addCategory === 'function') {
+    result = gameInstance!.addCategory(payload.addCustom);
   } else if (typeof gameInstance!.selectCategory === 'function') {
     result = gameInstance!.selectCategory(payload.category);
   } else {

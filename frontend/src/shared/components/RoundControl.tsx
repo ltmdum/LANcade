@@ -5,6 +5,11 @@ import { buildDurationMs, minuteOptions, secondOptions } from '../utils/time';
 import { checkPlayerRequirements } from '../utils/playerRequirements';
 import './RoundControl.css';
 
+interface CustomDurationConfig {
+  label: string;
+  options: { label: string; durationMs: number }[];
+}
+
 interface RoundControlProps {
   adminSessionId: string;
   onExpired: () => void;
@@ -15,6 +20,7 @@ interface RoundControlProps {
   playerCount?: number;
   minPlayers?: number;
   hideTimer?: boolean;
+  customDuration?: CustomDurationConfig;
 }
 
 /**
@@ -32,9 +38,11 @@ export function RoundControl({
   playerCount = 0,
   minPlayers,
   hideTimer = false,
+  customDuration,
 }: RoundControlProps) {
   const [minutes, setMinutes] = useState(defaultMinutes);
   const [seconds, setSeconds] = useState(defaultSeconds);
+  const [customIndex, setCustomIndex] = useState(0);
   const [status, setStatus] = useState('');
   const baseId = useId();
 
@@ -51,7 +59,9 @@ export function RoundControl({
       return;
     }
     // For games without timer, use a dummy duration
-    const durationMs = hideTimer ? 1000 : buildDurationMs(minutes, seconds);
+    const durationMs = customDuration
+      ? customDuration.options[customIndex]?.durationMs
+      : hideTimer ? 1000 : buildDurationMs(minutes, seconds);
     if (!durationMs) {
       setStatus('Select a time limit.');
       return;
@@ -77,7 +87,24 @@ export function RoundControl({
   return (
     <Panel title={title}>
       <div className="round-control-row">
-        {!hideTimer && (
+        {customDuration && (
+          <div className="round-control-field">
+            <label className="round-control-label" htmlFor={`${baseId}-custom`}>
+              {customDuration.label}
+            </label>
+            <select
+              id={`${baseId}-custom`}
+              className="round-control-select"
+              value={customIndex}
+              onChange={(e) => setCustomIndex(Number(e.target.value))}
+            >
+              {customDuration.options.map((opt, i) => (
+                <option key={i} value={i}>{opt.label}</option>
+              ))}
+            </select>
+          </div>
+        )}
+        {!customDuration && !hideTimer && (
           <>
             <div className="round-control-field">
               <label className="round-control-label" htmlFor={`${baseId}-minutes`}>

@@ -113,6 +113,7 @@ export interface CategoryClashEngine {
   selectRandomCategory?: () => { ok: boolean; category?: string; reason?: string };
   selectCategories?: (categories: string[]) => { ok: boolean; categories?: string[]; reason?: string };
   selectRandomCategories?: (count?: number) => { ok: boolean; categories?: string[]; reason?: string };
+  addCategory?: (name: string) => { ok: boolean; category?: string; reason?: string };
   endGame(): EndGameResult;
 }
 
@@ -467,13 +468,13 @@ export function createCategoryClashEngine(options: CategoryClashEngineOptions): 
     }
 
     const letter = round.letter || '';
-    if (rawWord[0].toUpperCase() !== letter.toUpperCase()) {
+    const key = rawWord.toUpperCase();
+    if (key[0] !== letter.toUpperCase()) {
       storeSubmission(playerId, rawWord, { status: 'invalid', category });
       notifyChange();
       return { ok: false, reason: 'invalid_letter' };
     }
 
-    const key = rawWord.toUpperCase();
     const existingWord = round.acceptedWordByKey.get(key);
     if (existingWord && existingWord.playerId !== playerId) {
       // Word taken by another player
@@ -746,6 +747,9 @@ export function createCategoryClashEngine(options: CategoryClashEngineOptions): 
   }
   if ('selectRandomCategories' in categoryManager) {
     engine.selectRandomCategories = (categoryManager as MultiCategoryManager).selectRandomCategories;
+  }
+  if ('addCategory' in categoryManager && typeof categoryManager.addCategory === 'function') {
+    engine.addCategory = (categoryManager as { addCategory: (name: string) => { ok: boolean; category?: string; reason?: string } }).addCategory;
   }
 
   return engine;

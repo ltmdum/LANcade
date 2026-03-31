@@ -123,6 +123,24 @@ export async function selectCategories(categories: string[], sessionId: string) 
 }
 
 /**
+ * Add a custom category as admin.
+ * @param category Category name to add.
+ * @param sessionId Admin session id.
+ * @returns Response and parsed payload.
+ */
+export async function addCustomCategory(category: string, sessionId: string) {
+  const response = await fetch('/api/admin/category', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${sessionId}`,
+    },
+    body: JSON.stringify({ addCustom: category }),
+  });
+  return { response, data: await response.json() };
+}
+
+/**
  * Start a new round as admin.
  * @param durationMs Round duration in milliseconds.
  * @param sessionId Admin session id.

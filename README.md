@@ -58,9 +58,9 @@ Games are configured via `games.config.json` in the project root. This file cont
 ```json
 {
   "games": [
-    "categoryclash1",
-    "categoryclash2",
-    "wordrush"
+    "quickfire",
+    "multicat",
+    "lastwordstanding"
   ]
 }
 ```
@@ -69,11 +69,13 @@ Games are configured via `games.config.json` in the project root. This file cont
 
 | Game ID        | Name             | Description                                       |
 |----------------|------------------|---------------------------------------------------|
-| `categoryclash1` | Category Clash v1.0 | Fast rounds, shared letter, and friendly disputes |
-| `categoryclash2` | Category Clash v2.0 | Multiple categories, one shared letter            |
-| `wordrush`     | WordRush         | Race the clock and survive the votes              |
-| `wordsprint` | Word Sprint    | Race to guess the 5-letter word                   |
-| `blankslate`   | BlankSlate       | Match minds with your fellow players              |
+| `quickfire` | Category Clash: Quick Fire | Fast rounds, shared letter, and friendly disputes |
+| `multicat` | Category Clash: Multicat | Multiple categories, one shared letter            |
+| `lastwordstanding` | Last Word Standing | Race the clock and survive the votes              |
+| `fiveletterword` | 5 Letter Word    | Race to guess the 5-letter word                   |
+| `mindmatch`   | Mind Match       | Match minds with your fellow players              |
+| `alphabetrace` | Alphabet Race  | A race through all 26 letters                     |
+| `undercoveragent` | Undercover Agent | Find the imposter among you                    |
 
 ### Enabling/Disabling Games
 
@@ -81,11 +83,11 @@ To enable or disable games, edit `games.config.json`:
 
 ```json
 {
-  "games": ["categoryclash1", "wordrush"]
+  "games": ["quickfire", "lastwordstanding"]
 }
 ```
 
-This example enables only Category Clash v1.0 and WordRush, hiding the other games.
+This example enables only Category Clash: Quick Fire and Last Word Standing, hiding the other games.
 
 ### Validation
 
@@ -97,7 +99,7 @@ npm run validate-config
 
 # Errors shown during build
 Error: Unknown game ID(s) in games.config.json: invalidgame
-Available games: categoryclash1, categoryclash2, wordrush, wordsprint
+Available games: quickfire, multicat, lastwordstanding, fiveletterword, mindmatch, alphabetrace, undercoveragent
 ```
 
 ## Project Structure
@@ -122,34 +124,44 @@ lancade/
 │       │   ├── tests/              # Category Clash shared tests
 │       │   │   └── utils/          # Category Clash shared utility tests
 │       │   └── utils/              # Utility functions shared by Category Clash games
-|       ├── categoryclash1/
-│       │   ├── components/         # Category Clash v1.0 specific components
-│       │   ├── hooks/              # Category Clash v1.0 specific hooks
-│       │   ├── utils/              # Category Clash v1.0 specific utility functions
-│       │   ├── CategoryClash1Game.tsx
-│       │   └── plugin.tsx          # Category Clash v1.0 frontend plugin registration
-|       ├── categoryclash2/
-│       │   ├── components/         # Category Clash v2.0 specific components
-│       │   ├── hooks/              # Category Clash v2.0 specific hooks
-│       │   ├── utils/              # Category Clash v2.0 specific utility functions
-│       │   ├── CategoryClash2Game.tsx
-│       │   └── plugin.tsx          # Category Clash v2.0 frontend plugin registration
-|       ├── wordRush/
-│       │   ├── components/         # WordRush specific components
-│       │   ├── hooks/              # WordRush specific hooks
-│       │   ├── utils/              # WordRush specific utility functions
-│       │   ├── WordRushGame.tsx
-│       │   └── plugin.tsx          # WordRush frontend plugin registration
-|       ├── wordSprint/
-│       │   ├── components/         # Word Sprint specific components
-│       │   ├── tests/              # Word Sprint specific tests
-│       │   ├── WordSprintGame.tsx
-│       │   └── plugin.tsx          # Word Sprint frontend plugin registration
-|       ├── blankSlate/
-│       │   ├── components/         # BlankSlate specific components
-│       │   ├── tests/              # BlankSlate specific tests
-│       │   ├── BlankSlateGame.tsx
-│       │   └── plugin.tsx          # BlankSlate frontend plugin registration
+|       ├── quickFire/
+│       │   ├── components/         # Quick Fire specific components
+│       │   ├── hooks/              # Quick Fire specific hooks
+│       │   ├── utils/              # Quick Fire specific utility functions
+│       │   ├── QuickFireGame.tsx
+│       │   └── plugin.tsx          # Quick Fire frontend plugin registration
+|       ├── multicat/
+│       │   ├── components/         # Multicat specific components
+│       │   ├── hooks/              # Multicat specific hooks
+│       │   ├── utils/              # Multicat specific utility functions
+│       │   ├── MulticatGame.tsx
+│       │   └── plugin.tsx          # Multicat frontend plugin registration
+|       ├── lastWordStanding/
+│       │   ├── components/         # Last Word Standing specific components
+│       │   ├── hooks/              # Last Word Standing specific hooks
+│       │   ├── utils/              # Last Word Standing specific utility functions
+│       │   ├── LastWordStandingGame.tsx
+│       │   └── plugin.tsx          # Last Word Standing frontend plugin registration
+|       ├── fiveLetterWord/
+│       │   ├── components/         # 5 Letter Word specific components
+│       │   ├── tests/              # 5 Letter Word specific tests
+│       │   ├── FiveLetterWordGame.tsx
+│       │   └── plugin.tsx          # 5 Letter Word frontend plugin registration
+|       ├── mindMatch/
+│       │   ├── components/         # Mind Match specific components
+│       │   ├── tests/              # Mind Match specific tests
+│       │   ├── MindMatchGame.tsx
+│       │   └── plugin.tsx          # Mind Match frontend plugin registration
+|       ├── alphabetRace/
+│       │   ├── components/         # Alphabet Race specific components
+│       │   ├── tests/              # Alphabet Race specific tests
+│       │   ├── AlphabetRaceGame.tsx
+│       │   └── plugin.tsx          # Alphabet Race frontend plugin registration
+|       ├── undercoverAgent/
+│       │   ├── components/         # Undercover Agent specific components
+│       │   ├── tests/              # Undercover Agent specific tests
+│       │   ├── UndercoverAgentGame.tsx
+│       │   └── plugin.tsx          # Undercover Agent frontend plugin registration
 │       └── plugins/            # Frontend plugin system
 ├── backend/            # Express + TypeScript
 │   └── src/
@@ -162,35 +174,43 @@ lancade/
 │       │   ├── utils/          # CategoryClash-specific utility functions
 │       │   ├── tests/          # CategoryClash-specific Vitest tests
 │       │   └── categoryclash-engine.ts
-|       ├── categoryclash1/
-│       │   ├── stores/         # Category Clash v1.0 specific stores
-│       │   ├── utils/          # Category Clash v1.0 specific utility functions
-│       │   ├── tests/          # Category Clash v1.0 specific Vitest tests
-│       │   ├── categoryclash1.ts
+|       ├── quickFire/
+│       │   ├── stores/         # Quick Fire specific stores
+│       │   ├── utils/          # Quick Fire specific utility functions
+│       │   ├── tests/          # Quick Fire specific Vitest tests
+│       │   ├── quickfire.ts
 │       │   └── plugin.ts       # Backend plugin registration
-|       ├── categoryclash2/
-│       │   ├── stores/         # Category Clash v2.0 specific stores
-│       │   ├── utils/          # Category Clash v2.0 specific utility functions
-│       │   ├── tests/          # Category Clash v2.0 specific Vitest tests
-│       │   ├── categoryclash2.ts
+|       ├── multicat/
+│       │   ├── stores/         # Multicat specific stores
+│       │   ├── utils/          # Multicat specific utility functions
+│       │   ├── tests/          # Multicat specific Vitest tests
+│       │   ├── multicat.ts
 │       │   └── plugin.ts
-|       ├── wordRush/
-│       │   ├── stores/         # WordRush specific stores
-│       │   ├── utils/          # WordRush specific utility functions
-│       │   ├── tests/          # WordRush specific Vitest tests
-│       │   ├── wordrush.ts
+|       ├── lastWordStanding/
+│       │   ├── stores/         # Last Word Standing specific stores
+│       │   ├── utils/          # Last Word Standing specific utility functions
+│       │   ├── tests/          # Last Word Standing specific Vitest tests
+│       │   ├── lastwordstanding.ts
 │       │   └── plugin.ts
-|       ├── wordSprint/
-│       │   ├── tests/          # Word Sprint specific Vitest tests
-│       │   ├── wordsprint.ts
+|       ├── fiveLetterWord/
+│       │   ├── tests/          # 5 Letter Word specific Vitest tests
+│       │   ├── fiveletterword.ts
 │       │   ├── scoring.ts      # Guess-style letter evaluation
 │       │   ├── word-list.ts    # Word list loading utilities
 │       │   ├── guess-words.json  # Bundled Guess word lists
 │       │   └── plugin.ts
-|       ├── blankSlate/
-│       │   ├── tests/          # BlankSlate specific Vitest tests
-│       │   ├── blankslate.ts
+|       ├── mindMatch/
+│       │   ├── tests/          # Mind Match specific Vitest tests
+│       │   ├── mindmatch.ts
 │       │   ├── prompts.json    # Fill-in-the-blank prompts
+│       │   └── plugin.ts
+|       ├── alphabetRace/
+│       │   ├── tests/          # Alphabet Race specific Vitest tests
+│       │   ├── alphabetrace.ts
+│       │   └── plugin.ts
+|       ├── undercoverAgent/
+│       │   ├── tests/          # Undercover Agent specific Vitest tests
+│       │   ├── undercoveragent.ts
 │       │   └── plugin.ts
 │       └── plugins/        # Backend plugin system
 │           └── tests/          # Vitest tests (mirrors src structure)
@@ -314,9 +334,9 @@ Add your game ID to `scripts/validate-games-config.js`:
 
 ```javascript
 const KNOWN_GAMES = new Set([
-  'categoryclash1',
-  'categoryclash2',
-  'wordrush',
+  'quickfire',
+  'multicat',
+  'lastwordstanding',
   'yourgame',  // Add your game here
 ]);
 ```
@@ -328,9 +348,9 @@ Add to `games.config.json`:
 ```json
 {
   "games": [
-    "categoryclash1",
-    "categoryclash2",
-    "wordrush",
+    "quickfire",
+    "multicat",
+    "lastwordstanding",
     "yourgame"
   ]
 }
@@ -351,7 +371,7 @@ Create tests in `backend/src/tests/yourgame/` to test your game logic.
 
 ## Games
 
-### Category Clash v1.0
+### Category Clash: Quick Fire
 - Admin selects a category from a list or uses Random (does not start the game).
 - Admin sets a round timer and starts the round.
 - Players submit words that start with the round letter. The first player to submit a word wins it; duplicates are rejected (case-insensitive).
@@ -360,14 +380,14 @@ Create tests in `backend/src/tests/yourgame/` to test your game logic.
 - Results include a leaderboard (with tie-breaks) and per-player word status (accepted, rejected, voted out) plus vote details.
 - The admin can restart during play with a fresh letter (using the current timer).
 
-### Category Clash v2.0
+### Category Clash: Multicat
 - Admin selects multiple categories (or uses Random to pick a set).
 - Players receive a shared letter and can submit one word per category.
 - Players can update their submitted words at any time before the timer ends.
 - Duplicate words across all categories are rejected, but players can try again.
-- Voting and scoring mirror Category Clash v1.0 (only players who submitted words can vote).
+- Voting and scoring mirror Quick Fire (only players who submitted words can vote).
 
-### WordRush
+### Last Word Standing
 - Admin selects a category and time limit.
 - The server picks a random starting player and fixes a turn order.
 - The current player gets a random letter and must submit a word before the timer expires.
@@ -378,7 +398,7 @@ Create tests in `backend/src/tests/yourgame/` to test your game logic.
 - Play continues until one player remains.
 - After a winner is declared, the admin can restart with the same configuration or return to setup.
 
-### Word Sprint
+### 5 Letter Word
 - A competitive Guess-style racing game using the official Guess word lists (bundled from guess-wordlist).
 - All players solve the same word simultaneously, racing to be first.
 - Players have 6 attempts to guess a 5-letter word.
@@ -392,7 +412,7 @@ Create tests in `backend/src/tests/yourgame/` to test your game logic.
 - If no one guesses in 6 tries, no winner is declared.
 - No timer needed—it's a pure race!
 
-### BlankSlate
+### Mind Match
 - A fill-in-the-blank party game where players try to match answers.
 - Requires at least 3 players to start.
 - Each round shows a prompt with a blank (e.g., "_____ body" or "house _____").
@@ -404,6 +424,42 @@ Create tests in `backend/src/tests/yourgame/` to test your game logic.
 - **Claiming**: Players with unique words can claim their answer was the same as another group. All other players vote to accept or reject the claim (majority wins).
 - If accepted, the claimant joins that group and receives points accordingly.
 - First player to reach 25 points wins the game.
+
+### Alphabet Race
+- A race through all 26 letters of the alphabet!
+- Admin selects a single category before starting.
+- The game starts at a random letter and cycles through all 26 (in order).
+- **Racing Phase**: All players race to be the first to submit a valid word for the current letter.
+- **Voting Phase**: Once a word is submitted, all other eligible players have a configurable timeout (default 10s) to accept or reject it.
+- If ≥50% of eligible voters reject the word:
+  - The submitter is ineligible for the rest of this letter AND the next letter (penalty).
+  - Other players can now race to submit for this letter.
+- If the word is accepted (or no majority rejects):
+  - The submitter scores 1 point.
+  - Play advances to the next letter.
+- If all but one player become ineligible for a letter, all penalties are wiped and all players are eligible again.
+- Play continues until all 26 letters are completed.
+- The player with the most accepted words wins!
+- Admins can add custom categories to the selectable list.
+
+### Undercover Agent
+- A social deduction game where one player is secretly the undercover agent.
+- Requires at least 3 players to start.
+- All players are shown the same word, except the undercover agent who is told they are undercover.
+- **Reveal Phase**: Players click "Reveal" to learn their role, then click "Ready" to proceed.
+- **Submission Rounds**: Starting at a random player, each player submits one word associated with the shared word. The undercover agent must fake it! Previously submitted words are rejected. The number of submission rounds is configurable.
+  - If any player submits the secret word, the game ends immediately and the agent wins. If a civilian submits it, it's an automatic loss for the civilians!
+  - Civilians should be careful not to give away the word with their clues!
+- **Voting Rounds**: Players see all submitted words and vote for who they think is the undercover agent.
+  - A unanimous vote (all players except the target vote for that player) resolves the round.
+  - If the unanimous vote targets the wrong player, the undercover agent wins immediately.
+  - If the unanimous vote correctly identifies the undercover agent, the agent gets one final chance to guess the secret word. If they guess correctly, the agent still wins. If they guess wrong, the civilians win.
+  - A non-unanimous vote triggers another voting round with the tally visible.
+  - There is no limit on the number of voting rounds.
+
+## Custom Categories
+
+Games that use categories (Category Clash: Quick Fire, Category Clash: Multicat, Last Word Standing, Alphabet Race) support admin-added custom categories. In the admin panel, use the "Add" input below the category selector to add a custom category to the list. Custom categories persist for the duration of the game session.
 
 ## Configuration
 

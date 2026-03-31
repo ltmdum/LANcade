@@ -148,6 +148,55 @@ describe('RoundControl component', () => {
     expect(screen.getByRole('button', { name: /start/i })).toBeInTheDocument();
   });
 
+  it('renders custom duration dropdown instead of minutes/seconds', () => {
+    render(
+      <RoundControl
+        {...defaultProps}
+        customDuration={{
+          label: 'Rounds',
+          options: [
+            { label: '2 rounds', durationMs: 2000 },
+            { label: '3 rounds', durationMs: 3000 },
+          ],
+        }}
+      />
+    );
+
+    expect(screen.getByLabelText(/rounds/i)).toBeInTheDocument();
+    expect(screen.queryByLabelText(/minutes/i)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/seconds/i)).not.toBeInTheDocument();
+  });
+
+  it('sends custom duration when custom duration is configured', async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: () => Promise.resolve({ ok: true, roundId: 1 }),
+    });
+
+    render(
+      <RoundControl
+        {...defaultProps}
+        customDuration={{
+          label: 'Rounds',
+          options: [
+            { label: '2 rounds', durationMs: 2000 },
+            { label: '3 rounds', durationMs: 3000 },
+          ],
+        }}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /start/i }));
+
+    await waitFor(() => {
+      expect(mockFetch).toHaveBeenCalledWith('/api/admin/start', expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ durationMs: 2000 }),
+      }));
+    });
+  });
+
   it('calls API with dummy duration when hideTimer is true', async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,

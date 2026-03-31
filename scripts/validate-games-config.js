@@ -22,11 +22,13 @@ const __dirname = path.dirname(__filename);
 
 // Known game IDs - must be kept in sync with actual game registrations
 const KNOWN_GAMES = new Set([
-  'categoryclash1',
-  'categoryclash2',
-  'wordrush',
-  'wordsprint',
-  'blankslate',
+  'quickfire',
+  'multicat',
+  'lastwordstanding',
+  'fiveletterword',
+  'mindmatch',
+  'alphabetrace',
+  'undercoveragent',
 ]);
 
 function validateConfig() {

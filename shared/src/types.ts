@@ -84,7 +84,7 @@ export interface CategoryClashState {
   games: GameInfo[];
 }
 
-// WordRush types
+// Last Word Standing types
 export interface UsedWord {
   word: string;
   playerId: string;
@@ -105,7 +105,7 @@ export interface VotesInfo {
   voteEndsAt: number | null;
 }
 
-export interface WordRushMatchState {
+export interface LastWordStandingMatchState {
   id: number;
   state: 'idle' | 'active' | 'voting' | 'finished';
   category: string | null;
@@ -125,11 +125,11 @@ export interface WordRushMatchState {
   winnerId: string | null;
 }
 
-export interface WordRushState {
+export interface LastWordStandingState {
   serverTime: number;
   players: PlayerInfo[];
   settings: CategorySettings;
-  match: WordRushMatchState;
+  match: LastWordStandingMatchState;
   game: GameInfo;
   games: GameInfo[];
 }
@@ -158,7 +158,7 @@ export interface RowBestResult {
   yellowCount: number;
 }
 
-export interface WordSprintMatchState {
+export interface FiveLetterWordMatchState {
   id: number;
   state: 'idle' | 'active' | 'finished';
   playerStates: PlayerGameState[];
@@ -168,29 +168,29 @@ export interface WordSprintMatchState {
   winnerName: string | null;
 }
 
-export interface WordSprintState {
+export interface FiveLetterWordState {
   serverTime: number;
   players: PlayerInfo[];
   settings: CategorySettings;
-  match: WordSprintMatchState;
+  match: FiveLetterWordMatchState;
   game: GameInfo;
   games: GameInfo[];
 }
 
-// BlankSlate types
-export interface BlankSlatePrompt {
+// Mind Match types
+export interface MindMatchPrompt {
   id: number;
   text: string;
   blankPosition: 'before' | 'after';
 }
 
-export interface BlankSlateSubmission {
+export interface MindMatchSubmission {
   playerId: string;
   playerName: string;
   word: string;
 }
 
-export interface BlankSlateClaim {
+export interface MindMatchClaim {
   claimantId: string;
   claimantName: string;
   claimantWord: string;
@@ -203,38 +203,38 @@ export interface BlankSlateClaim {
   isMutual: boolean;
 }
 
-export interface BlankSlateWordGroup {
+export interface MindMatchWordGroup {
   word: string;
   playerIds: string[];
   playerNames: string[];
   points: number;
 }
 
-export interface BlankSlateRoundResult {
-  groups: BlankSlateWordGroup[];
+export interface MindMatchRoundResult {
+  groups: MindMatchWordGroup[];
   scoreChanges: Record<string, number>;
 }
 
-export interface BlankSlateRoundState {
+export interface MindMatchRoundState {
   id: number;
   state: 'idle' | 'submitting' | 'claiming' | 'voting' | 'results';
-  prompt: BlankSlatePrompt | null;
-  submissions: BlankSlateSubmission[];
+  prompt: MindMatchPrompt | null;
+  submissions: MindMatchSubmission[];
   submittedPlayerIds: string[];
   durationMs: number | null;
   startedAt: number | null;
   endsAt: number | null;
   claimableTargets: Record<string, string[]>;
-  claims: BlankSlateClaim[];
+  claims: MindMatchClaim[];
   currentClaimIndex: number;
-  result: BlankSlateRoundResult | null;
+  result: MindMatchRoundResult | null;
 }
 
-export interface BlankSlateState {
+export interface MindMatchState {
   serverTime: number;
   players: PlayerInfo[];
   settings: CategorySettings;
-  round: BlankSlateRoundState;
+  round: MindMatchRoundState;
   scores: Record<string, number>;
   winnerId: string | null;
   winnerName: string | null;
@@ -242,8 +242,95 @@ export interface BlankSlateState {
   games: GameInfo[];
 }
 
+// Alphabet Race types
+export interface AlphabetRaceMatchState {
+  id: number;
+  state: 'idle' | 'racing' | 'voting' | 'finished';
+  category: string | null;
+  letterSequence: string[];
+  currentLetterIndex: number;
+  currentLetter: string | null;
+  submittedWord: string | null;
+  submittedBy: string | null;
+  submittedByName: string | null;
+  voteTimeoutMs: number;
+  voteEndsAt: number | null;
+  votesAccept: number;
+  votesReject: number;
+  votedPlayerIds: string[];
+  eligibleVoterCount: number;
+  scores: Record<string, number>;
+  ineligiblePlayerIds: string[];
+  completedCount: number;
+  participants: string[];
+  winnerId: string | null;
+  winnerName: string | null;
+}
+
+export interface AlphabetRaceState {
+  serverTime: number;
+  players: PlayerInfo[];
+  settings: CategorySettings;
+  match: AlphabetRaceMatchState;
+  game: GameInfo;
+  games: GameInfo[];
+}
+
+// Undercover Agent types
+export interface UndercoverSubmission {
+  playerId: string;
+  playerName: string;
+  words: string[];
+}
+
+export interface UndercoverVoteTally {
+  playerId: string;
+  playerName: string;
+  count: number;
+}
+
+export interface UndercoverVoteRound {
+  tally: UndercoverVoteTally[];
+  votedPlayerIds: string[];
+  isUnanimous: boolean;
+  unanimousTargetId: string | null;
+}
+
+export interface UndercoverAgentMatchState {
+  id: number;
+  state: 'idle' | 'reveal' | 'submitting' | 'voting' | 'guessing' | 'finished';
+  word: string | null;
+  undercoverPlayerId: string | null;
+  revealedPlayerIds: string[];
+  readyPlayerIds: string[];
+  totalRounds: number;
+  currentRound: number;
+  turnOrder: string[];
+  currentTurnIndex: number;
+  currentTurnPlayerId: string | null;
+  submissions: UndercoverSubmission[];
+  usedWords: string[];
+  roundSubmittedPlayerIds: string[];
+  voteRounds: UndercoverVoteRound[];
+  currentVoteRound: number;
+  votedPlayerIds: string[];
+  winnerIsUndercover: boolean;
+  finishReason: string | null;
+  finalGuess: string | null;
+  participants: string[];
+}
+
+export interface UndercoverAgentState {
+  serverTime: number;
+  players: PlayerInfo[];
+  settings: CategorySettings;
+  match: UndercoverAgentMatchState;
+  game: GameInfo;
+  games: GameInfo[];
+}
+
 // Union type for any game state
-export type GameState = CategoryClashState | WordRushState | WordSprintState | BlankSlateState;
+export type GameState = CategoryClashState | LastWordStandingState | FiveLetterWordState | MindMatchState | AlphabetRaceState | UndercoverAgentState;
 
 // API response types
 export interface ApiResult {

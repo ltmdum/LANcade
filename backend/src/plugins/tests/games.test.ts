@@ -4,47 +4,47 @@ import { gameRegistry } from '../games.js';
 describe('Game Plugins', () => {
   it('should have all games registered', () => {
     const registeredIds = gameRegistry.getAllRegisteredIds();
-    expect(registeredIds).toContain('categoryclash1');
-    expect(registeredIds).toContain('categoryclash2');
-    expect(registeredIds).toContain('wordrush');
+    expect(registeredIds).toContain('quickfire');
+    expect(registeredIds).toContain('multicat');
+    expect(registeredIds).toContain('lastwordstanding');
   });
 
   it('should have correct metadata for categoryclash1', () => {
     // Enable the game first
-    gameRegistry.setEnabledGames(['categoryclash1']);
-    const game = gameRegistry.getGame('categoryclash1');
+    gameRegistry.setEnabledGames(['quickfire']);
+    const game = gameRegistry.getGame('quickfire');
     
     expect(game).toBeDefined();
-    expect(game!.id).toBe('categoryclash1');
-    expect(game!.name).toBe('Category Clash v1.0');
+    expect(game!.id).toBe('quickfire');
+    expect(game!.name).toBe('Category Clash: Quick Fire');
     expect(typeof game!.factory).toBe('function');
   });
 
   it('should have correct metadata for categoryclash2', () => {
-    gameRegistry.setEnabledGames(['categoryclash2']);
-    const game = gameRegistry.getGame('categoryclash2');
+    gameRegistry.setEnabledGames(['multicat']);
+    const game = gameRegistry.getGame('multicat');
     
     expect(game).toBeDefined();
-    expect(game!.id).toBe('categoryclash2');
-    expect(game!.name).toBe('Category Clash v2.0');
+    expect(game!.id).toBe('multicat');
+    expect(game!.name).toBe('Category Clash: Multicat');
     expect(typeof game!.factory).toBe('function');
   });
 
   it('should have correct metadata for wordrush', () => {
-    gameRegistry.setEnabledGames(['wordrush']);
-    const game = gameRegistry.getGame('wordrush');
+    gameRegistry.setEnabledGames(['lastwordstanding']);
+    const game = gameRegistry.getGame('lastwordstanding');
     
     expect(game).toBeDefined();
-    expect(game!.id).toBe('wordrush');
-    expect(game!.name).toBe('WordRush');
+    expect(game!.id).toBe('lastwordstanding');
+    expect(game!.name).toBe('Last Word Standing');
     expect(typeof game!.factory).toBe('function');
   });
 
   it('should create working game instances', () => {
-    gameRegistry.setEnabledGames(['categoryclash1', 'wordrush']);
+    gameRegistry.setEnabledGames(['quickfire', 'lastwordstanding']);
     
-    const categoryclash = gameRegistry.getGame('categoryclash1');
-    const wordrush = gameRegistry.getGame('wordrush');
+    const categoryclash = gameRegistry.getGame('quickfire');
+    const wordrush = gameRegistry.getGame('lastwordstanding');
     
     const categoryclashInstance = categoryclash!.factory({
       clientGraceMs: 5000,

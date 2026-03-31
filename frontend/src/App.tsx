@@ -108,6 +108,7 @@ function App() {
   const joinPanelTitle = pluginConfig?.joinPanelTitle || 'Join the Round';
   const minPlayers = pluginConfig?.minPlayers;
   const hideTimer = pluginConfig?.hideTimer || false;
+  const customDuration = pluginConfig?.customDuration;
   const playerCount = serverState?.players?.length || 0;
 
   // Function to get game description for the game selector info buttons
@@ -196,6 +197,7 @@ function App() {
                 playerCount={playerCount}
                 minPlayers={minPlayers}
                 hideTimer={hideTimer}
+                customDuration={customDuration}
               />
               <PlayerList
                 players={serverState?.players || []}

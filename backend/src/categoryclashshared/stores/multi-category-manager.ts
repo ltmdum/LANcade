@@ -13,12 +13,19 @@ export interface MultiCategorySelectResult {
   reason?: string;
 }
 
+export interface MultiCategoryAddResult {
+  ok: boolean;
+  category?: string;
+  reason?: string;
+}
+
 export interface MultiCategoryManager {
   getSelectedCategories(): string[];
   getSelectedCategory(): string;
   getSettings(): CategorySettings;
   selectCategories(categories: string[]): MultiCategorySelectResult;
   selectRandomCategories(count?: number): MultiCategorySelectResult;
+  addCategory(name: string): MultiCategoryAddResult;
 }
 
 /**
@@ -149,11 +156,34 @@ export function createMultiCategoryManager(options: MultiCategoryManagerOptions)
     };
   }
 
+  /**
+   * Add a custom category and include it in the current selection.
+   * @param name Category name to add.
+   * @returns Result payload.
+   */
+  function addCategory(name: string): MultiCategoryAddResult {
+    if (!canChange()) {
+      return { ok: false, reason: 'round_active' };
+    }
+    const trimmed = name.trim();
+    if (!trimmed) {
+      return { ok: false, reason: 'empty_name' };
+    }
+    if (categories.includes(trimmed)) {
+      return { ok: false, reason: 'duplicate' };
+    }
+    categories.push(trimmed);
+    selectedCategories = [...selectedCategories, trimmed];
+    onChange();
+    return { ok: true, category: trimmed };
+  }
+
   return {
     getSelectedCategories,
     getSelectedCategory,
     getSettings,
     selectCategories,
     selectRandomCategories,
+    addCategory,
   };
 }

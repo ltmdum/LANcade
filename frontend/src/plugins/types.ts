@@ -47,6 +47,11 @@ export interface GamePluginConfig {
   minPlayers?: number;
   /** Whether to hide the timer config in admin panel (defaults to false) */
   hideTimer?: boolean;
+  /** Custom duration selector replacing the minutes/seconds dropdowns */
+  customDuration?: {
+    label: string;
+    options: { label: string; durationMs: number }[];
+  };
 }
 
 /**
