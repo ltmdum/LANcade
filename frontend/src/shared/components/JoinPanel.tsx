@@ -6,7 +6,6 @@ import './JoinPanel.css';
 interface JoinPanelProps {
   playerName: string;
   setPlayerName: (name: string) => void;
-  playerPassword: string;
   setPlayerPassword: (pass: string) => void;
   playerId: string;
   setPlayerId: (id: string) => void;
@@ -14,19 +13,21 @@ interface JoinPanelProps {
 }
 
 /**
- * Player join form panel.
+ * Player join form panel. The password input is managed locally so that
+ * keystrokes do not trigger server auth attempts. The password is only
+ * sent to the server when the player clicks "Join Game".
  * @param props Join panel props.
  * @returns Join panel element.
  */
 export function JoinPanel({
   playerName,
   setPlayerName,
-  playerPassword,
   setPlayerPassword,
   playerId,
   setPlayerId,
   title = 'Join the Game',
 }: JoinPanelProps) {
+  const [inputPassword, setInputPassword] = useState('');
   const [joinError, setJoinError] = useState('');
   const [joinStatus, setJoinStatus] = useState('');
   const baseId = useId();
@@ -39,18 +40,18 @@ export function JoinPanel({
     e.preventDefault();
     setJoinError('');
     setJoinStatus('');
-    
+
     if (!playerName.trim()) {
       setJoinError('Enter a name to join.');
       return;
     }
-    if (!playerPassword.trim()) {
+    if (!inputPassword.trim()) {
       setJoinError('Enter the player password.');
       return;
     }
-    
+
     try {
-      const { response, data } = await joinPlayer(playerName, playerId || null, playerPassword);
+      const { response, data } = await joinPlayer(playerName, playerId || null, inputPassword);
       if (response.status === 401) {
         setJoinError('Incorrect player password.');
         return;
@@ -65,9 +66,11 @@ export function JoinPanel({
       }
       setPlayerId(data.playerId);
       setPlayerName(data.name);
+      const verified = inputPassword.trim();
+      setPlayerPassword(verified);
       localStorage.setItem('playerId', data.playerId);
       localStorage.setItem('playerName', data.name);
-      localStorage.setItem('playerPassword', playerPassword.trim());
+      localStorage.setItem('playerPassword', verified);
       setJoinStatus('Player profile saved.');
     } catch {
       setJoinError('Could not join as player.');
@@ -88,6 +91,7 @@ export function JoinPanel({
             value={playerName}
             onChange={(e) => setPlayerName(e.target.value)}
             placeholder="e.g. Sam"
+            maxLength={30}
           />
         </div>
         <div className="join-panel-field">
@@ -98,8 +102,8 @@ export function JoinPanel({
             id={`${baseId}-player-password`}
             type="text"
             className="input"
-            value={playerPassword}
-            onChange={(e) => setPlayerPassword(e.target.value)}
+            value={inputPassword}
+            onChange={(e) => setInputPassword(e.target.value)}
             placeholder="Password from server console"
           />
         </div>

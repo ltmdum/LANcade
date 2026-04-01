@@ -464,11 +464,12 @@ Games that use categories (Category Clash: Quick Fire, Category Clash: Multicat,
 ## Configuration
 
 Environment variables:
-- `HOST` (default `0.0.0.0`)
+- `HOST` (optional): bind address. When not set and `LAN_ONLY` is true, the server auto-discovers private network interfaces and binds to each one. Set this explicitly to override (e.g., `HOST=192.168.1.5`).
 - `PORT` (default `3000`)
 - `LAN_ONLY` (default `true`): set to `false` to allow non-LAN clients.
 - `ADMIN_SESSION_TTL_MS` (default `900000`): admin session expiration.
 - `CLIENT_GRACE_MS` (default `5000`): wait time after the timer ends if a client never reports completion.
+- `PASSWORD_LENGTH` (default `8`, minimum `6`): length of the generated admin and player passwords.
 - `HTTPS_REQUIRED` (default `false`): set to `true` to require HTTPS.
 - `HTTPS_KEY_PATH` (default `certs/lan-key.pem`): TLS key path.
 - `HTTPS_CERT_PATH` (default `certs/lan-cert.pem`): TLS cert path.
@@ -486,6 +487,16 @@ To avoid browser warnings, generate a trusted LAN certificate and install the lo
    ```
 3. Copy the mkcert root CA to each device and trust it (see mkcert docs).
 
-## LAN-Only Safety
+## Security
 
-The server checks for private IPs and blocks public addresses. Also avoid router port forwarding and use a local firewall if needed.
+### LAN-Only Safety
+
+When `LAN_ONLY=true` (the default), the server binds only to private network interfaces discovered at startup. If no private interface is found, startup fails with a clear error. The `isPrivateIp` request-level middleware is kept as defence in depth. If you need to bind to a specific address, set `HOST` explicitly.
+
+### Rate Limiting
+
+All password-authenticated routes are rate limited per IP address. After 10 failed authentication attempts from the same IP, that IP is blocked for 60 seconds (HTTP 429 with `Retry-After` header). Failed attempts are logged to the console.
+
+### Connection Limits
+
+SSE (Server-Sent Events) connections are capped at 5 per IP and 50 globally. A heartbeat is sent every 30 seconds to detect and clean up dead connections. Clients exceeding the per-IP limit receive HTTP 429; when the global limit is reached, new connections receive HTTP 503.

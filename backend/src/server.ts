@@ -8,6 +8,11 @@ import crypto from 'crypto';
 import { fileURLToPath } from 'url';
 import { gameRegistry, initializeGames, BaseGame } from './plugins/index.js';
 import { createPlayerStore, PlayerStore } from './shared/stores/player-store.js';
+import { createRateLimiter } from './shared/utils/rate-limiter.js';
+import { resolveBindAddresses } from './shared/utils/resolve-bind-addresses.js';
+import { validatePlayerName, validateWord, validateCategory } from './shared/utils/input-validation.js';
+import { safeCompare } from './shared/utils/safe-compare.js';
+import { createConnectionTracker } from './shared/utils/connection-tracker.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -15,7 +20,7 @@ const __dirname = path.dirname(__filename);
 // Initialize games from config (will throw on invalid config)
 initializeGames();
 
-const HOST = process.env.HOST || '0.0.0.0';
+const EXPLICIT_HOST = process.env.HOST || null;
 const PORT = parseInt(process.env.PORT || '3000', 10);
 const LAN_ONLY = process.env.LAN_ONLY !== 'false';
 const ADMIN_SESSION_TTL_MS = parseInt(process.env.ADMIN_SESSION_TTL_MS || '900000', 10);
@@ -23,6 +28,7 @@ const HTTPS_REQUIRED = process.env.HTTPS_REQUIRED === 'true';
 const HTTPS_KEY_PATH = process.env.HTTPS_KEY_PATH || path.join(__dirname, '..', '..', 'certs', 'lan-key.pem');
 const HTTPS_CERT_PATH = process.env.HTTPS_CERT_PATH || path.join(__dirname, '..', '..', 'certs', 'lan-cert.pem');
 const CLIENT_GRACE_MS = parseInt(process.env.CLIENT_GRACE_MS || '5000', 10);
+const PASSWORD_LENGTH = Math.max(6, parseInt(process.env.PASSWORD_LENGTH || '8', 10));
 
 const PASSWORD_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 
@@ -31,7 +37,7 @@ const PASSWORD_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
  * @param length Length of the password to generate.
  * @returns Random password string.
  */
-function randomPassword(length = 6): string {
+function randomPassword(length = PASSWORD_LENGTH): string {
   const bytes = crypto.randomBytes(length);
   let value = '';
   for (let i = 0; i < length; i += 1) {
@@ -40,13 +46,15 @@ function randomPassword(length = 6): string {
   return value;
 }
 
-const ADMIN_PASSWORD = randomPassword(6);
-const PLAYER_PASSWORD = randomPassword(6);
+const ADMIN_PASSWORD = randomPassword(PASSWORD_LENGTH);
+const PLAYER_PASSWORD = randomPassword(PASSWORD_LENGTH);
 
 let selectedGameId = gameRegistry.getDefaultGameId() || '';
 let gameInstance: BaseGame | null = null;
 let adminSession: { id: string; lastSeen: number } | null = null;
 const sseClients = new Set<Response>();
+const sseTracker = createConnectionTracker(5, 50);
+const authRateLimiter = createRateLimiter(10, 60_000);
 const sharedPlayerStore = createPlayerStore();
 
 /**
@@ -173,7 +181,7 @@ function requireAdmin(req: Request): boolean {
   if (!isAdminSessionActive()) {
     return false;
   }
-  if (match[1] !== adminSession!.id) {
+  if (!safeCompare(match[1], adminSession!.id)) {
     return false;
   }
   adminSession!.lastSeen = Date.now();
@@ -186,7 +194,8 @@ function requireAdmin(req: Request): boolean {
  * @returns True if the password matches.
  */
 function verifyPlayerPassword(pass: unknown): boolean {
-  return pass === PLAYER_PASSWORD;
+  if (typeof pass !== 'string') return false;
+  return safeCompare(pass, PLAYER_PASSWORD);
 }
 
 /**
@@ -195,7 +204,8 @@ function verifyPlayerPassword(pass: unknown): boolean {
  * @returns True if the session id matches and is active.
  */
 function adminSessionMatches(sessionId: unknown): boolean {
-  return isAdminSessionActive() && adminSession !== null && adminSession.id === sessionId;
+  if (typeof sessionId !== 'string') return false;
+  return isAdminSessionActive() && adminSession !== null && safeCompare(adminSession.id, sessionId);
 }
 
 interface PublicState {
@@ -245,13 +255,39 @@ function isGameInProgress(game: BaseGame | null): boolean {
 function broadcastState(): void {
   const payload = JSON.stringify(buildPublicState());
   for (const client of sseClients) {
-    client.write(`event: state\ndata: ${payload}\n\n`);
+    try {
+      client.write(`event: state\ndata: ${payload}\n\n`);
+    } catch {
+      removeSseClient(client);
+    }
   }
+}
+
+/**
+ * Remove an SSE client and update the connection tracker.
+ * @param client The SSE response object to remove.
+ */
+function removeSseClient(client: Response): void {
+  if (!sseClients.has(client)) return;
+  const ip = (client as Response & { sseIp?: string }).sseIp || 'unknown';
+  sseClients.delete(client);
+  sseTracker.remove(ip);
 }
 
 // Create Express app
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: '10kb' }));
+
+// Security headers
+app.use((_req: Request, res: Response, next: NextFunction) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-XSS-Protection', '0');
+  if (HTTPS_REQUIRED) {
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  }
+  next();
+});
 
 // LAN-only middleware
 if (LAN_ONLY) {
@@ -264,6 +300,49 @@ if (LAN_ONLY) {
   });
 }
 
+/**
+ * Check rate limit for a client IP. If blocked, sends a 429 response.
+ * @param req Express request.
+ * @param res Express response.
+ * @returns True if the request is blocked and a response was sent.
+ */
+function isRateLimited(req: Request, res: Response): boolean {
+  const ip = req.socket.remoteAddress || 'unknown';
+  const remaining = authRateLimiter.isBlocked(ip);
+  if (remaining > 0) {
+    res.setHeader('Retry-After', String(remaining));
+    res.status(429).json({ error: 'too_many_attempts' });
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Record a failed auth attempt for a client IP.
+ * Logs a warning when an IP is blocked.
+ * @param req Express request.
+ */
+function recordAuthFailure(req: Request): void {
+  const ip = req.socket.remoteAddress || 'unknown';
+  const justBlocked = authRateLimiter.recordFailure(ip);
+  if (justBlocked) {
+    console.warn(`Rate limit: ${ip} blocked for 60s after 10 failed attempts`);
+  }
+}
+
+/**
+ * Get the active game instance or send a 503 response.
+ * @param res Express response (used to send 503 if no game is active).
+ * @returns The game instance, or null if a 503 was sent.
+ */
+function getGameInstance(res: Response): BaseGame | null {
+  if (!gameInstance) {
+    res.status(503).json({ error: 'no_game_active' });
+    return null;
+  }
+  return gameInstance;
+}
+
 // Health check
 app.get('/health', (req: Request, res: Response) => {
   res.json({ ok: true });
@@ -271,9 +350,11 @@ app.get('/health', (req: Request, res: Response) => {
 
 // API routes
 app.get('/api/state', (req: Request, res: Response) => {
+  if (isRateLimited(req, res)) return;
   const passwordOk = verifyPlayerPassword(req.query.password);
   const adminOk = adminSessionMatches(req.query.adminSessionId);
   if (!passwordOk && !adminOk) {
+    recordAuthFailure(req);
     res.status(401).json({ error: 'unauthorized' });
     return;
   }
@@ -281,9 +362,11 @@ app.get('/api/state', (req: Request, res: Response) => {
 });
 
 app.get('/api/games', (req: Request, res: Response) => {
+  if (isRateLimited(req, res)) return;
   const passwordOk = verifyPlayerPassword(req.query.password);
   const adminOk = adminSessionMatches(req.query.adminSessionId);
   if (!passwordOk && !adminOk) {
+    recordAuthFailure(req);
     res.status(401).json({ error: 'unauthorized' });
     return;
   }
@@ -294,10 +377,20 @@ app.get('/api/games', (req: Request, res: Response) => {
 });
 
 app.get('/api/events', (req: Request, res: Response) => {
+  if (isRateLimited(req, res)) return;
   const passwordOk = verifyPlayerPassword(req.query.password);
   const adminOk = adminSessionMatches(req.query.adminSessionId);
   if (!passwordOk && !adminOk) {
+    recordAuthFailure(req);
     res.status(401).send('Unauthorized');
+    return;
+  }
+
+  const clientIp = req.socket.remoteAddress || 'unknown';
+  const connectResult = sseTracker.canConnect(clientIp);
+  if (!connectResult.allowed) {
+    const status = connectResult.reason === 'server_busy' ? 503 : 429;
+    res.status(status).json({ error: connectResult.reason });
     return;
   }
 
@@ -307,24 +400,48 @@ app.get('/api/events', (req: Request, res: Response) => {
   res.setHeader('X-Accel-Buffering', 'no');
   res.write('\n');
 
+  (res as Response & { sseIp?: string }).sseIp = clientIp;
   sseClients.add(res);
+  sseTracker.add(clientIp);
+
   const payload = JSON.stringify(buildPublicState());
   res.write(`event: state\ndata: ${payload}\n\n`);
 
+  const heartbeat = setInterval(() => {
+    try {
+      res.write(':heartbeat\n\n');
+    } catch {
+      clearInterval(heartbeat);
+      removeSseClient(res);
+    }
+  }, 30_000);
+
   req.on('close', () => {
-    sseClients.delete(res);
+    clearInterval(heartbeat);
+    removeSseClient(res);
   });
 });
 
 app.post('/api/players/join', (req: Request, res: Response) => {
+  if (isRateLimited(req, res)) return;
   const payload = req.body;
   if (!verifyPlayerPassword(payload.password)) {
+    recordAuthFailure(req);
     res.status(401).json({ error: 'unauthorized' });
     return;
   }
 
-  const result = gameInstance!.joinPlayer({
-    name: payload.name,
+  const game = getGameInstance(res);
+  if (!game) return;
+
+  const nameCheck = validatePlayerName(payload.name);
+  if (!nameCheck.ok) {
+    res.status(400).json({ error: nameCheck.reason });
+    return;
+  }
+
+  const result = game.joinPlayer({
+    name: nameCheck.value,
     playerId: payload.playerId,
   });
 
@@ -338,15 +455,26 @@ app.post('/api/players/join', (req: Request, res: Response) => {
 });
 
 app.post('/api/round/submit', (req: Request, res: Response) => {
+  if (isRateLimited(req, res)) return;
   const payload = req.body;
   if (!verifyPlayerPassword(payload.password)) {
+    recordAuthFailure(req);
     res.status(401).json({ error: 'unauthorized' });
     return;
   }
 
-  const result = gameInstance!.submitWord(
+  const game = getGameInstance(res);
+  if (!game) return;
+
+  const wordCheck = validateWord(payload.word ?? '');
+  if (!wordCheck.ok) {
+    res.status(400).json({ error: wordCheck.reason });
+    return;
+  }
+
+  const result = game.submitWord(
     payload.playerId,
-    payload.word || '',
+    wordCheck.value,
     payload.category
   );
   if (!result.ok) {
@@ -358,11 +486,16 @@ app.post('/api/round/submit', (req: Request, res: Response) => {
 });
 
 app.post('/api/round/finish', (req: Request, res: Response) => {
+  if (isRateLimited(req, res)) return;
   const payload = req.body;
   if (!verifyPlayerPassword(payload.password)) {
+    recordAuthFailure(req);
     res.status(401).json({ error: 'unauthorized' });
     return;
   }
+
+  const game = getGameInstance(res);
+  if (!game) return;
 
   const roundId = parseInt(payload.roundId, 10);
   if (!Number.isFinite(roundId)) {
@@ -370,12 +503,12 @@ app.post('/api/round/finish', (req: Request, res: Response) => {
     return;
   }
 
-  if (typeof gameInstance!.finishRound !== 'function') {
+  if (typeof game.finishRound !== 'function') {
     res.status(400).json({ error: 'not_supported' });
     return;
   }
 
-  const result = gameInstance!.finishRound(payload.playerId, roundId);
+  const result = game.finishRound(payload.playerId, roundId);
   if (!result.ok) {
     res.status(400).json(result);
     return;
@@ -385,11 +518,16 @@ app.post('/api/round/finish', (req: Request, res: Response) => {
 });
 
 app.post('/api/round/votes', (req: Request, res: Response) => {
+  if (isRateLimited(req, res)) return;
   const payload = req.body;
   if (!verifyPlayerPassword(payload.password)) {
+    recordAuthFailure(req);
     res.status(401).json({ error: 'unauthorized' });
     return;
   }
+
+  const game = getGameInstance(res);
+  if (!game) return;
 
   let votePayload: unknown = payload;
   if (Object.prototype.hasOwnProperty.call(payload, 'downvotedWordIds')) {
@@ -397,7 +535,7 @@ app.post('/api/round/votes', (req: Request, res: Response) => {
   } else if (Object.prototype.hasOwnProperty.call(payload, 'votes')) {
     votePayload = payload.votes;
   }
-  const result = gameInstance!.submitVotes(payload.playerId, votePayload);
+  const result = game.submitVotes(payload.playerId, votePayload);
   if (!result.ok) {
     res.status(400).json(result);
     return;
@@ -407,8 +545,10 @@ app.post('/api/round/votes', (req: Request, res: Response) => {
 });
 
 app.post('/api/admin/claim', (req: Request, res: Response) => {
+  if (isRateLimited(req, res)) return;
   const payload = req.body;
-  if (!payload || payload.password !== ADMIN_PASSWORD) {
+  if (!payload || typeof payload.password !== 'string' || !safeCompare(payload.password, ADMIN_PASSWORD)) {
+    recordAuthFailure(req);
     res.status(401).json({ error: 'invalid_password' });
     return;
   }
@@ -449,6 +589,9 @@ app.post('/api/admin/start', (req: Request, res: Response) => {
     return;
   }
 
+  const game = getGameInstance(res);
+  if (!game) return;
+
   const payload = req.body;
   const durationMs = parseInt(payload.durationMs, 10);
   if (!Number.isFinite(durationMs) || durationMs <= 0) {
@@ -456,7 +599,7 @@ app.post('/api/admin/start', (req: Request, res: Response) => {
     return;
   }
 
-  const result = gameInstance!.startRound(durationMs);
+  const result = game.startRound(durationMs);
   res.json(result);
 });
 
@@ -466,23 +609,31 @@ app.post('/api/admin/category', (req: Request, res: Response) => {
     return;
   }
 
+  const game = getGameInstance(res);
+  if (!game) return;
+
   const payload = req.body;
   let result: { ok: boolean; reason?: string };
-  
+
   if (payload && Array.isArray(payload.categories)) {
-    if (typeof gameInstance!.selectCategories !== 'function') {
+    if (typeof game.selectCategories !== 'function') {
       res.status(400).json({ error: 'invalid_request' });
       return;
     }
-    result = gameInstance!.selectCategories(payload.categories);
-  } else if (payload && payload.random && typeof gameInstance!.selectRandomCategories === 'function') {
-    result = gameInstance!.selectRandomCategories(payload.count);
-  } else if (payload && payload.random && typeof gameInstance!.selectRandomCategory === 'function') {
-    result = gameInstance!.selectRandomCategory();
-  } else if (payload && payload.addCustom && typeof gameInstance!.addCategory === 'function') {
-    result = gameInstance!.addCategory(payload.addCustom);
-  } else if (typeof gameInstance!.selectCategory === 'function') {
-    result = gameInstance!.selectCategory(payload.category);
+    result = game.selectCategories(payload.categories);
+  } else if (payload && payload.random && typeof game.selectRandomCategories === 'function') {
+    result = game.selectRandomCategories(payload.count);
+  } else if (payload && payload.random && typeof game.selectRandomCategory === 'function') {
+    result = game.selectRandomCategory();
+  } else if (payload && payload.addCustom && typeof game.addCategory === 'function') {
+    const catCheck = validateCategory(payload.addCustom);
+    if (!catCheck.ok) {
+      res.status(400).json({ error: catCheck.reason });
+      return;
+    }
+    result = game.addCategory(catCheck.value);
+  } else if (typeof game.selectCategory === 'function') {
+    result = game.selectCategory(payload.category);
   } else {
     res.status(400).json({ error: 'invalid_request' });
     return;
@@ -548,12 +699,15 @@ app.post('/api/admin/end', (req: Request, res: Response) => {
     return;
   }
 
-  if (typeof gameInstance!.endGame !== 'function') {
+  const game = getGameInstance(res);
+  if (!game) return;
+
+  if (typeof game.endGame !== 'function') {
     res.status(400).json({ error: 'not_supported' });
     return;
   }
 
-  const result = gameInstance!.endGame();
+  const result = game.endGame();
   if (!result.ok) {
     res.status(400).json(result);
     return;
@@ -573,6 +727,13 @@ if (fs.existsSync(frontendDistPath)) {
   });
 }
 
+// Global error handler — catches unhandled route errors and returns
+// a generic JSON response without leaking stack traces or file paths.
+app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
+  console.error(err);
+  res.status(500).json({ error: 'internal_error' });
+});
+
 // Create server
 const tlsConfig = HTTPS_REQUIRED ? loadTlsConfig() : null;
 if (HTTPS_REQUIRED && !tlsConfig) {
@@ -583,25 +744,44 @@ if (HTTPS_REQUIRED && !tlsConfig) {
   process.exit(1);
 }
 
-const server = tlsConfig
-  ? https.createServer(tlsConfig, app)
-  : http.createServer(app);
+/**
+ * Create an HTTP or HTTPS server for the Express app.
+ * @returns Node http/https server instance.
+ */
+function createServer(): http.Server | https.Server {
+  return tlsConfig
+    ? https.createServer(tlsConfig, app)
+    : http.createServer(app);
+}
 
-server.listen(PORT, HOST, () => {
-  const scheme = tlsConfig ? 'https' : 'http';
-  console.log(`Server running on ${scheme}://${HOST}:${PORT}`);
-  const lanAddresses = getLanAddresses();
-  if (lanAddresses.length > 0) {
-    const primary = lanAddresses[0];
-    console.log(`LAN address: ${primary}`);
-    console.log(`Players: ${scheme}://${primary}:${PORT}/`);
-    console.log(`Admin: ${scheme}://${primary}:${PORT}/admin`);
-    if (lanAddresses.length > 1) {
-      console.log(`Other LAN addresses: ${lanAddresses.slice(1).join(', ')}`);
+// Resolve which addresses to bind to
+let bindAddresses: string[];
+try {
+  bindAddresses = resolveBindAddresses(EXPLICIT_HOST, LAN_ONLY, getLanAddresses());
+} catch (err) {
+  console.error(`Error: ${(err as Error).message}`);
+  process.exit(1);
+}
+
+const scheme = tlsConfig ? 'https' : 'http';
+let listenersReady = 0;
+
+for (const addr of bindAddresses) {
+  const server = createServer();
+  server.listen(PORT, addr, () => {
+    listenersReady += 1;
+    console.log(`Listening on ${scheme}://${addr}:${PORT}`);
+
+    // Print access info once all listeners are ready
+    if (listenersReady === bindAddresses.length) {
+      const lanAddresses = getLanAddresses();
+      if (lanAddresses.length > 0) {
+        const primary = lanAddresses[0];
+        console.log(`Players: ${scheme}://${primary}:${PORT}/`);
+        console.log(`Admin: ${scheme}://${primary}:${PORT}/admin`);
+      }
+      console.log(`Admin password: ${ADMIN_PASSWORD}`);
+      console.log(`Player password: ${PLAYER_PASSWORD}`);
     }
-  } else {
-    console.log('LAN address: unavailable');
-  }
-  console.log(`Admin password: ${ADMIN_PASSWORD}`);
-  console.log(`Player password: ${PLAYER_PASSWORD}`);
-});
+  });
+}

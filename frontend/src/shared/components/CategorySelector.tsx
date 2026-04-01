@@ -196,6 +196,7 @@ export function CategorySelector({
             onChange={(e) => setCustomCategory(e.target.value)}
             placeholder="New category..."
             disabled={!adminSessionId}
+            maxLength={50}
           />
           <button
             type="button"
@@ -243,6 +244,7 @@ export function CategorySelector({
           onChange={(e) => setCustomCategory(e.target.value)}
           placeholder="New category..."
           disabled={!adminSessionId}
+          maxLength={50}
         />
         <button
           type="button"

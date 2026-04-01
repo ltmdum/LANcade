@@ -164,7 +164,6 @@ function App() {
               <JoinPanel
                 playerName={playerName}
                 setPlayerName={setPlayerName}
-                playerPassword={playerPassword}
                 setPlayerPassword={setPlayerPassword}
                 playerId={playerId}
                 setPlayerId={setPlayerId}
@@ -212,7 +211,6 @@ function App() {
             <JoinPanel
               playerName={playerName}
               setPlayerName={setPlayerName}
-              playerPassword={playerPassword}
               setPlayerPassword={setPlayerPassword}
               playerId={playerId}
               setPlayerId={setPlayerId}

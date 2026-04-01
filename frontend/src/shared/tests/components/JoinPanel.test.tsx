@@ -19,7 +19,6 @@ describe('JoinPanel component', () => {
   const defaultProps = {
     playerName: '',
     setPlayerName: vi.fn(),
-    playerPassword: '',
     setPlayerPassword: vi.fn(),
     playerId: '',
     setPlayerId: vi.fn(),
@@ -34,6 +33,14 @@ describe('JoinPanel component', () => {
   afterEach(() => {
     vi.restoreAllMocks();
   });
+
+  /**
+   * Type a password into the password input field.
+   */
+  function typePassword(password: string) {
+    const input = screen.getByLabelText(/player password/i);
+    fireEvent.change(input, { target: { value: password } });
+  }
 
   it('renders name and password inputs', () => {
     render(<JoinPanel {...defaultProps} />);
@@ -55,7 +62,8 @@ describe('JoinPanel component', () => {
   });
 
   it('shows error when name is empty on submit', async () => {
-    render(<JoinPanel {...defaultProps} playerName="" playerPassword="pass123" />);
+    render(<JoinPanel {...defaultProps} playerName="" />);
+    typePassword('pass123');
 
     fireEvent.click(screen.getByRole('button', { name: /join game/i }));
 
@@ -64,7 +72,7 @@ describe('JoinPanel component', () => {
   });
 
   it('shows error when password is empty on submit', async () => {
-    render(<JoinPanel {...defaultProps} playerName="Alice" playerPassword="" />);
+    render(<JoinPanel {...defaultProps} playerName="Alice" />);
 
     fireEvent.click(screen.getByRole('button', { name: /join game/i }));
 
@@ -79,7 +87,8 @@ describe('JoinPanel component', () => {
       json: () => Promise.resolve({ playerId: 'new-player-id', name: 'Alice' }),
     });
 
-    render(<JoinPanel {...defaultProps} playerName="Alice" playerPassword="pass123" />);
+    render(<JoinPanel {...defaultProps} playerName="Alice" />);
+    typePassword('pass123');
 
     fireEvent.click(screen.getByRole('button', { name: /join game/i }));
 
@@ -100,23 +109,27 @@ describe('JoinPanel component', () => {
 
     const setPlayerId = vi.fn();
     const setPlayerName = vi.fn();
+    const setPlayerPassword = vi.fn();
     render(
       <JoinPanel
         {...defaultProps}
         playerName="Alice"
-        playerPassword="pass123"
         setPlayerId={setPlayerId}
         setPlayerName={setPlayerName}
+        setPlayerPassword={setPlayerPassword}
       />
     );
+    typePassword('pass123');
 
     fireEvent.click(screen.getByRole('button', { name: /join game/i }));
 
     await waitFor(() => {
       expect(setPlayerId).toHaveBeenCalledWith('new-player-id');
       expect(setPlayerName).toHaveBeenCalledWith('Alice');
+      expect(setPlayerPassword).toHaveBeenCalledWith('pass123');
       expect(localStorageMock.setItem).toHaveBeenCalledWith('playerId', 'new-player-id');
       expect(localStorageMock.setItem).toHaveBeenCalledWith('playerName', 'Alice');
+      expect(localStorageMock.setItem).toHaveBeenCalledWith('playerPassword', 'pass123');
     });
   });
 
@@ -127,7 +140,8 @@ describe('JoinPanel component', () => {
       json: () => Promise.resolve({ error: 'unauthorized' }),
     });
 
-    render(<JoinPanel {...defaultProps} playerName="Alice" playerPassword="wrong" />);
+    render(<JoinPanel {...defaultProps} playerName="Alice" />);
+    typePassword('wrong');
 
     fireEvent.click(screen.getByRole('button', { name: /join game/i }));
 
@@ -143,7 +157,8 @@ describe('JoinPanel component', () => {
       json: () => Promise.resolve({ error: 'name_taken' }),
     });
 
-    render(<JoinPanel {...defaultProps} playerName="Alice" playerPassword="pass123" />);
+    render(<JoinPanel {...defaultProps} playerName="Alice" />);
+    typePassword('pass123');
 
     fireEvent.click(screen.getByRole('button', { name: /join game/i }));
 
@@ -163,10 +178,10 @@ describe('JoinPanel component', () => {
       <JoinPanel
         {...defaultProps}
         playerName="Alice Updated"
-        playerPassword="pass123"
         playerId="existing-id"
       />
     );
+    typePassword('pass123');
 
     fireEvent.click(screen.getByRole('button', { name: /join game/i }));
 
@@ -175,5 +190,14 @@ describe('JoinPanel component', () => {
         body: JSON.stringify({ name: 'Alice Updated', playerId: 'existing-id', password: 'pass123' }),
       }));
     });
+  });
+
+  it('does not call setPlayerPassword on keystroke', () => {
+    const setPlayerPassword = vi.fn();
+    render(<JoinPanel {...defaultProps} setPlayerPassword={setPlayerPassword} />);
+
+    typePassword('typing...');
+
+    expect(setPlayerPassword).not.toHaveBeenCalled();
   });
 });

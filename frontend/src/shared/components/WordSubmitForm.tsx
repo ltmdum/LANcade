@@ -34,6 +34,7 @@ export function WordSubmitForm({
         onChange={(e) => onChange(e.target.value)}
         placeholder={`Word starting with ${letter || ''}`}
         disabled={disabled}
+        maxLength={100}
       />
       <button type="submit" className="btn btn-primary" disabled={disabled || isEmpty}>
         {buttonText}

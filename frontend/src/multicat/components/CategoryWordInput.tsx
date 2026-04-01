@@ -42,6 +42,7 @@ export function CategoryWordInput({
             onChange={(e) => onInputChange(category, e.target.value)}
             placeholder={`Word starting with ${letter || ''}`}
             disabled={timeUp}
+            maxLength={100}
           />
           {isSubmitted && (
             <span className="category-word-input-check">✓</span>

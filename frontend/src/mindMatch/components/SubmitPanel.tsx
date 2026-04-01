@@ -69,6 +69,7 @@ export function SubmitPanel({
           onChange={(e) => setWordInput(e.target.value)}
           placeholder="Your word..."
           className="submit-panel-input"
+          maxLength={100}
         />
         <button type="submit" className="btn btn-primary">
           {hasSubmitted ? 'Update' : 'Submit'}

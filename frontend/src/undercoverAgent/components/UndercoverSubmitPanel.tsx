@@ -77,6 +77,7 @@ export function UndercoverSubmitPanel({
               onChange={(e) => setWordInput(e.target.value)}
               placeholder="Your clue word..."
               className="submit-panel-input"
+              maxLength={100}
             />
             <button type="submit" className="btn btn-primary">
               Submit

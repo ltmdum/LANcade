@@ -73,6 +73,7 @@ export function UndercoverGuessPanel({
           onChange={(e) => setGuessInput(e.target.value)}
           placeholder="Guess the secret word..."
           className="submit-panel-input"
+          maxLength={100}
         />
         <button type="submit" className="btn btn-primary">
           Submit Guess
