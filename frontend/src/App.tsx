@@ -7,6 +7,7 @@ import { CategorySelector } from './shared/components/CategorySelector';
 import { RoundControl } from './shared/components/RoundControl';
 import { PlayerList } from './shared/components/PlayerList';
 import { EndGameButton } from './shared/components/EndGameButton';
+import { GameInfoModal } from './shared/components/GameInfoModal';
 import { gamePluginRegistry } from './plugins';
 import './App.css';
 
@@ -20,6 +21,7 @@ function App() {
   const [playerPassword, setPlayerPassword] = useState(localStorage.getItem('playerPassword') || '');
   const [playerId, setPlayerId] = useState(localStorage.getItem('playerId') || '');
   const [showConfig, setShowConfig] = useState(isAdminPage);
+  const [showGameInfo, setShowGameInfo] = useState(false);
 
   const buildAuthQuery = useCallback(() => {
     if (isAdminPage && adminSessionId) {
@@ -116,6 +118,13 @@ function App() {
     return gamePluginRegistry.getConfig(id)?.description;
   }, []);
 
+  // Function to get full game info for the info modal
+  const getGameInfo = useCallback((id: string) => {
+    const config = gamePluginRegistry.getConfig(id);
+    if (!config) return undefined;
+    return { name: config.name, description: config.description, instructions: config.instructions };
+  }, []);
+
   // Header display logic
   const showPlayHeader = (phase === 'active' || phase === 'voting' || phase === 'results' || phase === 'finished') 
     && (isKnownPlayer || isAdminPage) 
@@ -131,6 +140,18 @@ function App() {
     <div className="app-container">
       <div className="app-content">
         <div className="card">
+          {/* Game Info Button */}
+          {pluginConfig && !showConfig && (
+            <button
+              type="button"
+              className="app-info-button"
+              onClick={() => setShowGameInfo(true)}
+              aria-label={`How to play ${gameName}`}
+            >
+              i
+            </button>
+          )}
+
           {/* Header */}
           <header className="app-header">
             {showPlayHeader ? (
@@ -175,6 +196,7 @@ function App() {
                 adminSessionId={adminSessionId}
                 onExpired={handleAdminExpired}
                 getGameDescription={getGameDescription}
+                getGameInfo={getGameInfo}
               />
               {availableCategories.length > 0 && (
                 <CategorySelector
@@ -238,6 +260,16 @@ function App() {
           )}
         </div>
       </div>
+
+      {/* Game Info Modal */}
+      {showGameInfo && pluginConfig && (
+        <GameInfoModal
+          name={pluginConfig.name}
+          description={pluginConfig.description}
+          instructions={pluginConfig.instructions}
+          onClose={() => setShowGameInfo(false)}
+        />
+      )}
     </div>
   );
 }

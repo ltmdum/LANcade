@@ -32,8 +32,10 @@ export interface GamePluginConfig {
   name: string;
   /** Short slogan or tagline for the game */
   slogan: string;
-  /** Longer description explaining how the game works */
+  /** Longer description explaining how the game works (shown in hover tooltips) */
   description: string;
+  /** Step-by-step instructions for how to play (shown in info modal) */
+  instructions: string[];
   /** Default timer settings for admin panel (optional if hideTimer is true) */
   defaultTimer?: {
     minutes: string;

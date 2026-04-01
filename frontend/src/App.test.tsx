@@ -12,7 +12,7 @@ vi.mock('./shared/hooks/useServerState', () => ({
 const mockRender = vi.fn(() => <div data-testid="game-view">Game rendered</div>);
 let mockPhase = 'active';
 const mockPlugin = {
-  config: { id: 'testgame', name: 'Test Game', slogan: '', description: '', roundControlTitle: 'Round', joinPanelTitle: 'Join' },
+  config: { id: 'testgame', name: 'Test Game', slogan: '', description: '', instructions: [], roundControlTitle: 'Round', joinPanelTitle: 'Join' },
   canRender: () => true,
   getPhase: () => mockPhase,
   getHeaderCategory: () => 'Category',

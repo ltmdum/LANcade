@@ -68,6 +68,13 @@ export const plugin: GamePlugin = {
     name: 'Category Clash: Multicat',
     slogan: 'Multiple categories, one shared letter.',
     description: 'Like Quick Fire, but with multiple categories per round. Submit one word per category, all starting with the same letter. You can update your answers until time runs out. Strategic word choice is key!',
+    instructions: [
+      'Multiple categories are chosen, and a shared letter is picked.',
+      'Submit one word per category, all starting with the shared letter.',
+      'You can change your answers at any time before the timer ends.',
+      'Duplicate words across categories are rejected, but you can try again.',
+      "When time's up, vote to challenge other players' words. Most accepted words wins!",
+    ],
     defaultTimer: {
       minutes: '01',
       seconds: '30',

@@ -1,0 +1,36 @@
+/* GameInfoModal component styles */
+.game-info-overlay {
+  @apply fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4;
+}
+
+.game-info-modal {
+  @apply bg-white rounded-lg shadow-xl max-w-md w-full max-h-[80vh] overflow-y-auto p-6;
+}
+
+.game-info-header {
+  @apply flex items-start justify-between gap-4 mb-3;
+}
+
+.game-info-title {
+  @apply text-xl font-bold text-gray-800;
+}
+
+.game-info-close {
+  @apply text-2xl leading-none text-gray-400 hover:text-gray-600 flex-shrink-0 -mt-1;
+}
+
+.game-info-description {
+  @apply text-gray-600 mb-4;
+}
+
+.game-info-subtitle {
+  @apply text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2;
+}
+
+.game-info-instructions {
+  @apply list-decimal list-inside space-y-1.5;
+}
+
+.game-info-step {
+  @apply text-gray-700 text-sm leading-relaxed;
+}

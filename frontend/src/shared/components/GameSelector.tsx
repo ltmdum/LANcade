@@ -1,8 +1,15 @@
 import { useState } from 'react';
 import { Panel } from './Panel';
+import { GameInfoModal } from './GameInfoModal';
 import { selectGame } from '../utils/api';
 import type { GameInfo } from '@lancade/shared';
 import './GameSelector.css';
+
+interface GameInfoData {
+  name: string;
+  description: string;
+  instructions: string[];
+}
 
 interface GameSelectorProps {
   games: GameInfo[];
@@ -10,6 +17,7 @@ interface GameSelectorProps {
   adminSessionId: string;
   onExpired: () => void;
   getGameDescription?: (gameId: string) => string | undefined;
+  getGameInfo?: (gameId: string) => GameInfoData | undefined;
 }
 
 /**
@@ -23,9 +31,11 @@ export function GameSelector({
   adminSessionId,
   onExpired,
   getGameDescription,
+  getGameInfo,
 }: GameSelectorProps) {
   const [status, setStatus] = useState('');
   const [hoveredGameId, setHoveredGameId] = useState<string | null>(null);
+  const [infoGameId, setInfoGameId] = useState<string | null>(null);
 
   /**
    * Select a game via the admin API.
@@ -82,11 +92,12 @@ export function GameSelector({
                     className="game-selector-info-button"
                     onMouseEnter={() => setHoveredGameId(game.id)}
                     onMouseLeave={() => setHoveredGameId(null)}
+                    onClick={() => setInfoGameId(game.id)}
                     aria-label={`Info about ${game.name}`}
                   >
                     i
                   </button>
-                  {hoveredGameId === game.id && (
+                  {hoveredGameId === game.id && !infoGameId && (
                     <div className="game-selector-tooltip">
                       {description}
                     </div>
@@ -98,6 +109,18 @@ export function GameSelector({
         })}
       </div>
       {status && <p className="game-selector-status">{status}</p>}
+      {infoGameId && (() => {
+        const info = getGameInfo?.(infoGameId);
+        if (!info) return null;
+        return (
+          <GameInfoModal
+            name={info.name}
+            description={info.description}
+            instructions={info.instructions}
+            onClose={() => setInfoGameId(null)}
+          />
+        );
+      })()}
     </Panel>
   );
 }

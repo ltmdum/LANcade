@@ -64,6 +64,14 @@ export const plugin: GamePlugin = {
     name: 'Alphabet Race',
     slogan: 'A race through the alphabet!',
     description: 'Race to submit words for each letter. Other players vote to accept or reject. Get rejected and you sit out! Complete all 26 letters to finish.',
+    instructions: [
+      'Race through all 26 letters of the alphabet!',
+      'Be the first to submit a valid word for the current letter and category.',
+      'Other players vote to accept or reject your word.',
+      'If rejected, you sit out this letter AND the next one as a penalty.',
+      'Accepted words score 1 point, then play moves to the next letter.',
+      'The player with the most points after all 26 letters wins!',
+    ],
     defaultTimer: {
       minutes: '00',
       seconds: '10',

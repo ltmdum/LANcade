@@ -64,6 +64,13 @@ export const plugin: GamePlugin = {
     name: 'Category Clash: Quick Fire',
     slogan: 'Fast rounds, shared letter, and friendly disputes.',
     description: 'Everyone gets the same letter and category. Race to submit as many unique words as you can before time runs out. Duplicate words are blocked, and players vote on questionable answers. Most accepted words wins!',
+    instructions: [
+      'A category and letter are chosen for the round.',
+      'Submit as many words as you can that start with the letter and fit the category.',
+      'Be quick! The first player to submit a word claims it. Duplicates are rejected.',
+      "When time's up, vote to challenge other players' words.",
+      'Words that receive enough downvotes are removed. The player with the most accepted words wins!',
+    ],
     defaultTimer: {
       minutes: '01',
       seconds: '30',
