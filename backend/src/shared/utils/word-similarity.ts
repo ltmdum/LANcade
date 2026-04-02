@@ -1,6 +1,6 @@
 /**
  * Shared word similarity utilities using Damerau-Levenshtein distance.
- * Used by BlankSlate for claim eligibility checking.
+ * Used by Mind Match for claim eligibility checking.
  */
 
 /**

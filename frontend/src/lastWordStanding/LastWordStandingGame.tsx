@@ -19,9 +19,9 @@ interface LastWordStandingGameProps extends GameProps {
 }
 
 /**
- * WordRush gameplay surface.
+ * Last Word Standing gameplay surface.
  * @param props Game props from the plugin.
- * @returns WordRush game element.
+ * @returns Last Word Standing game element.
  */
 export function LastWordStandingGame({
   serverState,

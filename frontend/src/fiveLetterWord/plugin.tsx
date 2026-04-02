@@ -3,7 +3,7 @@ import type { FiveLetterWordState } from '@lancade/shared';
 import { FiveLetterWordGame } from './FiveLetterWordGame';
 
 /**
- * Check if the wordsprint plugin can render this server state.
+ * Check if the Five Letter Word plugin can render this server state.
  * @param serverState Current server state.
  * @param gameId Current game id.
  * @returns True when the plugin can render.
@@ -35,7 +35,7 @@ function getHeaderCategory(_serverState: unknown): string {
 }
 
 /**
- * Render the Word Sprint game component.
+ * Render the Five Letter Word game component.
  * @param props Shared game component props.
  * @returns React element.
  */

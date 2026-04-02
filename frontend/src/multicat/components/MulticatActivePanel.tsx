@@ -22,7 +22,7 @@ interface MulticatActivePanelProps {
 }
 
 /**
- * Active round panel for CategoryClash2 gameplay.
+ * Active round panel for Multicat gameplay.
  * @param props Active panel props.
  * @returns Active panel element.
  */

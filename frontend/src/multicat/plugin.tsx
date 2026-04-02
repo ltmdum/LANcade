@@ -3,7 +3,7 @@ import type { CategoryClashState } from '@lancade/shared';
 import { MulticatGame } from './MulticatGame';
 
 /**
- * Check if the categoryclash2 plugin can render this server state.
+ * Check if the Multicat plugin can render this server state.
  * @param serverState Current server state.
  * @param gameId Current game id.
  * @returns True when the plugin can render.
@@ -43,7 +43,7 @@ function getHeaderCategory(serverState: unknown): string {
 }
 
 /**
- * Render the categoryclash2 game component.
+ * Render the Multicat game component.
  * @param props Shared game component props.
  * @returns React element.
  */

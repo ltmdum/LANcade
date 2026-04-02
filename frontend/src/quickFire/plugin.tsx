@@ -3,7 +3,7 @@ import type { CategoryClashState } from '@lancade/shared';
 import { QuickFireGame } from './QuickFireGame';
 
 /**
- * Check if the categoryclash1 plugin can render this server state.
+ * Check if the Quick Fire plugin can render this server state.
  * @param serverState Current server state.
  * @param gameId Current game id.
  * @returns True when the plugin can render.
@@ -39,7 +39,7 @@ function getHeaderCategory(serverState: unknown): string {
 }
 
 /**
- * Render the categoryclash1 game component.
+ * Render the Quick Fire game component.
  * @param props Shared game component props.
  * @returns React element.
  */

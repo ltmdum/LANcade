@@ -3,7 +3,7 @@ import type { LastWordStandingState } from '@lancade/shared';
 import { LastWordStandingGame } from './LastWordStandingGame';
 
 /**
- * Check if the wordrush plugin can render this server state.
+ * Check if the Last Word Standing plugin can render this server state.
  * @param serverState Current server state.
  * @param gameId Current game id.
  * @returns True when the plugin can render.
@@ -39,7 +39,7 @@ function getHeaderCategory(serverState: unknown): string {
 }
 
 /**
- * Render the WordRush game component.
+ * Render the Last Word Standing game component.
  * @param props Shared game component props.
  * @returns React element.
  */

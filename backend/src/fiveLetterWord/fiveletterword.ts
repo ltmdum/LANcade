@@ -130,9 +130,9 @@ function computeRowBests(playerStates: Map<string, PlayerGameState>): RowBestRes
 }
 
 /**
- * Create a Word Sprint game instance.
+ * Create a Five Letter Word game instance.
  * @param options Optional configuration overrides.
- * @returns Word Sprint game instance.
+ * @returns Five Letter Word game instance.
  */
 export function createGame(options: FiveLetterWordGameOptions = {}) {
   const onStateChange = options.onStateChange || (() => {});

@@ -3,7 +3,7 @@ import { createGame } from '../quickfire.js';
 import { createPlayerStore } from '../../shared/stores/player-store.js';
 import { withFakeTimers, pickOtherLetter } from '../../shared/tests/helpers.js';
 
-describe('categoryclash1', () => {
+describe('quickfire', () => {
   it('rejects words when no active round', async () => {
     await withFakeTimers((_timers) => {
       const store = createPlayerStore();

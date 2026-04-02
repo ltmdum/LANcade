@@ -9,7 +9,7 @@ describe('Game Plugins', () => {
     expect(registeredIds).toContain('lastwordstanding');
   });
 
-  it('should have correct metadata for categoryclash1', () => {
+  it('should have correct metadata for quickfire', () => {
     // Enable the game first
     gameRegistry.setEnabledGames(['quickfire']);
     const game = gameRegistry.getGame('quickfire');
@@ -20,7 +20,7 @@ describe('Game Plugins', () => {
     expect(typeof game!.factory).toBe('function');
   });
 
-  it('should have correct metadata for categoryclash2', () => {
+  it('should have correct metadata for multicat', () => {
     gameRegistry.setEnabledGames(['multicat']);
     const game = gameRegistry.getGame('multicat');
     
@@ -30,7 +30,7 @@ describe('Game Plugins', () => {
     expect(typeof game!.factory).toBe('function');
   });
 
-  it('should have correct metadata for wordrush', () => {
+  it('should have correct metadata for lastwordstanding', () => {
     gameRegistry.setEnabledGames(['lastwordstanding']);
     const game = gameRegistry.getGame('lastwordstanding');
     

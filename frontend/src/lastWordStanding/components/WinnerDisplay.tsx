@@ -6,7 +6,7 @@ interface WinnerDisplayProps {
 }
 
 /**
- * Display the winner name for WordRush.
+ * Display the winner name for Last Word Standing.
  * @param props Winner display props.
  * @returns Winner display element.
  */

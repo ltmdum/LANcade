@@ -21,7 +21,7 @@ interface QuickFireActivePanelProps {
 }
 
 /**
- * Active round panel for CategoryClash1 gameplay.
+ * Active round panel for Quick Fire gameplay.
  * @param props Active panel props.
  * @returns Active panel element.
  */

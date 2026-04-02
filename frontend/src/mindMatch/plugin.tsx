@@ -3,7 +3,7 @@ import type { MindMatchState } from '@lancade/shared';
 import { MindMatchGame } from './MindMatchGame';
 
 /**
- * Check if the blankslate plugin can render this server state.
+ * Check if the Mind Match plugin can render this server state.
  * @param serverState Current server state.
  * @param gameId Current game id.
  * @returns True when the plugin can render.
@@ -49,7 +49,7 @@ function getHeaderCategory(serverState: unknown): string {
 }
 
 /**
- * Render the BlankSlate game component.
+ * Render the Mind Match game component.
  * @param props Shared game component props.
  * @returns React element.
  */

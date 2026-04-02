@@ -2,7 +2,7 @@ import type { GamePlugin, GameFactoryOptions, BaseGame } from '../plugins/types.
 import { createGame } from './lastwordstanding.js';
 
 /**
- * Create a WordRush game instance for the registry.
+ * Create a Last Word Standing game instance for the registry.
  * @param options Factory options from the server.
  * @returns Game instance implementing the BaseGame interface.
  */

@@ -3,7 +3,7 @@ import { createGame } from '../mindmatch.js';
 import { createPlayerStore } from '../../shared/stores/player-store.js';
 import { withFakeTimers } from '../../shared/tests/helpers.js';
 
-describe('blankslate', () => {
+describe('mindmatch', () => {
   describe('startRound', () => {
     it('requires at least 3 players to start', async () => {
       await withFakeTimers(() => {

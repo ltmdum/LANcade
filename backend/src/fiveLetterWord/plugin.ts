@@ -2,7 +2,7 @@ import type { GamePlugin, GameFactoryOptions, BaseGame } from '../plugins/types.
 import { createGame } from './fiveletterword.js';
 
 /**
- * Create a Word Sprint game instance for the registry.
+ * Create a Five Letter Word game instance for the registry.
  * @param options Factory options from the server.
  * @returns Game instance implementing the BaseGame interface.
  */

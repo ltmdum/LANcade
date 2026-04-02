@@ -17,9 +17,9 @@ interface MindMatchGameProps extends GameProps {
 }
 
 /**
- * BlankSlate game UI component.
+ * Mind Match game UI component.
  * @param props Game props from the plugin.
- * @returns BlankSlate game element.
+ * @returns Mind Match game element.
  */
 export function MindMatchGame({
   serverState,
@@ -60,7 +60,7 @@ export function MindMatchGame({
 
   async function onRestart() {
     setAdminStatus('');
-    // BlankSlate doesn't use duration (rounds end when all submit), but API requires a value
+    // Mind Match doesn't use duration (rounds end when all submit), but API requires a value
     const durationMs = round.durationMs ?? 60000;
     const result = await handlePlayAgain(durationMs, adminSessionId);
     setAdminStatus(result.statusMessage);

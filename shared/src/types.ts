@@ -134,7 +134,7 @@ export interface LastWordStandingState {
   games: GameInfo[];
 }
 
-// Word Sprint types
+// Five Letter Word types
 export type LetterStatus = 'correct' | 'present' | 'absent';
 
 /** A single row in a player's grid */

@@ -20,7 +20,7 @@ interface LastWordStandingActivePanelProps {
 }
 
 /**
- * Active turn panel for WordRush.
+ * Active turn panel for Last Word Standing.
  * @param props Active panel props.
  * @returns Active panel element.
  */

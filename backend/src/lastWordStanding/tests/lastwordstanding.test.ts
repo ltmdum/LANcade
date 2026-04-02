@@ -5,7 +5,7 @@ import { withFakeTimers, withStubbedRandom, pickOtherLetter } from '../../shared
 
 /**
  * Drive the game flow to eliminate a target player.
- * @param game WordRush game instance.
+ * @param game Last Word Standing game instance.
  * @param targetId Player to eliminate.
  * @param voterIds Voters who will reject the word.
  */
@@ -34,7 +34,7 @@ function eliminatePlayer(
   }
 }
 
-describe('wordrush', () => {
+describe('lastwordstanding', () => {
   it('validates round start requirements', async () => {
     await withFakeTimers((_timers) => {
       const store = createPlayerStore();

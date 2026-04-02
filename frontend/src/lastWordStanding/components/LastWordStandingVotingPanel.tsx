@@ -14,7 +14,7 @@ interface LastWordStandingVotingPanelProps {
 }
 
 /**
- * Voting panel for WordRush decisions.
+ * Voting panel for Last Word Standing decisions.
  * @param props Voting panel props.
  * @returns Voting panel element.
  */

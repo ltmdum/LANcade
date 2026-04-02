@@ -106,10 +106,8 @@ describe('UndercoverAgentGame', () => {
       state.match.word = 'banana';
       state.match.revealedPlayerIds = ['player-1'];
 
-      // We need to simulate that the player already revealed with civilian role.
-      // The role is stored in local component state via onReveal callback.
-      // Since we can't easily set internal state, we test that when
-      // revealedPlayerIds includes the player, the reveal button is gone.
+      // When revealedPlayerIds already includes the player, the reveal button
+      // should be hidden (the role is tracked in local component state).
       render(<UndercoverAgentGame {...createDefaultProps(state)} />);
 
       // The reveal button should not be shown when already revealed

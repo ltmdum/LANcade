@@ -19,7 +19,7 @@ function createTestAnswers(): string[] {
   return ['APPLE', 'BERRY', 'CRANE', 'DELTA', 'EARTH', 'FLAME', 'GRAPE', 'HOUSE'];
 }
 
-describe('wordsprint', () => {
+describe('fiveletterword', () => {
   describe('startRound', () => {
     it('fails when no players', async () => {
       await withFakeTimers(() => {

@@ -12,9 +12,9 @@ interface FiveLetterWordGameProps extends GameProps {
 }
 
 /**
- * Word Sprint gameplay surface.
+ * Five Letter Word gameplay surface.
  * @param props Game props from the plugin.
- * @returns Word Sprint game element.
+ * @returns Five Letter Word game element.
  */
 export function FiveLetterWordGame({
   serverState,

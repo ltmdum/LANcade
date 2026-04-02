@@ -3,7 +3,7 @@ import { createGame } from '../multicat.js';
 import { createPlayerStore } from '../../shared/stores/player-store.js';
 import { withFakeTimers } from '../../shared/tests/helpers.js';
 
-describe('categoryclash2', () => {
+describe('multicat', () => {
   it('allows updating a word for a category', async () => {
     await withFakeTimers((_timers) => {
       const store = createPlayerStore();

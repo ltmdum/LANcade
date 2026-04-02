@@ -959,10 +959,8 @@ describe('undercoverAgent', () => {
           const undercover = state.match.participants[0];
           const turnOrder = state.match.turnOrder;
 
-          // Have the agent submit the secret word first (agent wins)
-          // Actually, we need to test civilian duplicate bypass.
-          // First civilian submits the word, then we check another civilian.
-          // Easier: just have two civilians where one submits first.
+          // Find two civilians to test that submitting the secret word ends the game
+          // even when another player has already submitted a clue.
           let firstCivilian: string | null = null;
           let secondCivilian: string | null = null;
           for (const pid of turnOrder) {
@@ -978,13 +976,7 @@ describe('undercoverAgent', () => {
           // Submit clues until first civilian's turn, then have them submit the secret word
           for (const pid of turnOrder) {
             if (pid === firstCivilian) {
-              // First civilian submits a regular word that matches the secret word
-              // But we need to test that a SECOND civilian can also submit it
-              // Actually the game ends when first civilian submits it, so let's
-              // test that even if the word was already submitted by someone, the
-              // civilian submitting the secret word still ends the game.
-
-              // Have this civilian submit a regular clue
+              // First civilian submits a regular clue
               game.submitWord(pid, 'regularclue');
             } else if (pid === secondCivilian) {
               // Second civilian submits the secret word

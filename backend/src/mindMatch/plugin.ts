@@ -2,8 +2,8 @@ import type { GamePlugin, GameFactoryOptions, BaseGame } from '../plugins/types.
 import { createGame, MindMatchGame } from './mindmatch.js';
 
 /**
- * Adapt the BlankSlate game interface to the BaseGame interface.
- * @param game BlankSlate game instance.
+ * Adapt the Mind Match game interface to the BaseGame interface.
+ * @param game Mind Match game instance.
  * @returns BaseGame compatible interface.
  */
 function adaptToBaseGame(game: MindMatchGame): BaseGame {
@@ -20,7 +20,7 @@ function adaptToBaseGame(game: MindMatchGame): BaseGame {
 }
 
 /**
- * Create a BlankSlate game instance for the registry.
+ * Create a Mind Match game instance for the registry.
  * @param options Factory options from the server.
  * @returns Game instance implementing the BaseGame interface.
  */
