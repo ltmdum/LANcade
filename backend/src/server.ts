@@ -9,7 +9,7 @@ import { fileURLToPath } from 'url';
 import { gameRegistry, initializeGames, BaseGame } from './plugins/index.js';
 import { createPlayerStore, PlayerStore } from './shared/stores/player-store.js';
 import { createRateLimiter } from './shared/utils/rate-limiter.js';
-import { resolveBindAddresses } from './shared/utils/resolve-bind-addresses.js';
+import { resolveBindAddress } from './shared/utils/resolve-bind-addresses.js';
 import { validatePlayerName, validateWord, validateCategory } from './shared/utils/input-validation.js';
 import { safeCompare } from './shared/utils/safe-compare.js';
 import { createConnectionTracker } from './shared/utils/connection-tracker.js';
@@ -22,7 +22,6 @@ initializeGames();
 
 const EXPLICIT_HOST = process.env.HOST || null;
 const PORT = parseInt(process.env.PORT || '3000', 10);
-const LAN_ONLY = process.env.LAN_ONLY !== 'false';
 const ADMIN_SESSION_TTL_MS = parseInt(process.env.ADMIN_SESSION_TTL_MS || '900000', 10);
 const HTTPS_REQUIRED = process.env.HTTPS_REQUIRED === 'true';
 const HTTPS_KEY_PATH = process.env.HTTPS_KEY_PATH || path.join(__dirname, '..', '..', 'certs', 'lan-key.pem');
@@ -133,23 +132,100 @@ function isPrivateIp(address: string | undefined): boolean {
 }
 
 /**
- * Get all LAN IPv4 addresses for this host.
+ * Score a network interface entry so the most likely user-facing LAN
+ * address sorts first. Higher score = more likely to be the right one.
+ * @param name OS interface name (e.g. "wlan0", "eth0", "docker0").
+ * @param address IPv4 address string.
+ * @returns Numeric score.
+ */
+function scoreLanInterface(name: string, address: string): number {
+  const lower = name.toLowerCase();
+  let score = 0;
+
+  // Prefer WiFi interfaces (most common for mobile / laptop)
+  if (/^(wlan|wlp|wi-?fi|en0$)/.test(lower)) score += 40;
+  // Ethernet is good too
+  else if (/^(eth|enp|en[1-9])/.test(lower)) score += 30;
+
+  // Deprioritize virtual / container / VPN interfaces
+  if (/^(docker|br-|veth|virbr|tun|tap|wg|tailscale|zt)/.test(lower)) score -= 50;
+
+  // 192.168.x.x is overwhelmingly the most common home network range
+  if (address.startsWith('192.168.')) score += 20;
+  // 10.x.x.x is often VPN / mobile hotspot / enterprise
+  else if (address.startsWith('10.')) score += 5;
+
+  // Addresses ending in .1 are typically gateways or hotspot hosts
+  if (address.endsWith('.1')) score -= 15;
+
+  return score;
+}
+
+/**
+ * Get all LAN IPv4 addresses for this host, sorted so the most likely
+ * user-facing address is first.
  * @returns Array of LAN IP addresses.
  */
 function getLanAddresses(): string[] {
   const interfaces = os.networkInterfaces();
-  const addresses: string[] = [];
-  for (const ifaceEntries of Object.values(interfaces)) {
+  const entries: { name: string; address: string; score: number }[] = [];
+  for (const [name, ifaceEntries] of Object.entries(interfaces)) {
     for (const entry of ifaceEntries || []) {
       if (entry.family !== 'IPv4' || entry.internal) {
         continue;
       }
       if (isPrivateIp(entry.address)) {
-        addresses.push(entry.address);
+        entries.push({
+          name,
+          address: entry.address,
+          score: scoreLanInterface(name, entry.address),
+        });
       }
     }
   }
-  return Array.from(new Set(addresses));
+  entries.sort((a, b) => b.score - a.score);
+  return Array.from(new Set(entries.map((e) => e.address)));
+}
+
+/**
+ * Count the number of leading 1-bits in a dotted-decimal netmask.
+ * @param netmask Dotted-decimal netmask (e.g. "255.255.255.0").
+ * @returns CIDR prefix length (e.g. 24), or 0 if invalid.
+ */
+function netmaskToCidr(netmask: string): number {
+  const parts = netmask.split('.').map(Number);
+  if (parts.length !== 4) return 0;
+  let bits = 0;
+  for (const octet of parts) {
+    bits += (octet >>> 0).toString(2).split('1').length - 1;
+  }
+  return bits;
+}
+
+/**
+ * Warn if any private interface is on a suspiciously large subnet.
+ * Home networks are typically /24 (254 hosts). Subnets larger than /22
+ * (~1022 hosts) suggest a public, shared, or enterprise network where
+ * untrusted devices may be present.
+ */
+function warnIfUntrustedNetwork(): void {
+  const interfaces = os.networkInterfaces();
+  for (const [name, ifaceEntries] of Object.entries(interfaces)) {
+    for (const entry of ifaceEntries || []) {
+      if (entry.family !== 'IPv4' || entry.internal) continue;
+      if (!isPrivateIp(entry.address)) continue;
+
+      const cidr = netmaskToCidr(entry.netmask);
+      if (cidr > 0 && cidr < 22) {
+        console.warn(
+          `WARNING: Interface ${name} (${entry.address}/${cidr}) is on a large subnet.`
+        );
+        console.warn(
+          'This may indicate a public or shared network. Ensure you trust all devices on this network.'
+        );
+      }
+    }
+  }
 }
 
 /**
@@ -289,16 +365,14 @@ app.use((_req: Request, res: Response, next: NextFunction) => {
   next();
 });
 
-// LAN-only middleware
-if (LAN_ONLY) {
-  app.use((req: Request, res: Response, next: NextFunction) => {
-    if (!isPrivateIp(req.socket.remoteAddress)) {
-      res.status(403).send('LAN access only');
-      return;
-    }
-    next();
-  });
-}
+// Reject requests from non-private IPs
+app.use((req: Request, res: Response, next: NextFunction) => {
+  if (!isPrivateIp(req.socket.remoteAddress)) {
+    res.status(403).send('LAN access only');
+    return;
+  }
+  next();
+});
 
 /**
  * Check rate limit for a client IP. If blocked, sends a 429 response.
@@ -754,34 +828,23 @@ function createServer(): http.Server | https.Server {
     : http.createServer(app);
 }
 
-// Resolve which addresses to bind to
-let bindAddresses: string[];
+warnIfUntrustedNetwork();
+
+// Resolve which address to bind to
+let bindAddress: string;
 try {
-  bindAddresses = resolveBindAddresses(EXPLICIT_HOST, LAN_ONLY, getLanAddresses());
+  bindAddress = resolveBindAddress(EXPLICIT_HOST, getLanAddresses());
 } catch (err) {
   console.error(`Error: ${(err as Error).message}`);
   process.exit(1);
 }
 
 const scheme = tlsConfig ? 'https' : 'http';
-let listenersReady = 0;
-
-for (const addr of bindAddresses) {
-  const server = createServer();
-  server.listen(PORT, addr, () => {
-    listenersReady += 1;
-    console.log(`Listening on ${scheme}://${addr}:${PORT}`);
-
-    // Print access info once all listeners are ready
-    if (listenersReady === bindAddresses.length) {
-      const lanAddresses = getLanAddresses();
-      if (lanAddresses.length > 0) {
-        const primary = lanAddresses[0];
-        console.log(`Players: ${scheme}://${primary}:${PORT}/`);
-        console.log(`Admin: ${scheme}://${primary}:${PORT}/admin`);
-      }
-      console.log(`Admin password: ${ADMIN_PASSWORD}`);
-      console.log(`Player password: ${PLAYER_PASSWORD}`);
-    }
-  });
-}
+const server = createServer();
+server.listen(PORT, bindAddress, () => {
+  console.log(`Listening on ${scheme}://${bindAddress}:${PORT}`);
+  console.log(`Players: ${scheme}://${bindAddress}:${PORT}/`);
+  console.log(`Admin: ${scheme}://${bindAddress}:${PORT}/admin`);
+  console.log(`Admin password: ${ADMIN_PASSWORD}`);
+  console.log(`Player password: ${PLAYER_PASSWORD}`);
+});
