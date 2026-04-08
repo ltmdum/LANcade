@@ -19,7 +19,6 @@ export interface CategoryClashEngineOptions {
   categories?: string[];
   onStateChange?: () => void;
   clientGraceMs?: number;
-  limitPerCategory?: boolean;
   playerStore?: PlayerStore;
   createCategoryManager: (config: {
     categories?: string[];
@@ -28,7 +27,7 @@ export interface CategoryClashEngineOptions {
   }) => AnyCategoryManager;
 }
 
-interface WordEntry {
+export interface WordEntry {
   id: string;
   word: string;
   key: string;
@@ -39,7 +38,7 @@ interface WordEntry {
   downvoterNames: string[];
 }
 
-interface Submission {
+export interface Submission {
   word: string;
   category: string | null;
   status: string;
@@ -47,7 +46,7 @@ interface Submission {
   blockedByPlayerId?: string;
 }
 
-interface Round {
+export interface Round {
   id: number;
   state: 'idle' | 'active' | 'voting' | 'results';
   letter: string | null;
@@ -101,6 +100,34 @@ export interface EndGameResult {
   reason?: string;
 }
 
+/**
+ * Strategy interface for game-specific word submission behavior.
+ */
+export interface WordSubmissionStrategy {
+  /**
+   * Called before accepting a new word. Returns an error result if the word
+   * should be rejected, or null to proceed with acceptance.
+   */
+  validateSubmission(
+    round: Round,
+    playerId: string,
+    key: string,
+    category: string,
+    existingWord: WordEntry | undefined,
+    getPlayerName: (id: string) => string
+  ): SubmitWordResult | null;
+
+  /**
+   * Called before adding a new accepted word. Allows the strategy to
+   * clean up any existing words that should be replaced.
+   */
+  prepareForNewWord(
+    round: Round,
+    playerId: string,
+    category: string
+  ): void;
+}
+
 export interface CategoryClashEngine {
   getPhase(): string;
   getState(): Omit<CategoryClashState, 'game' | 'games'>;
@@ -121,7 +148,7 @@ export interface CategoryClashEngine {
  * Create a new empty round structure.
  * @returns Empty round state.
  */
-function createEmptyRound(): Round {
+export function createEmptyRound(): Round {
   return {
     id: 0,
     state: 'idle',
@@ -173,12 +200,15 @@ function normalizeCategory(category: unknown, available: string[]): string | nul
 /**
  * Create the categoryclash engine with state and handlers.
  * @param options Engine configuration and dependencies.
+ * @param strategy Game-specific word submission behavior.
  * @returns Category Clash engine instance.
  */
-export function createCategoryClashEngine(options: CategoryClashEngineOptions): CategoryClashEngine {
+export function createCategoryClashEngine(
+  options: CategoryClashEngineOptions,
+  strategy: WordSubmissionStrategy
+): CategoryClashEngine {
   const onStateChange = options.onStateChange || (() => {});
   const clientGraceMs = Number.isFinite(options.clientGraceMs) ? options.clientGraceMs! : 5000;
-  const limitPerCategory = Boolean(options.limitPerCategory);
 
   let round = createEmptyRound();
   let roundEndTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -426,25 +456,6 @@ export function createCategoryClashEngine(options: CategoryClashEngineOptions): 
   }
 
   /**
-   * Remove an existing accepted word for the same player/category.
-   * @param playerId Player identifier.
-   * @param category Category name.
-   */
-  function removeExistingWordForCategory(playerId: string, category: string): void {
-    const categoryKey = category.toLowerCase();
-    // Find and remove any existing word for this player+category
-    const existingIndex = round.acceptedWords.findIndex(
-      (w) => w.playerId === playerId && w.category.toLowerCase() === categoryKey
-    );
-    if (existingIndex !== -1) {
-      const existing = round.acceptedWords[existingIndex];
-      round.acceptedWords.splice(existingIndex, 1);
-      round.acceptedWordByKey.delete(existing.key);
-      round.acceptedWordById.delete(existing.id);
-    }
-  }
-
-  /**
    * Submit a word for the active round.
    * @param playerId Player identifier.
    * @param wordInput Raw word input.
@@ -491,25 +502,18 @@ export function createCategoryClashEngine(options: CategoryClashEngineOptions): 
       };
     }
 
-    // In multi-category mode, a player cannot reuse a word they already have
-    // in a different category.  Re-submitting to the *same* category is a
-    // normal update and is allowed.
-    if (limitPerCategory && existingWord && existingWord.playerId === playerId
-        && existingWord.category.toLowerCase() !== category.toLowerCase()) {
+    // Delegate game-specific validation to the strategy
+    const validationResult = strategy.validateSubmission(
+      round, playerId, key, category, existingWord, getPlayerName
+    );
+    if (validationResult) {
       storeSubmission(playerId, rawWord, { status: 'invalid', category });
       notifyChange();
-      return {
-        ok: false,
-        reason: 'already_used_by_self',
-        blockedWord: existingWord.word,
-        blockedCategory: existingWord.category,
-      };
+      return validationResult;
     }
 
-    // If limitPerCategory, remove any existing word for this category before adding new one
-    if (limitPerCategory) {
-      removeExistingWordForCategory(playerId, category);
-    }
+    // Let the strategy prepare for the new word (e.g., remove old word for category)
+    strategy.prepareForNewWord(round, playerId, category);
 
     const wordId = crypto.randomBytes(8).toString('hex');
     const word: WordEntry = {
@@ -526,12 +530,13 @@ export function createCategoryClashEngine(options: CategoryClashEngineOptions): 
     round.acceptedWords.push(word);
     round.acceptedWordByKey.set(key, word);
     round.acceptedWordById.set(wordId, word);
-    if (limitPerCategory) {
-      const categoryKey = category.toLowerCase();
-      const playerCategories = round.acceptedByPlayerCategory.get(playerId) || new Set();
-      playerCategories.add(categoryKey);
-      round.acceptedByPlayerCategory.set(playerId, playerCategories);
-    }
+
+    // Track category usage
+    const categoryKey = category.toLowerCase();
+    const playerCategories = round.acceptedByPlayerCategory.get(playerId) || new Set();
+    playerCategories.add(categoryKey);
+    round.acceptedByPlayerCategory.set(playerId, playerCategories);
+
     storeSubmission(playerId, rawWord, {
       status: 'accepted',
       wordId,
@@ -618,6 +623,10 @@ export function createCategoryClashEngine(options: CategoryClashEngineOptions): 
       word.votedOut = word.downvotedBy.size >= threshold;
     }
 
+    // Submissions whose word was replaced (removed from acceptedWords by the
+    // strategy's prepareForNewWord) should not count toward scoring.
+    const acceptedWordIds = new Set(round.acceptedWords.map((w) => w.id));
+
     // Only include players who submitted words in results
     const resultsByPlayer = new Map<string, PlayerResult>();
     for (const playerId of round.submissionsByPlayer.keys()) {
@@ -626,35 +635,42 @@ export function createCategoryClashEngine(options: CategoryClashEngineOptions): 
       let votedOutCount = 0;
       let finalScore = 0;
 
-      const words = submissions.map((submission) => {
-        if (submission.status === 'accepted') {
-          const word = round.acceptedWordById.get(submission.wordId!);
-          const votedOut = word ? word.votedOut : false;
-          if (votedOut) {
-            votedOutCount += 1;
-          } else {
-            finalScore += 1;
+      const words = submissions
+        .filter((submission) => {
+          if (submission.status === 'accepted' && submission.wordId) {
+            return acceptedWordIds.has(submission.wordId);
           }
+          return true;
+        })
+        .map((submission) => {
+          if (submission.status === 'accepted') {
+            const word = round.acceptedWordById.get(submission.wordId!);
+            const votedOut = word ? word.votedOut : false;
+            if (votedOut) {
+              votedOutCount += 1;
+            } else {
+              finalScore += 1;
+            }
+            return {
+              word: submission.word,
+              category: submission.category || null,
+              status: (votedOut ? 'voted_out' : 'accepted') as 'accepted' | 'voted_out' | 'rejected',
+              blockedByName: null,
+              downvotedByNames: word ? word.downvoterNames : [],
+            };
+          }
+
+          rejectedCount += 1;
           return {
             word: submission.word,
             category: submission.category || null,
-            status: (votedOut ? 'voted_out' : 'accepted') as 'accepted' | 'voted_out' | 'rejected',
-            blockedByName: null,
-            downvotedByNames: word ? word.downvoterNames : [],
+            status: 'rejected' as const,
+            blockedByName: submission.blockedByPlayerId
+              ? getPlayerName(submission.blockedByPlayerId)
+              : null,
+            downvotedByNames: [],
           };
-        }
-
-        rejectedCount += 1;
-        return {
-          word: submission.word,
-          category: submission.category || null,
-          status: 'rejected' as const,
-          blockedByName: submission.blockedByPlayerId
-            ? getPlayerName(submission.blockedByPlayerId)
-            : null,
-          downvotedByNames: [],
-        };
-      });
+        });
 
       resultsByPlayer.set(playerId, {
         name: getPlayerName(playerId),

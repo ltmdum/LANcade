@@ -383,6 +383,41 @@ describe('multicat', () => {
     });
   });
 
+  it('scores only the final word when a player updates a category', async () => {
+    await withFakeTimers((_timers) => {
+      const store = createPlayerStore();
+      const alice = store.joinPlayer({ name: 'Alice' }).playerId!;
+      const bob = store.joinPlayer({ name: 'Bob' }).playerId!;
+
+      const game = createGame({ playerStore: store, clientGraceMs: 0 });
+      const start = game.startRound(5000);
+      const letter = start.letter!;
+      const state = game.getState();
+      const category = state.round.categories[0];
+
+      // Alice submits a word, then changes her mind
+      game.submitWord(alice, `${letter}lpha`, category);
+      game.submitWord(alice, `${letter}pple`, category);
+
+      // Bob submits a word so voting can proceed
+      game.submitWord(bob, `${letter}nother`, category);
+
+      game.finishRound(alice, state.round.id);
+      game.finishRound(bob, state.round.id);
+
+      // Vote without downvoting anything
+      game.submitVotes(alice, []);
+      game.submitVotes(bob, []);
+
+      const results = game.getState();
+      expect(results.round.state).toBe('results');
+
+      const aliceResults = results.round.resultsByPlayer![alice];
+      // Alice should score 1 (only the final word), not 2
+      expect(aliceResults.finalScore).toBe(1);
+    });
+  });
+
   it('allows adding a custom category before starting', async () => {
     await withFakeTimers((_timers) => {
       const store = createPlayerStore();
