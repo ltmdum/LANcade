@@ -11,17 +11,17 @@
   align-items: center;
   padding: 0.75rem;
   border-radius: 8px;
-  background: #f5f5f5;
+  background: var(--bg-input);
 }
 
 .results-panel-group.scored {
-  background: #e8f5e9;
-  border: 1px solid #a5d6a7;
+  background: var(--success-muted);
+  border: 1px solid var(--success);
 }
 
 .results-panel-group.no-score {
-  background: #f5f5f5;
-  border: 1px solid #e0e0e0;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
 }
 
 .results-panel-word {
@@ -30,7 +30,7 @@
 }
 
 .results-panel-players {
-  color: #666;
+  color: var(--text-secondary);
   font-size: 0.875rem;
   flex: 1;
   text-align: center;
@@ -38,11 +38,11 @@
 
 .results-panel-points {
   font-weight: 600;
-  color: #4caf50;
+  color: var(--success);
 }
 
 .results-panel-group.no-score .results-panel-points {
-  color: #999;
+  color: var(--text-muted);
 }
 
 .results-panel-changes h4 {
@@ -57,6 +57,6 @@
 }
 
 .results-panel-delta.positive {
-  color: #4caf50;
+  color: var(--success);
   font-weight: 600;
 }

@@ -8,17 +8,21 @@
 }
 
 .wordrush-active-last-chance {
-  @apply bg-red-200 text-red-800;
+  background-color: var(--danger-muted);
+  color: var(--danger);
 }
 
 .wordrush-active-status {
-  @apply text-gray-600;
+  color: var(--text-secondary);
 }
 
 .wordrush-active-connection {
-  @apply text-sm text-gray-500;
+  @apply text-sm;
+  color: var(--text-muted);
 }
 
 .wordrush-active-eliminated {
-  @apply text-gray-600 bg-gray-100 p-3 rounded-lg;
+  color: var(--text-secondary);
+  background-color: var(--bg-input);
+  @apply p-3 rounded-lg;
 }

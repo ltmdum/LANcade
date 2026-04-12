@@ -2,89 +2,217 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  :root {
+    /* Surface */
+    --bg-primary: #0f172a;
+    --bg-card: #1e293b;
+    --bg-input: #334155;
+
+    /* Text */
+    --text-primary: #f1f5f9;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+
+    /* Borders */
+    --border: #334155;
+    --border-subtle: #1e293b;
+
+    /* Accent */
+    --accent: #00C6F5;
+    --accent-hover: #00a8d1;
+    --accent-muted: rgba(0, 198, 245, 0.15);
+    --accent-text: #0f172a;
+
+    /* Semantic */
+    --success: #22c55e;
+    --success-muted: rgba(34, 197, 94, 0.15);
+    --danger: #ef4444;
+    --danger-muted: rgba(239, 68, 68, 0.15);
+    --warning: #eab308;
+    --warning-muted: rgba(234, 179, 8, 0.15);
+    --gold: #fbbf24;
+
+    /* Five Letter Word */
+    --letter-guess-correct: #22c55e;
+    --letter-guess-present: #eab308;
+    --letter-guess-absent: #1e293b;
+  }
+
+  body {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+  }
+}
+
 @layer components {
   .btn {
-    @apply px-3 py-1.5 rounded font-medium transition-colors duration-200 text-sm;
+    @apply px-3 py-1.5 rounded-lg font-semibold transition-colors duration-200 text-sm;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
   }
-  
+
   .btn-primary {
-    @apply bg-blue-600 text-white hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed;
+    background-color: var(--accent);
+    color: var(--accent-text);
   }
-  
+  .btn-primary:hover {
+    background-color: var(--accent-hover);
+  }
+  .btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
   .btn-secondary {
-    @apply bg-gray-200 text-gray-800 hover:bg-gray-300 disabled:bg-gray-100 disabled:cursor-not-allowed;
+    background-color: var(--bg-input);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
   }
-  
+  .btn-secondary:hover {
+    background-color: var(--border);
+  }
+  .btn-secondary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
   .btn-danger {
-    @apply bg-red-600 text-white hover:bg-red-700 disabled:bg-red-400 disabled:cursor-not-allowed;
+    background-color: var(--danger);
+    color: #fff;
   }
-  
+  .btn-danger:hover {
+    background-color: #dc2626;
+  }
+  .btn-danger:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .btn-success {
+    background-color: var(--success);
+    color: #fff;
+  }
+  .btn-success:hover {
+    background-color: #16a34a;
+  }
+  .btn-success:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
   .input {
-    @apply w-full px-2 py-1.5 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm;
+    @apply w-full px-3 py-2 rounded-lg text-sm;
+    background-color: var(--bg-input);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
   }
-  
+  .input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px var(--accent-muted);
+  }
+  .input::placeholder {
+    color: var(--text-muted);
+  }
+
   .card {
-    @apply bg-white rounded-lg shadow-md p-4 relative;
+    background-color: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1rem;
+    position: relative;
   }
-  
+
   .panel {
-    @apply bg-gray-50 rounded p-3 mb-3;
+    background-color: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
   }
-  
+
   .tag {
-    @apply inline-block px-2 py-0.5 bg-gray-200 text-gray-700 rounded-full text-xs font-medium;
+    @apply inline-block px-2 py-0.5 rounded-full text-xs font-medium;
+    background-color: var(--bg-input);
+    color: var(--text-secondary);
   }
-  
+
   .letter-display {
-    @apply text-6xl font-bold text-center text-blue-600;
+    @apply text-6xl font-bold text-center;
+    color: var(--accent);
   }
-  
+
   .countdown {
-    @apply text-3xl font-mono text-center text-gray-700;
+    @apply text-3xl font-mono text-center;
+    color: var(--text-primary);
   }
-  
+
   .flash-success {
-    @apply animate-pulse bg-green-100;
+    @apply animate-pulse;
+    background-color: var(--success-muted);
   }
-  
+
   .flash-error {
-    @apply animate-pulse bg-red-100;
+    @apply animate-pulse;
+    background-color: var(--danger-muted);
   }
 
   /* Results table with sticky first column */
   .results-table-container {
     @apply overflow-x-auto;
   }
-  
+
   .results-table {
     @apply w-full text-sm border-collapse;
   }
-  
+
   .results-table th,
   .results-table td {
     @apply py-1.5 px-3 text-left whitespace-nowrap;
   }
-  
-  /* First column: allow wrapping and set max width */
+
   .results-table th:first-child,
   .results-table td:first-child {
-    @apply sticky left-0 bg-inherit whitespace-normal break-words;
+    @apply sticky left-0 whitespace-normal break-words;
+    background-color: inherit;
     max-width: 120px;
   }
-  
+
+  .results-table thead th {
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+  }
+
   .results-table thead th:first-child {
-    @apply bg-gray-50;
+    background-color: var(--bg-card);
   }
-  
+
   .results-table tbody tr:nth-child(odd) td:first-child {
-    @apply bg-white;
+    background-color: var(--bg-primary);
   }
-  
+
   .results-table tbody tr:nth-child(even) td:first-child {
-    @apply bg-gray-50;
+    background-color: var(--bg-card);
   }
-  
+
+  .results-table tbody tr:nth-child(odd) {
+    background-color: var(--bg-primary);
+  }
+
+  .results-table tbody tr:nth-child(even) {
+    background-color: var(--bg-card);
+  }
+
+  .results-table tbody tr.highlight {
+    background-color: var(--accent-muted);
+  }
+
   .results-table tbody tr.highlight td:first-child {
-    @apply bg-blue-50;
+    background-color: var(--accent-muted);
   }
 }

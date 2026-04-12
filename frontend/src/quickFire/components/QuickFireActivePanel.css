@@ -4,9 +4,10 @@
 }
 
 .categoryclash1-status-message {
-  @apply text-gray-600;
+  color: var(--text-secondary);
 }
 
 .categoryclash1-connection {
-  @apply text-sm text-gray-500;
+  @apply text-sm;
+  color: var(--text-muted);
 }

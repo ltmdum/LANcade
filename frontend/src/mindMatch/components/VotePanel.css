@@ -2,7 +2,7 @@
   text-align: center;
   margin-bottom: 1rem;
   padding: 1rem;
-  background: #f5f5f5;
+  background: var(--bg-input);
   border-radius: 8px;
 }
 
@@ -12,7 +12,7 @@
 }
 
 .vote-panel-target {
-  color: #666;
+  color: var(--text-secondary);
   font-size: 0.875rem;
 }
 
@@ -29,7 +29,7 @@
 
 .vote-panel-waiting {
   text-align: center;
-  color: #666;
+  color: var(--text-secondary);
   font-style: italic;
   margin: 1rem 0;
 }
@@ -37,7 +37,7 @@
 .vote-panel-tally {
   text-align: center;
   font-size: 0.875rem;
-  color: #666;
+  color: var(--text-secondary);
 }
 
 .vote-panel-status {

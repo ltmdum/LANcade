@@ -7,7 +7,8 @@
 }
 
 .round-control-label {
-  @apply block text-sm font-medium text-gray-700 mb-1;
+  @apply block text-sm font-medium mb-1;
+  color: var(--text-primary);
 }
 
 .round-control-select {
@@ -15,9 +16,11 @@
 }
 
 .round-control-waiting {
-  @apply text-sm text-amber-600 mt-2;
+  @apply text-sm mt-2;
+  color: var(--warning);
 }
 
 .round-control-status {
-  @apply text-sm text-gray-600 mt-2;
+  @apply text-sm mt-2;
+  color: var(--text-secondary);
 }

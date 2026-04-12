@@ -8,9 +8,11 @@
 }
 
 .admin-panel-status {
-  @apply text-sm text-gray-600 mt-2;
+  @apply text-sm mt-2;
+  color: var(--text-secondary);
 }
 
 .admin-panel-active {
-  @apply text-sm text-green-600 mt-1;
+  @apply text-sm mt-1;
+  color: var(--success);
 }

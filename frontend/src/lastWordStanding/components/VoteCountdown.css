@@ -4,7 +4,8 @@
 }
 
 .vote-countdown-label {
-  @apply text-sm text-gray-500;
+  @apply text-sm;
+  color: var(--text-muted);
 }
 
 .vote-countdown-time {

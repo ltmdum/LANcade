@@ -7,11 +7,13 @@
 }
 
 .join-panel-label {
-  @apply block text-sm font-medium text-gray-700 mb-1;
+  @apply block text-sm font-medium mb-1;
+  color: var(--text-primary);
 }
 
 .join-panel-error {
-  @apply text-sm text-red-600;
+  @apply text-sm;
+  color: var(--danger);
 }
 
 .join-panel-submit {
@@ -19,5 +21,6 @@
 }
 
 .join-panel-status {
-  @apply text-sm text-green-600;
+  @apply text-sm;
+  color: var(--success);
 }

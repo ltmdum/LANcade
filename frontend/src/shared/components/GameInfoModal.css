@@ -1,10 +1,14 @@
 /* GameInfoModal component styles */
 .game-info-overlay {
-  @apply fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4;
+  @apply fixed inset-0 z-50 flex items-center justify-center p-4;
+  background: rgba(0, 0, 0, 0.5);
 }
 
 .game-info-modal {
-  @apply bg-white rounded-lg shadow-xl max-w-md w-full max-h-[80vh] overflow-y-auto p-6;
+  @apply max-w-md w-full max-h-[80vh] overflow-y-auto p-6;
+  background: var(--bg-card);
+  border-radius: 12px;
+  border: 1px solid var(--border);
 }
 
 .game-info-header {
@@ -12,19 +16,27 @@
 }
 
 .game-info-title {
-  @apply text-xl font-bold text-gray-800;
+  @apply text-xl font-bold;
+  color: var(--text-primary);
 }
 
 .game-info-close {
-  @apply text-2xl leading-none text-gray-400 hover:text-gray-600 flex-shrink-0 -mt-1;
+  @apply text-2xl leading-none flex-shrink-0 -mt-1 cursor-pointer;
+  color: var(--text-muted);
+}
+
+.game-info-close:hover {
+  color: var(--text-secondary);
 }
 
 .game-info-description {
-  @apply text-gray-600 mb-4;
+  @apply mb-4;
+  color: var(--text-secondary);
 }
 
 .game-info-subtitle {
-  @apply text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2;
+  @apply text-sm font-semibold uppercase tracking-wide mb-2;
+  color: var(--text-muted);
 }
 
 .game-info-instructions {
@@ -32,5 +44,6 @@
 }
 
 .game-info-step {
-  @apply text-gray-700 text-sm leading-relaxed;
+  @apply text-sm leading-relaxed;
+  color: var(--text-primary);
 }

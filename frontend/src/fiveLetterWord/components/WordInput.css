@@ -39,7 +39,8 @@
   font-size: 0.9rem;
   font-weight: bold;
   text-transform: uppercase;
-  background: var(--color-key-bg, #d3d6da);
+  background: var(--bg-input);
+  color: var(--text-primary);
   border: none;
   border-radius: 4px;
   cursor: pointer;
@@ -50,11 +51,11 @@
 }
 
 .word-keyboard-key:hover:not(:disabled) {
-  background: var(--color-key-hover, #c0c3c6);
+  background: var(--border);
 }
 
 .word-keyboard-key:active:not(:disabled) {
-  background: var(--color-key-active, #a0a3a6);
+  background: var(--text-muted);
 }
 
 .word-keyboard-key:disabled {
@@ -63,30 +64,33 @@
 
 /* Letter status colors for keyboard keys */
 .word-keyboard-key-correct {
-  background-color: #6aaa64;
+  background-color: var(--letter-guess-correct);
   color: white;
 }
 
 .word-keyboard-key-correct:hover:not(:disabled) {
-  background-color: #5a9a54;
+  background-color: var(--letter-guess-correct);
+  filter: brightness(0.9);
 }
 
 .word-keyboard-key-present {
-  background-color: #c9b458;
+  background-color: var(--letter-guess-present);
   color: white;
 }
 
 .word-keyboard-key-present:hover:not(:disabled) {
-  background-color: #b9a448;
+  background-color: var(--letter-guess-present);
+  filter: brightness(0.9);
 }
 
 .word-keyboard-key-absent {
-  background-color: #787c7e;
-  color: white;
+  background-color: var(--letter-guess-absent);
+  color: var(--text-muted);
 }
 
 .word-keyboard-key-absent:hover:not(:disabled) {
-  background-color: #686c6e;
+  background-color: var(--letter-guess-absent);
+  filter: brightness(0.85);
 }
 
 .word-keyboard-key-wide {
@@ -97,7 +101,7 @@
 
 .word-input-status {
   font-size: 0.875rem;
-  color: var(--color-error, #d32f2f);
+  color: var(--danger);
   text-align: center;
   margin: 0.5rem 0 0 0;
 }

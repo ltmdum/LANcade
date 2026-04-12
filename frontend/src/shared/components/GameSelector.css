@@ -16,7 +16,7 @@
 }
 
 .game-selector-name {
-  @apply text-gray-700;
+  color: var(--text-primary);
 }
 
 .game-selector-info-container {
@@ -24,18 +24,26 @@
 }
 
 .game-selector-info-button {
-  @apply w-5 h-5 rounded-full border border-gray-400 text-gray-500
-         flex items-center justify-center cursor-pointer
-         hover:border-gray-600 hover:text-gray-700 hover:bg-gray-100
-         text-sm font-serif italic;
+  @apply w-5 h-5 rounded-full flex items-center justify-center cursor-pointer text-sm font-serif italic;
+  border: 1px solid var(--text-muted);
+  color: var(--text-muted);
+}
+
+.game-selector-info-button:hover {
+  border-color: var(--text-secondary);
+  color: var(--text-secondary);
+  background: var(--accent-muted);
 }
 
 .game-selector-tooltip {
-  @apply absolute right-0 top-full mt-1 z-10
-         bg-gray-800 text-white text-sm rounded px-3 py-2
-         whitespace-normal w-48 shadow-lg;
+  @apply absolute right-0 top-full mt-1 z-10 text-sm rounded px-3 py-2 whitespace-normal w-48;
+  background: var(--bg-input);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
 }
 
 .game-selector-status {
-  @apply text-sm text-gray-600 mt-2;
+  @apply text-sm mt-2;
+  color: var(--text-secondary);
 }

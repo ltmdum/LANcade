@@ -12,7 +12,8 @@
 }
 
 .category-selector-name {
-  @apply text-gray-700 break-words;
+  @apply break-words;
+  color: var(--text-primary);
 }
 
 .category-selector-actions {
@@ -20,7 +21,8 @@
 }
 
 .category-selector-count {
-  @apply text-sm text-gray-600;
+  @apply text-sm;
+  color: var(--text-secondary);
 }
 
 .category-selector-row {
@@ -28,5 +30,6 @@
 }
 
 .category-selector-status {
-  @apply text-sm text-gray-600 mt-2;
+  @apply text-sm mt-2;
+  color: var(--text-secondary);
 }

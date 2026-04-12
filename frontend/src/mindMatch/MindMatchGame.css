@@ -9,14 +9,14 @@
   text-align: center;
   margin: 1.5rem 0;
   padding: 1rem;
-  background: #f0f0f0;
+  background: var(--bg-input);
   border-radius: 8px;
 }
 
 .blankslate-prompt .blank {
   display: inline-block;
   min-width: 100px;
-  border-bottom: 3px solid #333;
+  border-bottom: 3px solid var(--text-primary);
   margin: 0 0.5rem;
 }
 
@@ -31,24 +31,26 @@
 .blankslate-score-tag {
   padding: 0.25rem 0.75rem;
   border-radius: 20px;
-  background: #e0e0e0;
+  background: var(--bg-input);
+  color: var(--text-secondary);
   font-size: 0.875rem;
 }
 
 .blankslate-score-tag.leader {
-  background: #ffd700;
+  background: var(--gold);
+  color: var(--accent-text);
   font-weight: bold;
 }
 
 .blankslate-score-tag.winner {
-  background: #4caf50;
+  background: var(--success);
   color: white;
   font-weight: bold;
 }
 
 .blankslate-waiting {
   text-align: center;
-  color: #666;
+  color: var(--text-secondary);
   font-style: italic;
   margin: 1rem 0;
 }

@@ -4,5 +4,7 @@
 }
 
 .player-tag-eliminated {
-  @apply bg-red-100 text-red-600 line-through;
+  background-color: var(--danger-muted);
+  color: var(--danger);
+  @apply line-through;
 }

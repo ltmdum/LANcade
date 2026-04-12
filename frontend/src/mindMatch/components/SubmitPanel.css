@@ -8,8 +8,10 @@
   flex: 1;
   padding: 0.5rem;
   font-size: 1rem;
-  border: 1px solid #ccc;
+  border: 1px solid var(--border);
   border-radius: 4px;
+  background-color: var(--bg-input);
+  color: var(--text-primary);
 }
 
 .submit-panel-submitted {
@@ -18,7 +20,7 @@
 }
 
 .submit-panel-hint {
-  color: #666;
+  color: var(--text-secondary);
   font-size: 0.875rem;
   text-align: center;
   margin-bottom: 0.5rem;
@@ -26,6 +28,6 @@
 
 .submit-panel-status {
   text-align: center;
-  color: #666;
+  color: var(--text-secondary);
   margin-top: 0.5rem;
 }

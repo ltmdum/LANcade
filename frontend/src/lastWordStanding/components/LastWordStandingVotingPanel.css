@@ -1,6 +1,7 @@
 /* WordRushVotingPanel component styles */
 .wordrush-voting-submitter {
-  @apply text-sm text-gray-600 mb-2;
+  @apply text-sm mb-2;
+  color: var(--text-secondary);
 }
 
 .wordrush-voting-word {
@@ -8,7 +9,7 @@
 }
 
 .wordrush-voting-waiting {
-  @apply text-gray-600;
+  color: var(--text-secondary);
 }
 
 .wordrush-voting-buttons {
@@ -16,5 +17,6 @@
 }
 
 .wordrush-voting-status {
-  @apply text-sm text-gray-600 mt-2;
+  @apply text-sm mt-2;
+  color: var(--text-secondary);
 }

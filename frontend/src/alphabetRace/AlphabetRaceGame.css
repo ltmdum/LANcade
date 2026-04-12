@@ -5,11 +5,13 @@
 }
 
 .alphabet-race-letter {
-  @apply text-5xl font-bold text-center text-blue-500;
+  @apply text-5xl font-bold text-center;
+  color: var(--accent);
 }
 
 .alphabet-race-category {
-  @apply text-center text-lg text-gray-500 mb-2;
+  @apply text-center text-lg mb-2;
+  color: var(--text-muted);
 }
 
 .letter-progress {
@@ -17,15 +19,20 @@
 }
 
 .letter-progress-item {
-  @apply w-6 h-6 flex items-center justify-center text-xs font-bold rounded bg-gray-100 text-gray-500;
+  @apply w-6 h-6 flex items-center justify-center text-xs font-bold rounded;
+  background-color: var(--bg-input);
+  color: var(--text-muted);
 }
 
 .letter-progress-item--completed {
-  @apply bg-green-500 text-white;
+  background-color: var(--success);
+  color: white;
 }
 
 .letter-progress-item--current {
-  @apply bg-blue-500 text-white scale-125;
+  background-color: var(--accent);
+  color: var(--accent-text);
+  @apply scale-125;
 }
 
 .alphabet-vote-panel {
@@ -37,7 +44,8 @@
 }
 
 .alphabet-vote-submitter {
-  @apply text-sm text-gray-600 mb-2;
+  @apply text-sm mb-2;
+  color: var(--text-secondary);
 }
 
 .alphabet-vote-buttons {
@@ -45,15 +53,17 @@
 }
 
 .alphabet-vote-status {
-  @apply text-sm text-gray-600 mt-2;
+  @apply text-sm mt-2;
+  color: var(--text-secondary);
 }
 
 .alphabet-vote-waiting {
-  @apply text-gray-600;
+  color: var(--text-secondary);
 }
 
 .alphabet-vote-counts {
-  @apply text-sm text-gray-500 mt-2;
+  @apply text-sm mt-2;
+  color: var(--text-muted);
 }
 
 .alphabet-score-list {
@@ -69,21 +79,27 @@
 }
 
 .alphabet-winner-name {
-  @apply text-4xl font-bold text-center text-blue-500;
+  @apply text-4xl font-bold text-center;
+  color: var(--accent);
 }
 
 .alphabet-race-ineligible {
-  @apply text-gray-600 bg-gray-100 p-3 rounded-lg text-center;
+  color: var(--text-secondary);
+  background-color: var(--bg-input);
+  @apply p-3 rounded-lg text-center;
 }
 
 .alphabet-race-status {
-  @apply text-gray-600 text-center;
+  color: var(--text-secondary);
+  @apply text-center;
 }
 
 .alphabet-progress-count {
-  @apply text-sm text-gray-500 text-center;
+  @apply text-sm text-center;
+  color: var(--text-muted);
 }
 
 .alphabet-game-over {
-  @apply text-2xl font-bold text-center text-gray-700 mb-2;
+  @apply text-2xl font-bold text-center mb-2;
+  color: var(--text-secondary);
 }

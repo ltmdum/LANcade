@@ -21,41 +21,41 @@
   font-size: 1.75rem;
   font-weight: bold;
   text-transform: uppercase;
-  border: 2px solid var(--color-border, #d3d6da);
-  background: var(--color-bg, #fff);
-  color: var(--color-text, #1a1a1b);
+  border: 2px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-primary);
   transition: background-color 0.2s, border-color 0.2s;
 }
 
 .guess-cell-correct {
-  background-color: #6aaa64;
-  border-color: #6aaa64;
+  background-color: var(--letter-guess-correct);
+  border-color: var(--letter-guess-correct);
   color: white;
 }
 
 .guess-cell-present {
-  background-color: #c9b458;
-  border-color: #c9b458;
+  background-color: var(--letter-guess-present);
+  border-color: var(--letter-guess-present);
   color: white;
 }
 
 .guess-cell-absent {
-  background-color: #787c7e;
-  border-color: #787c7e;
+  background-color: var(--letter-guess-absent);
+  border-color: var(--letter-guess-absent);
   color: white;
 }
 
 .guess-cell-empty {
   background-color: transparent;
-  border-color: var(--color-border, #d3d6da);
+  border-color: var(--border);
 }
 
 .guess-cell-input {
-  border-color: var(--color-border, #878a8c);
+  border-color: var(--text-muted);
 }
 
 .guess-cell-filled {
-  border-color: var(--color-border-dark, #565758);
+  border-color: var(--text-secondary);
   animation: pop 0.1s ease;
 }
 
@@ -85,7 +85,7 @@
   gap: 2px;
   margin-left: 12px;
   padding: 4px;
-  background: rgba(0, 0, 0, 0.05);
+  background: rgba(255, 255, 255, 0.05);
   border-radius: 4px;
 }
 
@@ -102,15 +102,15 @@
 }
 
 .row-best-cell-correct {
-  background-color: #6aaa64;
+  background-color: var(--letter-guess-correct);
 }
 
 .row-best-cell-present {
-  background-color: #c9b458;
+  background-color: var(--letter-guess-present);
 }
 
 .row-best-cell-absent {
-  background-color: #787c7e;
+  background-color: var(--letter-guess-absent);
 }
 
 /* Mobile responsive adjustments */

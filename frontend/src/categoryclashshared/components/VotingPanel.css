@@ -1,44 +1,67 @@
 /* VotingPanel component styles */
 .voting-panel-description {
-  @apply text-sm text-gray-600 mb-4;
-}
-
-.voting-panel-groups {
-  @apply space-y-4;
-}
-
-.voting-panel-player-name {
-  @apply font-medium text-gray-800 mb-2;
+  @apply text-sm mb-4;
+  color: var(--text-secondary);
 }
 
 .voting-panel-words {
-  @apply space-y-1;
+  @apply space-y-2;
 }
 
-.voting-panel-word-label {
-  @apply flex items-center gap-2 cursor-pointer;
+.voting-panel-row {
+  @apply flex items-center gap-3;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  background-color: var(--bg-input);
 }
 
-.voting-panel-checkbox {
-  @apply w-4 h-4;
+.voting-panel-toggles {
+  @apply flex gap-1;
+  flex-shrink: 0;
+}
+
+.voting-panel-thumb {
+  @apply flex items-center justify-center text-base;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background-color: transparent;
+  cursor: pointer;
+  opacity: 0.4;
+  transition: opacity 0.15s, background-color 0.15s, border-color 0.15s;
+}
+.voting-panel-thumb:disabled {
+  cursor: not-allowed;
+}
+
+.voting-panel-thumb--up-active {
+  opacity: 1;
+  background-color: var(--success-muted);
+  border-color: var(--success);
+}
+
+.voting-panel-thumb--down-active {
+  opacity: 1;
+  background-color: var(--danger-muted);
+  border-color: var(--danger);
 }
 
 .voting-panel-word-text {
-  @apply text-gray-700;
-}
-
-.voting-panel-no-words {
-  @apply text-sm text-gray-500;
+  @apply text-sm;
+  color: var(--text-primary);
 }
 
 .voting-panel-no-submissions {
-  @apply text-sm text-gray-500;
+  @apply text-sm;
+  color: var(--text-muted);
 }
 
 .voting-panel-submit {
-  @apply btn btn-primary mt-4;
+  @apply btn btn-primary mt-4 w-full;
 }
 
 .voting-panel-status {
-  @apply text-sm text-gray-600 mt-2;
+  @apply text-sm mt-2;
+  color: var(--text-secondary);
 }

@@ -1,6 +1,7 @@
 /* App component styles */
 .app-container {
-  @apply min-h-screen bg-gray-100;
+  @apply min-h-screen;
+  background-color: var(--bg-primary);
 }
 
 .app-content {
@@ -12,29 +13,36 @@
 }
 
 .app-header-label {
-  @apply text-sm text-gray-500 uppercase tracking-wide;
+  @apply text-sm uppercase tracking-wide;
+  color: var(--text-secondary);
 }
 
 .app-header-title {
-  @apply text-3xl font-bold text-gray-800;
+  @apply text-3xl font-bold;
+  color: var(--text-primary);
 }
 
 .app-header-title-small {
-  @apply text-2xl font-bold text-gray-800;
+  @apply text-2xl font-bold;
+  color: var(--text-primary);
 }
 
 .app-header-description {
-  @apply text-gray-600 mt-2;
+  @apply mt-2;
+  color: var(--text-secondary);
 }
 
 .app-info-button {
-  @apply w-5 h-5 rounded-full border border-gray-400 text-gray-500
-         flex items-center justify-center cursor-pointer
-         hover:border-gray-600 hover:text-gray-700 hover:bg-gray-100
-         text-sm font-serif italic
-         absolute top-3 right-3;
+  @apply w-5 h-5 rounded-full flex items-center justify-center cursor-pointer text-sm font-serif italic absolute top-3 right-3;
+  border: 1px solid var(--text-muted);
+  color: var(--text-muted);
+}
+.app-info-button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 .app-connection-status {
-  @apply text-center text-gray-500 py-8;
+  @apply text-center py-8;
+  color: var(--text-muted);
 }

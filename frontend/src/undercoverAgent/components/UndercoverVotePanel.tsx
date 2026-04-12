@@ -156,16 +156,14 @@ function VoteForm({
       </p>
       <div className="undercover-vote-options">
         {votableParticipants.map((id) => (
-          <label key={id} className="undercover-vote-option">
-            <input
-              type="radio"
-              name="vote-target"
-              value={id}
-              checked={selectedTarget === id}
-              onChange={() => onSelectTarget(id)}
-            />
+          <button
+            key={id}
+            type="button"
+            className={`undercover-vote-card ${selectedTarget === id ? 'undercover-vote-card--selected' : ''}`}
+            onClick={() => onSelectTarget(id)}
+          >
             {playerLookup[id] || id}
-          </label>
+          </button>
         ))}
       </div>
       <button type="submit" className="btn btn-primary">

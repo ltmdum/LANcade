@@ -1,7 +1,7 @@
 .scoreboard {
   margin: 1rem 0;
   padding: 1rem;
-  background: #fafafa;
+  background: var(--bg-card);
   border-radius: 8px;
 }
 
@@ -21,17 +21,19 @@
 .scoreboard-tag {
   padding: 0.25rem 0.75rem;
   border-radius: 20px;
-  background: #e0e0e0;
+  background: var(--bg-input);
+  color: var(--text-secondary);
   font-size: 0.875rem;
 }
 
 .scoreboard-tag.leader {
-  background: #ffd700;
+  background: var(--gold);
+  color: var(--accent-text);
   font-weight: bold;
 }
 
 .scoreboard-tag.winner {
-  background: #4caf50;
+  background: var(--success);
   color: white;
   font-weight: bold;
 }
@@ -40,5 +42,5 @@
   text-align: center;
   margin-top: 0.5rem;
   font-size: 0.75rem;
-  color: #888;
+  color: var(--text-muted);
 }

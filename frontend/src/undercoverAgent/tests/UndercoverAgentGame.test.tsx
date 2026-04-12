@@ -248,9 +248,11 @@ describe('UndercoverAgentGame', () => {
       expect(
         screen.getByText(/who do you think is the undercover agent/i)
       ).toBeInTheDocument();
-      // Should show radio buttons for Bob and Charlie but not Alice (self)
-      const radios = screen.getAllByRole('radio');
-      expect(radios.length).toBe(2);
+      // Should show selectable cards for Bob and Charlie but not Alice (self)
+      const voteButtons = screen.getAllByRole('button').filter(
+        (btn) => btn.classList.contains('undercover-vote-card')
+      );
+      expect(voteButtons.length).toBe(2);
       // Bob and Charlie appear in both the word list table and vote options
       expect(screen.getAllByText('Bob').length).toBeGreaterThanOrEqual(1);
       expect(screen.getAllByText('Charlie').length).toBeGreaterThanOrEqual(1);

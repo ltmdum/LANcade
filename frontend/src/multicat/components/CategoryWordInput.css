@@ -4,15 +4,16 @@
 }
 
 .category-word-input-default {
-  @apply bg-gray-50;
+  background-color: var(--bg-input);
 }
 
 .category-word-input-accepted {
-  @apply bg-green-50;
+  background-color: var(--success-muted);
 }
 
 .category-word-input-label {
-  @apply text-sm font-medium text-gray-700 mb-1;
+  @apply text-sm font-medium mb-1;
+  color: var(--text-secondary);
 }
 
 .category-word-input-form {
@@ -28,9 +29,11 @@
 }
 
 .category-word-input-field-submitted {
-  @apply border-green-500 pr-8;
+  border-color: var(--success);
+  @apply pr-8;
 }
 
 .category-word-input-check {
-  @apply absolute right-2 top-1/2 -translate-y-1/2 text-green-600;
+  @apply absolute right-2 top-1/2 -translate-y-1/2;
+  color: var(--success);
 }

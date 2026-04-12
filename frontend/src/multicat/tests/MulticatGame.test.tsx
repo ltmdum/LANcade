@@ -170,7 +170,7 @@ describe('MulticatGame', () => {
 
       render(<MulticatGame {...createDefaultProps(state)} />);
 
-      expect(screen.getByRole('button', { name: /submit downvotes/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /submit votes/i })).toBeInTheDocument();
     });
 
     it('does not render admin controls during voting state', () => {

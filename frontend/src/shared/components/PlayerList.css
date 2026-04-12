@@ -4,7 +4,8 @@
 }
 
 .player-list-item {
-  @apply flex items-center justify-between text-gray-700;
+  @apply flex items-center justify-between;
+  color: var(--text-primary);
 }
 
 .player-list-eject {
@@ -12,5 +13,6 @@
 }
 
 .player-list-empty {
-  @apply text-sm text-gray-500;
+  @apply text-sm;
+  color: var(--text-muted);
 }
