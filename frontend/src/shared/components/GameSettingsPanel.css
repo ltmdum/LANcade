@@ -1,0 +1,16 @@
+/* GameSettingsPanel component styles */
+.game-settings-controls {
+  @apply flex flex-wrap items-end gap-3;
+}
+
+.game-settings-field {
+}
+
+.game-settings-label {
+  @apply block text-sm font-medium mb-1;
+  color: var(--text-primary);
+}
+
+.game-settings-select {
+  @apply input w-full;
+}

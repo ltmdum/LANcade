@@ -76,6 +76,7 @@ Games are configured via `games.config.json` in the project root. This file cont
 | `mindmatch`   | Mind Match       | Match minds with your fellow players              |
 | `alphabetrace` | Alphabet Race  | A race through all 26 letters                     |
 | `undercoveragent` | Undercover Agent | Find the imposter among you                    |
+| `tradingexchange` | Trading Exchange | Trade around the hidden sum of all cards        |
 
 ### Enabling/Disabling Games
 
@@ -99,7 +100,7 @@ npm run validate-config
 
 # Errors shown during build
 Error: Unknown game ID(s) in games.config.json: invalidgame
-Available games: quickfire, multicat, lastwordstanding, fiveletterword, mindmatch, alphabetrace, undercoveragent
+Available games: quickfire, multicat, lastwordstanding, fiveletterword, mindmatch, alphabetrace, undercoveragent, tradingexchange
 ```
 
 ## Project Structure
@@ -162,6 +163,12 @@ lancade/
 │       │   ├── tests/              # Undercover Agent specific tests
 │       │   ├── UndercoverAgentGame.tsx
 │       │   └── plugin.tsx          # Undercover Agent frontend plugin registration
+|       ├── tradingExchange/
+│       │   ├── components/         # Trading Exchange specific components
+│       │   ├── tests/              # Trading Exchange specific tests
+│       │   ├── utils/              # Trading Exchange specific utility functions
+│       │   ├── TradingExchangeGame.tsx
+│       │   └── plugin.tsx          # Trading Exchange frontend plugin registration
 │       └── plugins/            # Frontend plugin system
 ├── backend/            # Express + TypeScript
 │   └── src/
@@ -211,6 +218,11 @@ lancade/
 |       ├── undercoverAgent/
 │       │   ├── tests/          # Undercover Agent specific Vitest tests
 │       │   ├── undercoveragent.ts
+│       │   └── plugin.ts
+|       ├── tradingExchange/
+│       │   ├── tests/          # Trading Exchange specific Vitest tests
+│       │   ├── tradingexchange.ts
+│       │   ├── matching.ts     # Order matching algorithms
 │       │   └── plugin.ts
 │       └── plugins/        # Backend plugin system
 │           └── tests/          # Vitest tests (mirrors src structure)
@@ -456,6 +468,22 @@ Create tests in `backend/src/tests/yourgame/` to test your game logic.
   - If the unanimous vote correctly identifies the undercover agent, the agent gets one final chance to guess the secret word. If they guess correctly, the agent still wins. If they guess wrong, the civilians win.
   - A non-unanimous vote triggers another voting round with the tally visible.
   - There is no limit on the number of voting rounds.
+
+### Trading Exchange
+- A card-based trading game where players estimate the hidden sum of all dealt cards.
+- Admin configures the number of cards per player and the inactivity timeout.
+- **Auction Phase**: Players are dealt cards and submit blind bid/offer pairs.
+  - Crossed orders are matched off (highest bid with lowest offer, at the midpoint price).
+  - Remaining unmatched orders form the initial orderbook.
+- **Continuous Trading**: Players adjust bid/offer pairs in real-time.
+  - Orders match at the passive (existing) order's price.
+  - An inactivity timer resets on every trade; when it expires, the round ends.
+  - At the start of each new round, one card per player is revealed to everyone.
+  - The number of trading rounds equals the number of cards per player, plus one.
+  - In the final round, all cards are revealed — fastest traders get the best prices.
+- **Settlement**: Outstanding positions are settled at the true value (sum of all cards).
+- **Scoring**: Highest total P&L (realized + settlement) wins.
+- Card-related utilities are shared in `shared/src/cards.ts`, `backend/src/shared/cards/`, and `frontend/src/shared/cards/` for reuse by future card games.
 
 ## Custom Categories
 

@@ -150,11 +150,12 @@ function pickRandom<T>(array: T[]): T {
  * @param options Game configuration options.
  * @returns Undercover Agent game instance.
  */
-export function createGame(options: UndercoverAgentGameOptions = {}): UndercoverAgentGame {
+export function createGame(options: UndercoverAgentGameOptions = {}) {
   const onStateChange = options.onStateChange || (() => {});
   const playerStore = options.playerStore;
 
   let match = createEmptyMatch();
+  let totalRoundsSetting = 2;
 
   /**
    * Notify listeners of state change.
@@ -213,6 +214,7 @@ export function createGame(options: UndercoverAgentGameOptions = {}): Undercover
       serverTime: Date.now(),
       players: playerStore ? playerStore.listPlayers() : [],
       settings: { categories: [], selectedCategory: '' },
+      gameSettings: { totalRounds: totalRoundsSetting },
       match: {
         id: match.id,
         state: match.state,
@@ -558,17 +560,17 @@ export function createGame(options: UndercoverAgentGameOptions = {}): Undercover
   }
 
   /**
-   * Start a new round with the given configuration.
-   * @param durationMs Encodes the number of submission rounds (durationMs / 1000).
+   * Start a new round with the configured number of submission rounds.
+   * @param _durationMs Unused (rounds configured via updateSettings).
    * @returns Start result.
    */
-  function startRound(durationMs: number): StartRoundResult {
+  function startRound(_durationMs: number): StartRoundResult {
     const playerIds = getPlayerIds();
     if (playerIds.length < 3) {
       return { ok: false, reason: 'need_3_players' };
     }
 
-    const totalRounds = Math.max(1, Math.min(10, Math.round(durationMs / 1000)));
+    const totalRounds = totalRoundsSetting;
     const participants = [...playerIds];
 
     match = createEmptyMatch();
@@ -676,6 +678,25 @@ export function createGame(options: UndercoverAgentGameOptions = {}): Undercover
   }
 
   /**
+   * Update admin-configurable settings (only when idle).
+   * @param settings Key-value settings to update.
+   * @returns Update result.
+   */
+  function updateSettings(settings: Record<string, unknown>): { ok: boolean; reason?: string } {
+    if (match.state !== 'idle') return { ok: false, reason: 'game_active' };
+    if ('totalRounds' in settings) {
+      const val = settings.totalRounds;
+      if (typeof val === 'number' && Number.isInteger(val) && val >= 1 && val <= 10) {
+        totalRoundsSetting = val;
+        notifyChange();
+        return { ok: true };
+      }
+      return { ok: false, reason: 'invalid_value' };
+    }
+    return { ok: false, reason: 'unknown_setting' };
+  }
+
+  /**
    * End the current game, returning to idle state.
    * @returns End result.
    */
@@ -697,6 +718,7 @@ export function createGame(options: UndercoverAgentGameOptions = {}): Undercover
     submitWord,
     submitVotes,
     joinPlayer,
+    updateSettings,
     endGame,
   };
 }

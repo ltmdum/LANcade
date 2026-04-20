@@ -93,6 +93,18 @@ export interface BaseGame {
     ok: boolean;
     reason?: string;
   };
+
+  /** Handle a generic game-specific action from a player */
+  handleAction?: (playerId: string, action: unknown) => {
+    ok: boolean;
+    reason?: string;
+  };
+
+  /** Update game-specific settings from the admin panel */
+  updateSettings?: (settings: Record<string, unknown>) => {
+    ok: boolean;
+    reason?: string;
+  };
 }
 
 /**

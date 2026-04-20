@@ -1,0 +1,26 @@
+.card-tile {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2rem;
+  padding: 0.15rem 0.35rem;
+  border-radius: 0.25rem;
+  font-weight: 700;
+  font-size: 0.85rem;
+  background-color: #ffffff;
+  border: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.card-tile--red {
+  color: #ef4444;
+}
+
+.card-tile--black {
+  color: #1a1a1a;
+}
+
+.card-tile--hidden {
+  color: var(--text-muted);
+  font-style: italic;
+}

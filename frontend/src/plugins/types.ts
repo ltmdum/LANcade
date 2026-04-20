@@ -54,6 +54,28 @@ export interface GamePluginConfig {
     label: string;
     options: { label: string; durationMs: number }[];
   };
+  /** Declarative game-specific admin settings (rendered as a settings panel) */
+  gameSettings?: GameSettingControl[];
+}
+
+/** An option within a select-type game setting. */
+export interface GameSettingOption {
+  label: string;
+  value: number;
+}
+
+/** A declarative control rendered in the admin game settings panel. */
+export interface GameSettingControl {
+  /** Key used in the settings payload and server state. */
+  key: string;
+  /** Human-readable label. */
+  label: string;
+  /** Control type. */
+  type: 'select';
+  /** Available options. */
+  options: GameSettingOption[];
+  /** Default value. */
+  defaultValue: number;
 }
 
 /**

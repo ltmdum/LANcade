@@ -324,13 +324,70 @@ export interface UndercoverAgentState {
   serverTime: number;
   players: PlayerInfo[];
   settings: CategorySettings;
+  gameSettings?: Record<string, unknown>;
   match: UndercoverAgentMatchState;
   game: GameInfo;
   games: GameInfo[];
 }
 
+// Trading Exchange types
+import type { Card } from './cards.js';
+
+export interface TradingExchangeOrder {
+  playerId: string;
+  playerName: string;
+  bid: number | null;
+  offer: number | null;
+}
+
+export interface TradingExchangeTrade {
+  buyerId: string;
+  buyerName: string;
+  sellerId: string;
+  sellerName: string;
+  price: number;
+  timestamp: number;
+}
+
+export interface TradingExchangeLeaderboardEntry {
+  playerId: string;
+  playerName: string;
+  pnl: number;
+}
+
+export interface TradingExchangeMatchState {
+  id: number;
+  state: 'idle' | 'auction' | 'trading' | 'finished';
+  cardsPerPlayer: number;
+  inactivityTimeoutMs: number;
+  playerCards: Record<string, Card[]>;
+  revealedCardCount: number;
+  currentRound: number;
+  totalRounds: number;
+  orders: TradingExchangeOrder[];
+  trades: TradingExchangeTrade[];
+  roundEndsAt: number | null;
+  playerColours: Record<string, string>;
+  participants: string[];
+  auctionSubmittedIds: string[];
+  winnerId: string | null;
+  winnerName: string | null;
+  leaderboard: TradingExchangeLeaderboardEntry[] | null;
+  trueValue: number | null;
+}
+
+export interface TradingExchangeState {
+  serverTime: number;
+  players: PlayerInfo[];
+  settings: CategorySettings;
+  gameSettings: Record<string, unknown>;
+  exchange: TradingExchangeMatchState;
+  game: GameInfo;
+  games: GameInfo[];
+}
+
 // Union type for any game state
-export type GameState = CategoryClashState | LastWordStandingState | FiveLetterWordState | MindMatchState | AlphabetRaceState | UndercoverAgentState;
+export type GameState = CategoryClashState | LastWordStandingState | FiveLetterWordState | MindMatchState | AlphabetRaceState | UndercoverAgentState | TradingExchangeState;
 
 // API response types
 export interface ApiResult {

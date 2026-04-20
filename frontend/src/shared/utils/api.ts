@@ -247,3 +247,37 @@ export async function endGame(sessionId: string) {
   });
   return { response, data: await response.json() };
 }
+
+/**
+ * Send a game-specific action from a player.
+ * @param playerId Player identifier.
+ * @param action Game-specific action payload.
+ * @param password Player password.
+ * @returns Response and parsed payload.
+ */
+export async function gameAction(playerId: string, action: unknown, password: string) {
+  const response = await fetch('/api/round/action', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ playerId, action, password }),
+  });
+  return { response, data: await response.json() };
+}
+
+/**
+ * Update game-specific admin settings.
+ * @param settings Key-value settings to update.
+ * @param sessionId Admin session id.
+ * @returns Response and parsed payload.
+ */
+export async function updateGameSettings(settings: Record<string, unknown>, sessionId: string) {
+  const response = await fetch('/api/admin/settings', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${sessionId}`,
+    },
+    body: JSON.stringify({ settings }),
+  });
+  return { response, data: await response.json() };
+}

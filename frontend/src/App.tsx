@@ -8,6 +8,7 @@ import { RoundControl } from './shared/components/RoundControl';
 import { PlayerList } from './shared/components/PlayerList';
 import { EndGameButton } from './shared/components/EndGameButton';
 import { GameInfoModal } from './shared/components/GameInfoModal';
+import { GameSettingsPanel } from './shared/components/GameSettingsPanel';
 import { gamePluginRegistry } from './plugins';
 import './App.css';
 
@@ -111,6 +112,8 @@ function App() {
   const minPlayers = pluginConfig?.minPlayers;
   const hideTimer = pluginConfig?.hideTimer || false;
   const customDuration = pluginConfig?.customDuration;
+  const gameSettingsControls = pluginConfig?.gameSettings;
+  const gameSettingsValues = (serverState as unknown as Record<string, unknown> | undefined)?.gameSettings as Record<string, unknown> | undefined;
   const playerCount = serverState?.players?.length || 0;
 
   // Function to get game description for the game selector info buttons
@@ -204,6 +207,14 @@ function App() {
                   selectedCategory={selectedCategory}
                   selectedCategories={selectedCategories}
                   categoryMode={categoryMode}
+                  adminSessionId={adminSessionId}
+                  onExpired={handleAdminExpired}
+                />
+              )}
+              {gameSettingsControls && adminSessionId && (
+                <GameSettingsPanel
+                  controls={gameSettingsControls}
+                  values={gameSettingsValues || {}}
                   adminSessionId={adminSessionId}
                   onExpired={handleAdminExpired}
                 />

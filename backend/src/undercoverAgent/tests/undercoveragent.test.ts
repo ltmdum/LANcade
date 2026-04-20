@@ -31,6 +31,17 @@ function setupFourPlayerGame() {
 }
 
 /**
+ * Helper to configure rounds via updateSettings and start the game.
+ * @param game The game instance.
+ * @param rounds Number of submission rounds.
+ * @returns The startRound result.
+ */
+function startWithRounds(game: ReturnType<typeof createGame>, rounds: number) {
+  game.updateSettings({ totalRounds: rounds });
+  return game.startRound(1000);
+}
+
+/**
  * Drive all players through the reveal phase by revealing and readying.
  * @param game The game instance.
  * @param playerIds Array of all participant player IDs.
@@ -73,17 +84,17 @@ describe('undercoverAgent', () => {
         const store = createPlayerStore();
         const game = createGame({ playerStore: store });
 
-        let result = game.startRound(2000);
+        let result = startWithRounds(game, 2);
         expect(result.ok).toBe(false);
         expect(result.reason).toBe('need_3_players');
 
         store.joinPlayer({ name: 'Alice' });
-        result = game.startRound(2000);
+        result = startWithRounds(game, 2);
         expect(result.ok).toBe(false);
         expect(result.reason).toBe('need_3_players');
 
         store.joinPlayer({ name: 'Bob' });
-        result = game.startRound(2000);
+        result = startWithRounds(game, 2);
         expect(result.ok).toBe(false);
         expect(result.reason).toBe('need_3_players');
       });
@@ -92,7 +103,7 @@ describe('undercoverAgent', () => {
     it('successfully starts with 3 players', async () => {
       await withFakeTimers(() => {
         const { game } = setupThreePlayerGame();
-        const result = game.startRound(2000);
+        const result = startWithRounds(game, 2);
         expect(result.ok).toBe(true);
         expect(result.roundId).toBeDefined();
       });
@@ -101,7 +112,7 @@ describe('undercoverAgent', () => {
     it('sets state to reveal on start', async () => {
       await withFakeTimers(() => {
         const { game } = setupThreePlayerGame();
-        game.startRound(2000);
+        startWithRounds(game, 2);
         const state = game.getState();
         expect(state.match.state).toBe('reveal');
       });
@@ -110,28 +121,49 @@ describe('undercoverAgent', () => {
     it('assigns a word on start', async () => {
       await withFakeTimers(() => {
         const { game } = setupThreePlayerGame();
-        game.startRound(2000);
+        startWithRounds(game, 2);
         const state = game.getState();
         expect(state.match.word).not.toBeNull();
         expect(typeof state.match.word).toBe('string');
       });
     });
 
-    it('durationMs determines number of rounds', async () => {
+    it('updateSettings determines number of rounds', async () => {
       await withFakeTimers(() => {
         const { game } = setupThreePlayerGame();
 
-        game.startRound(2000);
+        startWithRounds(game, 2);
         expect(game.getState().match.totalRounds).toBe(2);
 
         game.endGame();
-        game.startRound(3000);
+        startWithRounds(game, 3);
         expect(game.getState().match.totalRounds).toBe(3);
 
         game.endGame();
-        game.startRound(5000);
+        startWithRounds(game, 5);
         expect(game.getState().match.totalRounds).toBe(5);
       });
+    });
+
+    it('rejects invalid totalRounds settings', () => {
+      const { game } = setupThreePlayerGame();
+      expect(game.updateSettings({ totalRounds: 0 }).ok).toBe(false);
+      expect(game.updateSettings({ totalRounds: 11 }).ok).toBe(false);
+      expect(game.updateSettings({ totalRounds: 2.5 }).ok).toBe(false);
+    });
+
+    it('rejects settings changes during active game', async () => {
+      await withFakeTimers(() => {
+        const { game } = setupThreePlayerGame();
+        startWithRounds(game, 2);
+        expect(game.updateSettings({ totalRounds: 3 }).reason).toBe('game_active');
+      });
+    });
+
+    it('broadcasts gameSettings in state', () => {
+      const { game } = setupThreePlayerGame();
+      game.updateSettings({ totalRounds: 4 });
+      expect((game.getState() as Record<string, unknown>).gameSettings).toEqual({ totalRounds: 4 });
     });
   });
 
@@ -139,7 +171,7 @@ describe('undercoverAgent', () => {
     it('player can reveal their role via REVEAL command', async () => {
       await withFakeTimers(() => {
         const { game, alice } = setupThreePlayerGame();
-        game.startRound(2000);
+        startWithRounds(game, 2);
 
         const result = game.submitWord(alice, 'REVEAL');
         expect(result.ok).toBe(true);
@@ -151,7 +183,7 @@ describe('undercoverAgent', () => {
     it('tracks revealed players', async () => {
       await withFakeTimers(() => {
         const { game, alice, bob } = setupThreePlayerGame();
-        game.startRound(2000);
+        startWithRounds(game, 2);
 
         game.submitWord(alice, 'REVEAL');
         let state = game.getState();
@@ -167,7 +199,7 @@ describe('undercoverAgent', () => {
     it('player can ready after revealing', async () => {
       await withFakeTimers(() => {
         const { game, alice } = setupThreePlayerGame();
-        game.startRound(2000);
+        startWithRounds(game, 2);
 
         game.submitWord(alice, 'REVEAL');
         const result = game.submitWord(alice, 'READY');
@@ -181,7 +213,7 @@ describe('undercoverAgent', () => {
     it('cannot reveal twice', async () => {
       await withFakeTimers(() => {
         const { game, alice } = setupThreePlayerGame();
-        game.startRound(2000);
+        startWithRounds(game, 2);
 
         game.submitWord(alice, 'REVEAL');
         const result = game.submitWord(alice, 'REVEAL');
@@ -193,7 +225,7 @@ describe('undercoverAgent', () => {
     it('cannot ready before revealing', async () => {
       await withFakeTimers(() => {
         const { game, alice } = setupThreePlayerGame();
-        game.startRound(2000);
+        startWithRounds(game, 2);
 
         const result = game.submitWord(alice, 'READY');
         expect(result.ok).toBe(false);
@@ -205,7 +237,7 @@ describe('undercoverAgent', () => {
       await withFakeTimers(() =>
         withStubbedRandom(0, () => {
           const { game, alice, bob, charlie } = setupThreePlayerGame();
-          game.startRound(2000);
+          startWithRounds(game, 2);
 
           revealAndReadyAll(game, [alice, bob, charlie]);
 
@@ -218,7 +250,7 @@ describe('undercoverAgent', () => {
     it('exactly one player gets undercover role', async () => {
       await withFakeTimers(() => {
         const { game, alice, bob, charlie } = setupThreePlayerGame();
-        game.startRound(2000);
+        startWithRounds(game, 2);
 
         const resultA = game.submitWord(alice, 'REVEAL');
         const resultB = game.submitWord(bob, 'REVEAL');
@@ -239,7 +271,7 @@ describe('undercoverAgent', () => {
       await withFakeTimers(() =>
         withStubbedRandom(0, () => {
           const { game, alice, bob, charlie } = setupThreePlayerGame();
-          game.startRound(2000);
+          startWithRounds(game, 2);
           revealAndReadyAll(game, [alice, bob, charlie]);
 
           const state = game.getState();
@@ -260,7 +292,7 @@ describe('undercoverAgent', () => {
       await withFakeTimers(() =>
         withStubbedRandom(0, () => {
           const { game, alice, bob, charlie } = setupThreePlayerGame();
-          game.startRound(2000);
+          startWithRounds(game, 2);
           revealAndReadyAll(game, [alice, bob, charlie]);
 
           const state = game.getState();
@@ -280,7 +312,7 @@ describe('undercoverAgent', () => {
       await withFakeTimers(() =>
         withStubbedRandom(0, () => {
           const { game, alice, bob, charlie } = setupThreePlayerGame();
-          game.startRound(2000);
+          startWithRounds(game, 2);
           revealAndReadyAll(game, [alice, bob, charlie]);
 
           const state = game.getState();
@@ -296,7 +328,7 @@ describe('undercoverAgent', () => {
       await withFakeTimers(() =>
         withStubbedRandom(0, () => {
           const { game, alice, bob, charlie } = setupThreePlayerGame();
-          game.startRound(2000);
+          startWithRounds(game, 2);
           revealAndReadyAll(game, [alice, bob, charlie]);
 
           const state = game.getState();
@@ -316,7 +348,7 @@ describe('undercoverAgent', () => {
       await withFakeTimers(() =>
         withStubbedRandom(0, () => {
           const { game, alice, bob, charlie } = setupThreePlayerGame();
-          game.startRound(2000);
+          startWithRounds(game, 2);
           revealAndReadyAll(game, [alice, bob, charlie]);
 
           submitAllInTurnOrder(game, (i) => `word${i}`);
@@ -333,7 +365,7 @@ describe('undercoverAgent', () => {
       await withFakeTimers(() =>
         withStubbedRandom(0, () => {
           const { game, alice, bob, charlie } = setupThreePlayerGame();
-          game.startRound(2000); // 2 rounds
+          startWithRounds(game, 2); // 2 rounds
           revealAndReadyAll(game, [alice, bob, charlie]);
 
           // Complete round 1
@@ -351,7 +383,7 @@ describe('undercoverAgent', () => {
       await withFakeTimers(() =>
         withStubbedRandom(0, () => {
           const { game, alice, bob, charlie } = setupThreePlayerGame();
-          game.startRound(2000); // 2 rounds
+          startWithRounds(game, 2); // 2 rounds
           revealAndReadyAll(game, [alice, bob, charlie]);
 
           // Complete round 1
@@ -384,7 +416,7 @@ describe('undercoverAgent', () => {
      */
     function setupVotingPhase() {
       const { game, alice, bob, charlie } = setupThreePlayerGame();
-      game.startRound(1000); // 1 round
+      startWithRounds(game, 1); // 1 round
       revealAndReadyAll(game, [alice, bob, charlie]);
       submitAllInTurnOrder(game, (i) => `word${i}`);
       return { game, alice, bob, charlie };
@@ -523,7 +555,7 @@ describe('undercoverAgent', () => {
     it('cannot vote when not in voting phase', async () => {
       await withFakeTimers(() => {
         const { game, alice, bob } = setupThreePlayerGame();
-        game.startRound(2000);
+        startWithRounds(game, 2);
 
         const result = game.submitVotes(alice, {
           targetPlayerId: bob,
@@ -553,7 +585,7 @@ describe('undercoverAgent', () => {
       await withFakeTimers(() =>
         withStubbedRandom(0, () => {
           const { game, alice, bob, charlie } = setupThreePlayerGame();
-          game.startRound(1000);
+          startWithRounds(game, 1);
           revealAndReadyAll(game, [alice, bob, charlie]);
           submitAllInTurnOrder(game, (i) => `w${i}`);
 
@@ -587,7 +619,7 @@ describe('undercoverAgent', () => {
         withStubbedRandom(0, () => {
           const { game, alice, bob, charlie, dave } =
             setupFourPlayerGame();
-          game.startRound(1000);
+          startWithRounds(game, 1);
           revealAndReadyAll(game, [alice, bob, charlie, dave]);
           submitAllInTurnOrder(game, (i) => `w${i}`);
 
@@ -621,7 +653,7 @@ describe('undercoverAgent', () => {
       await withFakeTimers(() =>
         withStubbedRandom(0, () => {
           const { game, alice, bob, charlie } = setupThreePlayerGame();
-          game.startRound(1000);
+          startWithRounds(game, 1);
           revealAndReadyAll(game, [alice, bob, charlie]);
           submitAllInTurnOrder(game, (i) => `w${i}`);
 
@@ -658,7 +690,7 @@ describe('undercoverAgent', () => {
       await withFakeTimers(() =>
         withStubbedRandom(0, () => {
           const { game, alice, bob, charlie } = setupThreePlayerGame();
-          game.startRound(1000);
+          startWithRounds(game, 1);
           revealAndReadyAll(game, [alice, bob, charlie]);
           submitAllInTurnOrder(game, (i) => `w${i}`);
 
@@ -687,7 +719,7 @@ describe('undercoverAgent', () => {
       await withFakeTimers(() =>
         withStubbedRandom(0, () => {
           const { game, alice, bob, charlie } = setupThreePlayerGame();
-          game.startRound(1000);
+          startWithRounds(game, 1);
           revealAndReadyAll(game, [alice, bob, charlie]);
           submitAllInTurnOrder(game, (i) => `w${i}`);
 
@@ -718,7 +750,7 @@ describe('undercoverAgent', () => {
     it('admin can end active game early', async () => {
       await withFakeTimers(() => {
         const { game } = setupThreePlayerGame();
-        game.startRound(2000);
+        startWithRounds(game, 2);
 
         expect(game.getState().match.state).toBe('reveal');
 
@@ -744,7 +776,7 @@ describe('undercoverAgent', () => {
       await withFakeTimers(() =>
         withStubbedRandom(0, () => {
           const { game, alice, bob, charlie } = setupThreePlayerGame();
-          game.startRound(2000);
+          startWithRounds(game, 2);
           revealAndReadyAll(game, [alice, bob, charlie]);
 
           expect(game.getState().match.state).toBe('submitting');
@@ -760,7 +792,7 @@ describe('undercoverAgent', () => {
       await withFakeTimers(() =>
         withStubbedRandom(0, () => {
           const { game, alice, bob, charlie } = setupThreePlayerGame();
-          game.startRound(1000);
+          startWithRounds(game, 1);
           revealAndReadyAll(game, [alice, bob, charlie]);
           submitAllInTurnOrder(game, (i) => `w${i}`);
 
@@ -829,7 +861,7 @@ describe('undercoverAgent', () => {
         });
 
         const before = changeCount;
-        game.startRound(2000);
+        startWithRounds(game, 2);
         expect(changeCount).toBeGreaterThan(before);
       });
     });
@@ -842,7 +874,7 @@ describe('undercoverAgent', () => {
 
         expect(game.getPhase()).toBe('idle');
 
-        game.startRound(2000);
+        startWithRounds(game, 2);
         expect(game.getPhase()).toBe('reveal');
       });
     });
@@ -853,7 +885,7 @@ describe('undercoverAgent', () => {
       await withFakeTimers(() =>
         withStubbedRandom(0, () => {
           const { game, alice, bob, charlie } = setupThreePlayerGame();
-          game.startRound(2000);
+          startWithRounds(game, 2);
 
           // Reveal phase
           expect(game.getState().match.undercoverPlayerId).toBeNull();
@@ -872,7 +904,7 @@ describe('undercoverAgent', () => {
       await withFakeTimers(() =>
         withStubbedRandom(0, () => {
           const { game, alice, bob, charlie } = setupThreePlayerGame();
-          game.startRound(2000);
+          startWithRounds(game, 2);
           revealAndReadyAll(game, [alice, bob, charlie]);
 
           const state = game.getState();
@@ -893,7 +925,7 @@ describe('undercoverAgent', () => {
       await withFakeTimers(() =>
         withStubbedRandom(0, () => {
           const { game, alice, bob, charlie } = setupThreePlayerGame();
-          game.startRound(2000);
+          startWithRounds(game, 2);
           revealAndReadyAll(game, [alice, bob, charlie]);
 
           const state = game.getState();
@@ -922,7 +954,7 @@ describe('undercoverAgent', () => {
       await withFakeTimers(() =>
         withStubbedRandom(0, () => {
           const { game, alice, bob, charlie } = setupThreePlayerGame();
-          game.startRound(2000);
+          startWithRounds(game, 2);
           revealAndReadyAll(game, [alice, bob, charlie]);
 
           const state = game.getState();
@@ -951,7 +983,7 @@ describe('undercoverAgent', () => {
       await withFakeTimers(() =>
         withStubbedRandom(0, () => {
           const { game, alice, bob, charlie } = setupThreePlayerGame();
-          game.startRound(2000);
+          startWithRounds(game, 2);
           revealAndReadyAll(game, [alice, bob, charlie]);
 
           const state = game.getState();
@@ -1000,7 +1032,7 @@ describe('undercoverAgent', () => {
       await withFakeTimers(() =>
         withStubbedRandom(0, () => {
           const { game, alice, bob, charlie } = setupThreePlayerGame();
-          game.startRound(2000);
+          startWithRounds(game, 2);
           revealAndReadyAll(game, [alice, bob, charlie]);
 
           const state = game.getState();
@@ -1032,7 +1064,7 @@ describe('undercoverAgent', () => {
      */
     function setupGuessingPhase() {
       const { game, alice, bob, charlie } = setupThreePlayerGame();
-      game.startRound(1000);
+      startWithRounds(game, 1);
       revealAndReadyAll(game, [alice, bob, charlie]);
       submitAllInTurnOrder(game, (i) => `clue${i}`);
 
@@ -1155,7 +1187,7 @@ describe('undercoverAgent', () => {
       await withFakeTimers(() =>
         withStubbedRandom(0, () => {
           const { game, alice, bob, charlie } = setupThreePlayerGame();
-          game.startRound(1000);
+          startWithRounds(game, 1);
           revealAndReadyAll(game, [alice, bob, charlie]);
           submitAllInTurnOrder(game, (i) => `w${i}`);
 

@@ -618,6 +618,32 @@ app.post('/api/round/votes', (req: Request, res: Response) => {
   res.json({ ok: true });
 });
 
+app.post('/api/round/action', (req: Request, res: Response) => {
+  if (isRateLimited(req, res)) return;
+  const payload = req.body;
+  if (!verifyPlayerPassword(payload.password)) {
+    recordAuthFailure(req);
+    res.status(401).json({ error: 'unauthorized' });
+    return;
+  }
+
+  const game = getGameInstance(res);
+  if (!game) return;
+
+  if (typeof game.handleAction !== 'function') {
+    res.status(400).json({ error: 'not_supported' });
+    return;
+  }
+
+  const result = game.handleAction(payload.playerId, payload.action);
+  if (!result.ok) {
+    res.status(400).json(result);
+    return;
+  }
+
+  res.json(result);
+});
+
 app.post('/api/admin/claim', (req: Request, res: Response) => {
   if (isRateLimited(req, res)) return;
   const payload = req.body;
@@ -790,8 +816,37 @@ app.post('/api/admin/end', (req: Request, res: Response) => {
   res.json({ ok: true });
 });
 
+app.post('/api/admin/settings', (req: Request, res: Response) => {
+  if (!requireAdmin(req)) {
+    res.status(401).json({ error: 'unauthorized' });
+    return;
+  }
+
+  const game = getGameInstance(res);
+  if (!game) return;
+
+  if (typeof game.updateSettings !== 'function') {
+    res.status(400).json({ error: 'not_supported' });
+    return;
+  }
+
+  const payload = req.body;
+  if (!payload || typeof payload.settings !== 'object' || payload.settings === null) {
+    res.status(400).json({ error: 'invalid_request' });
+    return;
+  }
+
+  const result = game.updateSettings(payload.settings);
+  if (!result.ok) {
+    res.status(400).json(result);
+    return;
+  }
+
+  res.json({ ok: true });
+});
+
 // Serve static files from frontend build in production
-const frontendDistPath = 
+const frontendDistPath =
   process.env.STATIC_DIR ||              // ← mobile bridge sets this
   path.join(__dirname, '..', '..', 'frontend', 'dist');
 if (fs.existsSync(frontendDistPath)) {

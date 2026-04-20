@@ -71,16 +71,22 @@ export const plugin: GamePlugin = {
     roundControlTitle: 'Game Control',
     joinPanelTitle: 'Join the Game',
     minPlayers: 3,
-    customDuration: {
-      label: 'Rounds',
-      options: [
-        { label: '1 round', durationMs: 1000 },
-        { label: '2 rounds', durationMs: 2000 },
-        { label: '3 rounds', durationMs: 3000 },
-        { label: '4 rounds', durationMs: 4000 },
-        { label: '5 rounds', durationMs: 5000 },
-      ],
-    },
+    hideTimer: true,
+    gameSettings: [
+      {
+        key: 'totalRounds',
+        label: 'Submission Rounds',
+        type: 'select',
+        options: [
+          { label: '1 round', value: 1 },
+          { label: '2 rounds', value: 2 },
+          { label: '3 rounds', value: 3 },
+          { label: '4 rounds', value: 4 },
+          { label: '5 rounds', value: 5 },
+        ],
+        defaultValue: 2,
+      },
+    ],
   },
   canRender,
   getPhase,
