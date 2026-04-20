@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import type { TradingExchangeTrade } from '@lancade/shared';
 import { NumberField } from './NumberField';
 import {
@@ -13,6 +13,8 @@ import {
 interface PositionTableProps {
   trades: TradingExchangeTrade[];
   playerId: string;
+  /** Pre-calculated seed for the estimate field. */
+  estimateSeed: number | null;
 }
 
 /**
@@ -20,8 +22,9 @@ interface PositionTableProps {
  * @param props Position table props.
  * @returns Position table element.
  */
-export function PositionTable({ trades, playerId }: PositionTableProps) {
+export function PositionTable({ trades, playerId, estimateSeed }: PositionTableProps) {
   const [estimate, setEstimate] = useState<string>('');
+  const seededRef = useRef(false);
 
   const liveTrades = useMemo(() => excludeSettlementTrades(trades), [trades]);
   const playerTrades = useMemo(
@@ -37,6 +40,12 @@ export function PositionTable({ trades, playerId }: PositionTableProps) {
     () => computeAverageOutstandingPrice(playerTrades),
     [playerTrades],
   );
+  useEffect(() => {
+    if (seededRef.current || estimateSeed === null) return;
+    seededRef.current = true;
+    setEstimate(String(estimateSeed));
+  }, [estimateSeed]);
+
   const estimateNum = estimate !== '' ? parseInt(estimate, 10) : null;
   const pnlEstimate = useMemo(() => {
     if (estimateNum === null || !Number.isFinite(estimateNum)) return null;
@@ -108,3 +117,4 @@ function pnlClass(pnl: number): string {
   if (pnl < 0) return 'te-pnl--negative';
   return '';
 }
+

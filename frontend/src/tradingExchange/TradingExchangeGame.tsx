@@ -44,6 +44,23 @@ export function TradingExchangeGame(props: GameComponentProps) {
 
   const maxValue = ex.participants.length * ex.cardsPerPlayer * 13;
 
+  const estimateSeed = useMemo(() => {
+    const myFirstTrade = liveTrades.find(
+      (t) => t.buyerId === playerId || t.sellerId === playerId,
+    );
+    if (myFirstTrade) return Math.round(myFirstTrade.price);
+    let bestBid = -1;
+    let bestOffer = Infinity;
+    for (const o of ex.orders) {
+      if (o.bid !== null && o.bid > bestBid) bestBid = o.bid;
+      if (o.offer !== null && o.offer < bestOffer) bestOffer = o.offer;
+    }
+    if (bestBid >= 0 && bestOffer < Infinity) return Math.round((bestBid + bestOffer) / 2);
+    if (bestBid >= 0) return bestBid;
+    if (bestOffer < Infinity) return bestOffer;
+    return null;
+  }, [liveTrades, ex.orders, playerId]);
+
   const { bidTraded, offerTraded, fallbackBid, fallbackOffer } = useMemo(() => {
     const hasBid = myOrder?.bid !== null && myOrder?.bid !== undefined;
     const hasOffer = myOrder?.offer !== null && myOrder?.offer !== undefined;
@@ -130,6 +147,7 @@ export function TradingExchangeGame(props: GameComponentProps) {
           offerTraded={offerTraded}
           fallbackBid={fallbackBid}
           fallbackOffer={fallbackOffer}
+          estimateSeed={estimateSeed}
           onSubmit={handleOrderSubmit}
           orderStatus={orderStatus}
         />
@@ -158,17 +176,18 @@ interface TradingSectionProps {
   offerTraded: boolean;
   fallbackBid: number | null;
   fallbackOffer: number | null;
+  estimateSeed: number | null;
   onSubmit: (bid: number, offer: number) => void;
   orderStatus: string;
 }
 
 function TradingSection({
   ex, playerId, maxValue, liveTrades, myTrades, myOrder,
-  bidTraded, offerTraded, fallbackBid, fallbackOffer, onSubmit, orderStatus,
+  bidTraded, offerTraded, fallbackBid, fallbackOffer, estimateSeed, onSubmit, orderStatus,
 }: TradingSectionProps) {
   return (
     <>
-      <PositionTable trades={ex.trades} playerId={playerId} />
+      <PositionTable trades={ex.trades} playerId={playerId} estimateSeed={estimateSeed} />
       <div className="te-trading-area">
         <div className="te-trading-area__lists">
           <TradesList trades={liveTrades} playerColours={ex.playerColours} title="Market Trades" maxRows={0} />
