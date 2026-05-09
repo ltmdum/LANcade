@@ -23,10 +23,10 @@ describe('GameInfoModal', () => {
     expect(screen.getByText('Step three.')).toBeInTheDocument();
   });
 
-  it('renders instructions as an ordered list', () => {
+  it('renders instructions as an unordered list', () => {
     render(<GameInfoModal {...defaultProps} />);
     const list = screen.getByRole('list');
-    expect(list.tagName).toBe('OL');
+    expect(list.tagName).toBe('UL');
     expect(list.children).toHaveLength(3);
   });
 

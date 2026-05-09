@@ -33,11 +33,11 @@ export function GameInfoModal({ name, description, instructions, onClose }: Game
         </div>
         <p className="game-info-description">{description}</p>
         <h3 className="game-info-subtitle">How to Play</h3>
-        <ol className="game-info-instructions">
+        <ul className="game-info-instructions">
           {instructions.map((step, i) => (
             <li key={i} className="game-info-step">{step}</li>
           ))}
-        </ol>
+        </ul>
       </div>
     </div>
   );
