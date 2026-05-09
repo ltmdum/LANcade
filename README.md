@@ -471,7 +471,7 @@ Create tests in `backend/src/tests/yourgame/` to test your game logic.
 
 ### Trading Exchange
 - A card-based trading game where players estimate the hidden sum of all dealt cards.
-- Admin configures the number of cards per player and the inactivity timeout.
+- Admin configures cards per player (1-13), inactivity timeout, and an optional auto-submit timer.
 - **Auction Phase**: Players are dealt cards and submit blind bid/offer pairs.
   - Crossed orders are matched off (highest bid with lowest offer, at the midpoint price).
   - Remaining unmatched orders form the initial orderbook.
@@ -481,6 +481,7 @@ Create tests in `backend/src/tests/yourgame/` to test your game logic.
   - At the start of each new round, one card per player is revealed to everyone.
   - The number of trading rounds equals the number of cards per player, plus one.
   - In the final round, all cards are revealed — fastest traders get the best prices.
+- **Auto-Submit**: When enabled, if a player's order gets filled, they have a configurable countdown to adjust their values before the system automatically resubmits. The countdown is shown in the Submit button.
 - **Settlement**: Outstanding positions are settled at the true value (sum of all cards).
 - **Scoring**: Highest total P&L (realized + settlement) wins.
 - Card-related utilities are shared in `shared/src/cards.ts`, `backend/src/shared/cards/`, and `frontend/src/shared/cards/` for reuse by future card games.

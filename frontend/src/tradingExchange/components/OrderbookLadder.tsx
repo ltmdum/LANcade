@@ -1,61 +1,27 @@
-import { useRef, useEffect, useState, useMemo } from 'react';
+import { useMemo } from 'react';
 import type { TradingExchangeOrder } from '@lancade/shared';
 
 interface OrderbookLadderProps {
   orders: TradingExchangeOrder[];
   playerColours: Record<string, string>;
-  maxValue: number;
 }
 
-const VISIBLE_ROWS = 9;
-const MIDPOINT_ROW = 4; // 0-indexed, 5th row
+const MAX_HEIGHT_REM = 9 * 1.75;
 
 /**
- * Vertical orderbook ladder showing bids and offers at each price level.
- * Snaps to midpoint between best bid and best offer unless hovered.
+ * Orderbook ladder showing only price levels where orders exist.
+ * Grows to fit content, then becomes scrollable at max height.
  * @param props Orderbook ladder props.
  * @returns Orderbook ladder element.
  */
-export function OrderbookLadder({ orders, playerColours, maxValue }: OrderbookLadderProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [isHovered, setIsHovered] = useState(false);
-
-  const { bidsByPrice, offersByPrice, midValue } = useMemo(
+export function OrderbookLadder({ orders, playerColours }: OrderbookLadderProps) {
+  const { bidsByPrice, offersByPrice, priceLevels } = useMemo(
     () => buildPriceLevels(orders),
     [orders],
   );
 
-  useEffect(() => {
-    if (isHovered || !containerRef.current) return;
-    const rowHeight = containerRef.current.scrollHeight / (maxValue + 1);
-    const targetRow = maxValue - midValue;
-    const scrollTo = rowHeight * targetRow - rowHeight * MIDPOINT_ROW;
-    containerRef.current.scrollTop = Math.max(0, scrollTo);
-  }, [midValue, maxValue, isHovered]);
-
-  const rows = [];
-  for (let price = maxValue; price >= 0; price--) {
-    rows.push(
-      <LadderRow
-        key={price}
-        price={price}
-        bids={bidsByPrice.get(price) || []}
-        offers={offersByPrice.get(price) || []}
-        playerColours={playerColours}
-      />,
-    );
-  }
-
   return (
-    <div
-      className="te-ladder"
-      ref={containerRef}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      onTouchStart={() => setIsHovered(true)}
-      onTouchEnd={() => setIsHovered(false)}
-      style={{ maxHeight: `${VISIBLE_ROWS * 1.75}rem` }}
-    >
+    <div className="te-ladder" style={{ maxHeight: `${MAX_HEIGHT_REM}rem` }}>
       <table className="te-ladder__table">
         <thead>
           <tr>
@@ -64,7 +30,20 @@ export function OrderbookLadder({ orders, playerColours, maxValue }: OrderbookLa
             <th className="te-ladder__th">Offers</th>
           </tr>
         </thead>
-        <tbody>{rows}</tbody>
+        <tbody>
+          {priceLevels.length === 0 && (
+            <tr><td colSpan={3} className="te-ladder__empty">No orders</td></tr>
+          )}
+          {priceLevels.map((price) => (
+            <LadderRow
+              key={price}
+              price={price}
+              bids={bidsByPrice.get(price) || []}
+              offers={offersByPrice.get(price) || []}
+              playerColours={playerColours}
+            />
+          ))}
+        </tbody>
       </table>
     </div>
   );
@@ -113,14 +92,14 @@ function InitialsList({ entries, colours }: InitialsListProps) {
 interface PriceLevels {
   bidsByPrice: Map<number, { id: string; initial: string }[]>;
   offersByPrice: Map<number, { id: string; initial: string }[]>;
-  midValue: number;
+  priceLevels: number[];
 }
 
+/** Build price level data, returning only levels with at least one order. */
 function buildPriceLevels(orders: TradingExchangeOrder[]): PriceLevels {
   const bidsByPrice = new Map<number, { id: string; initial: string }[]>();
   const offersByPrice = new Map<number, { id: string; initial: string }[]>();
-  let bestBid = 0;
-  let bestOffer = Infinity;
+  const priceSet = new Set<number>();
 
   for (const o of orders) {
     const initial = (o.playerName[0] || '?').toUpperCase();
@@ -128,19 +107,16 @@ function buildPriceLevels(orders: TradingExchangeOrder[]): PriceLevels {
       const list = bidsByPrice.get(o.bid) || [];
       list.push({ id: o.playerId, initial });
       bidsByPrice.set(o.bid, list);
-      if (o.bid > bestBid) bestBid = o.bid;
+      priceSet.add(o.bid);
     }
     if (o.offer !== null) {
       const list = offersByPrice.get(o.offer) || [];
       list.push({ id: o.playerId, initial });
       offersByPrice.set(o.offer, list);
-      if (o.offer < bestOffer) bestOffer = o.offer;
+      priceSet.add(o.offer);
     }
   }
 
-  const mid = bestOffer === Infinity
-    ? bestBid
-    : Math.round((bestBid + bestOffer) / 2);
-
-  return { bidsByPrice, offersByPrice, midValue: mid };
+  const priceLevels = Array.from(priceSet).sort((a, b) => b - a);
+  return { bidsByPrice, offersByPrice, priceLevels };
 }

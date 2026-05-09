@@ -105,6 +105,9 @@ export interface BaseGame {
     ok: boolean;
     reason?: string;
   };
+
+  /** Clean up timers and resources when the game instance is being replaced */
+  dispose?: () => void;
 }
 
 /**

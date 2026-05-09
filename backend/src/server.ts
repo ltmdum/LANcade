@@ -66,6 +66,9 @@ function ensureGame(gameId: string): boolean {
   if (!definition) {
     return false;
   }
+  if (gameInstance && typeof gameInstance.dispose === 'function') {
+    gameInstance.dispose();
+  }
   selectedGameId = gameId;
   gameInstance = definition.factory({
     clientGraceMs: CLIENT_GRACE_MS,

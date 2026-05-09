@@ -160,6 +160,26 @@ describe('undercoverAgent', () => {
       });
     });
 
+    it('accepts settings changes after a finished game', async () => {
+      await withFakeTimers(() =>
+        withStubbedRandom(0, () => {
+          const { game, alice, bob, charlie } = setupThreePlayerGame();
+          startWithRounds(game, 1);
+          revealAndReadyAll(game, [alice, bob, charlie]);
+
+          // First player submits the secret word → instant finish
+          const word = game.getState().match.word!;
+          const firstPlayer = game.getState().match.currentTurnPlayerId!;
+          game.submitWord(firstPlayer, word);
+          expect(game.getState().match.state).toBe('finished');
+
+          // Must be able to change settings for the next game
+          expect(game.updateSettings({ totalRounds: 5 }).ok).toBe(true);
+          expect((game.getState() as Record<string, unknown>).gameSettings).toEqual({ totalRounds: 5 });
+        })
+      );
+    });
+
     it('broadcasts gameSettings in state', () => {
       const { game } = setupThreePlayerGame();
       game.updateSettings({ totalRounds: 4 });

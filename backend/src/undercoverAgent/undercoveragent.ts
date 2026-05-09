@@ -683,7 +683,7 @@ export function createGame(options: UndercoverAgentGameOptions = {}) {
    * @returns Update result.
    */
   function updateSettings(settings: Record<string, unknown>): { ok: boolean; reason?: string } {
-    if (match.state !== 'idle') return { ok: false, reason: 'game_active' };
+    if (match.state !== 'idle' && match.state !== 'finished') return { ok: false, reason: 'game_active' };
     if ('totalRounds' in settings) {
       const val = settings.totalRounds;
       if (typeof val === 'number' && Number.isInteger(val) && val >= 1 && val <= 10) {

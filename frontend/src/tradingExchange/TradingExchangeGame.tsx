@@ -42,8 +42,6 @@ export function TradingExchangeGame(props: GameComponentProps) {
     [ex.trades, playerId],
   );
 
-  const maxValue = ex.participants.length * ex.cardsPerPlayer * 13;
-
   const estimateSeed = useMemo(() => {
     const myFirstTrade = liveTrades.find(
       (t) => t.buyerId === playerId || t.sellerId === playerId,
@@ -139,7 +137,7 @@ export function TradingExchangeGame(props: GameComponentProps) {
         <TradingSection
           ex={ex}
           playerId={playerId}
-          maxValue={maxValue}
+          clockSkewMs={clockSkewMs}
           liveTrades={liveTrades}
           myTrades={myTrades}
           myOrder={myOrder}
@@ -168,7 +166,7 @@ export function TradingExchangeGame(props: GameComponentProps) {
 interface TradingSectionProps {
   ex: TradingExchangeState['exchange'];
   playerId: string;
-  maxValue: number;
+  clockSkewMs: number;
   liveTrades: import('@lancade/shared').TradingExchangeTrade[];
   myTrades: import('@lancade/shared').TradingExchangeTrade[];
   myOrder: import('@lancade/shared').TradingExchangeOrder | undefined;
@@ -182,9 +180,10 @@ interface TradingSectionProps {
 }
 
 function TradingSection({
-  ex, playerId, maxValue, liveTrades, myTrades, myOrder,
+  ex, playerId, clockSkewMs, liveTrades, myTrades, myOrder,
   bidTraded, offerTraded, fallbackBid, fallbackOffer, estimateSeed, onSubmit, orderStatus,
 }: TradingSectionProps) {
+  const myAutoSubmitEndsAt = ex.autoSubmitEndsAt[playerId] ?? null;
   return (
     <>
       <PositionTable trades={ex.trades} playerId={playerId} estimateSeed={estimateSeed} />
@@ -199,7 +198,7 @@ function TradingSection({
             maxRows={0}
           />
         </div>
-        <OrderbookLadder orders={ex.orders} playerColours={ex.playerColours} maxValue={maxValue} />
+        <OrderbookLadder orders={ex.orders} playerColours={ex.playerColours} />
       </div>
       <OrderInput
         onSubmit={onSubmit}
@@ -209,6 +208,8 @@ function TradingSection({
         fallbackOffer={fallbackOffer}
         bidTraded={bidTraded}
         offerTraded={offerTraded}
+        autoSubmitEndsAt={myAutoSubmitEndsAt}
+        clockSkewMs={clockSkewMs}
         status={orderStatus}
       />
     </>

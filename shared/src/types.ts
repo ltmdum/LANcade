@@ -360,6 +360,7 @@ export interface TradingExchangeMatchState {
   state: 'idle' | 'auction' | 'trading' | 'finished';
   cardsPerPlayer: number;
   inactivityTimeoutMs: number;
+  autoSubmitMs: number;
   playerCards: Record<string, Card[]>;
   revealedCardCount: number;
   currentRound: number;
@@ -367,6 +368,7 @@ export interface TradingExchangeMatchState {
   orders: TradingExchangeOrder[];
   trades: TradingExchangeTrade[];
   roundEndsAt: number | null;
+  autoSubmitEndsAt: Record<string, number>;
   playerColours: Record<string, string>;
   participants: string[];
   auctionSubmittedIds: string[];

@@ -16,6 +16,10 @@ interface OrderInputProps {
   bidTraded?: boolean;
   /** Whether the offer side just traded (show "not in market" state). */
   offerTraded?: boolean;
+  /** Timestamp when auto-submit will fire (null if not active). */
+  autoSubmitEndsAt?: number | null;
+  /** Clock skew for accurate countdown display. */
+  clockSkewMs?: number;
   status?: string;
 }
 
@@ -23,6 +27,7 @@ interface OrderInputProps {
  * Bid/offer input with +/- arrows and submit button below.
  * When a side trades, shows the last trade price with a visual indicator.
  * Bid and offer are coupled: bid always stays below offer.
+ * Auto-submits the current input values when the countdown reaches 0.
  * @param props Order input props.
  * @returns Order input element.
  */
@@ -35,6 +40,8 @@ export function OrderInput({
   fallbackOffer,
   bidTraded = false,
   offerTraded = false,
+  autoSubmitEndsAt,
+  clockSkewMs = 0,
   status,
 }: OrderInputProps) {
   const displayBid = currentBid ?? fallbackBid;
@@ -43,8 +50,15 @@ export function OrderInput({
   const [bid, setBid] = useState<string>(displayBid !== null ? String(displayBid) : '');
   const [offer, setOffer] = useState<string>(displayOffer !== null ? String(displayOffer) : '');
   const [error, setError] = useState('');
+  const [autoSubmitSeconds, setAutoSubmitSeconds] = useState<number | null>(null);
   const prevDisplayBidRef = useRef(displayBid);
   const prevDisplayOfferRef = useRef(displayOffer);
+  const bidRef = useRef(bid);
+  const offerRef = useRef(offer);
+  const onSubmitRef = useRef(onSubmit);
+  bidRef.current = bid;
+  offerRef.current = offer;
+  onSubmitRef.current = onSubmit;
 
   useEffect(() => {
     if (displayBid !== null && displayBid !== prevDisplayBidRef.current) {
@@ -59,6 +73,36 @@ export function OrderInput({
     }
     prevDisplayOfferRef.current = displayOffer;
   }, [displayOffer]);
+
+  useEffect(() => {
+    if (!autoSubmitEndsAt) {
+      setAutoSubmitSeconds(null);
+      return;
+    }
+    function tick() {
+      const adjusted = Date.now() - clockSkewMs;
+      const remainingMs = autoSubmitEndsAt! - adjusted;
+      const seconds = Math.ceil(Math.max(0, remainingMs) / 1000);
+      if (remainingMs <= 0) {
+        setAutoSubmitSeconds(null);
+        submitFromRefs();
+        return;
+      }
+      setAutoSubmitSeconds(seconds);
+    }
+    tick();
+    const interval = setInterval(tick, 200);
+    return () => clearInterval(interval);
+  }, [autoSubmitEndsAt, clockSkewMs]);
+
+  /** Submit using current ref values (called from timer callback). */
+  function submitFromRefs(): void {
+    const bidNum = parseInt(bidRef.current, 10);
+    const offerNum = parseInt(offerRef.current, 10);
+    if (Number.isFinite(bidNum) && Number.isFinite(offerNum) && bidNum < offerNum && bidNum >= 0) {
+      onSubmitRef.current(bidNum, offerNum);
+    }
+  }
 
   const handleBidChange = useCallback((v: string) => {
     setBid(v);
@@ -99,6 +143,10 @@ export function OrderInput({
     onSubmit(bidNum, offerNum);
   }
 
+  const buttonText = autoSubmitSeconds !== null
+    ? `Submit (${autoSubmitSeconds}s)`
+    : 'Submit';
+
   return (
     <div className="te-order-input">
       <div className="te-order-input__fields">
@@ -119,11 +167,11 @@ export function OrderInput({
       </div>
       <button
         type="button"
-        className="btn btn-primary te-order-input__btn"
+        className={`btn btn-primary te-order-input__btn ${autoSubmitSeconds !== null ? 'te-order-input__btn--countdown' : ''}`}
         onClick={handleSubmit}
         disabled={disabled || !bid || !offer}
       >
-        Submit
+        {buttonText}
       </button>
       {error && <p className="te-order-input__error">{error}</p>}
       {status && <p className="te-order-input__status">{status}</p>}

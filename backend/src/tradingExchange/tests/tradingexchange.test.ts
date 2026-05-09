@@ -336,8 +336,22 @@ describe('tradingexchange', () => {
     it('rejects invalid cardsPerPlayer values', () => {
       const { game } = setupGame(['Alice', 'Bob']);
       expect(game.updateSettings({ cardsPerPlayer: 0 }).ok).toBe(false);
-      expect(game.updateSettings({ cardsPerPlayer: 6 }).ok).toBe(false);
+      expect(game.updateSettings({ cardsPerPlayer: 14 }).ok).toBe(false);
       expect(game.updateSettings({ cardsPerPlayer: 2.5 }).ok).toBe(false);
+    });
+
+    it('accepts cardsPerPlayer up to 13', () => {
+      const { game } = setupGame(['Alice', 'Bob']);
+      expect(game.updateSettings({ cardsPerPlayer: 13 }).ok).toBe(true);
+      expect((game.getState() as ExchangeState).gameSettings.cardsPerPlayer).toBe(13);
+    });
+
+    it('accepts autoSubmitMs setting', () => {
+      const { game } = setupGame(['Alice', 'Bob']);
+      expect(game.updateSettings({ autoSubmitMs: 10000 }).ok).toBe(true);
+      expect((game.getState() as ExchangeState).gameSettings.autoSubmitMs).toBe(10000);
+      expect(game.updateSettings({ autoSubmitMs: 0 }).ok).toBe(true);
+      expect((game.getState() as ExchangeState).gameSettings.autoSubmitMs).toBe(0);
     });
 
     it('rejects settings changes during active game', async () => {
@@ -345,6 +359,21 @@ describe('tradingexchange', () => {
         const { game } = setupGame(['Alice', 'Bob']);
         game.startRound(30000);
         expect(game.updateSettings({ cardsPerPlayer: 3 }).reason).toBe('game_active');
+      });
+    });
+
+    it('accepts settings changes after a finished game', async () => {
+      await withFakeTimers((timers) => {
+        const { game, ids } = setupGame(['Alice', 'Bob']);
+        game.updateSettings({ cardsPerPlayer: 1 });
+        game.startRound(5000);
+        for (const id of ids) submitOrders(game, id, 1, 100);
+        timers.advance(5001);
+        timers.advance(5001);
+        expect(getExchangeState(game).exchange.state).toBe('finished');
+        // Must be able to change settings for the next game
+        expect(game.updateSettings({ cardsPerPlayer: 4 }).ok).toBe(true);
+        expect((game.getState() as ExchangeState).gameSettings.cardsPerPlayer).toBe(4);
       });
     });
 

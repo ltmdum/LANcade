@@ -25,6 +25,7 @@ const EXCHANGE_ID = '__exchange__';
 const EXCHANGE_NAME = 'Exchange';
 
 const DEFAULT_CARDS_PER_PLAYER = 2;
+const DEFAULT_AUTO_SUBMIT_MS = 0; // 0 = disabled
 
 /** Internal order stored per player. */
 interface InternalOrder {
@@ -48,6 +49,7 @@ interface Match {
   state: 'idle' | 'auction' | 'trading' | 'finished';
   cardsPerPlayer: number;
   inactivityTimeoutMs: number;
+  autoSubmitMs: number;
   playerCards: Map<string, Card[]>;
   revealedCardCount: number;
   currentRound: number;
@@ -55,6 +57,7 @@ interface Match {
   orders: Map<string, InternalOrder>;
   trades: InternalTrade[];
   roundEndsAt: number | null;
+  autoSubmitEndsAt: Map<string, number>;
   playerColours: Map<string, string>;
   participants: string[];
   auctionSubmittedIds: Set<string>;
@@ -75,6 +78,7 @@ function createEmptyMatch(): Match {
     state: 'idle',
     cardsPerPlayer: 2,
     inactivityTimeoutMs: 30000,
+    autoSubmitMs: 0,
     playerCards: new Map(),
     revealedCardCount: 0,
     currentRound: 0,
@@ -82,6 +86,7 @@ function createEmptyMatch(): Match {
     orders: new Map(),
     trades: [],
     roundEndsAt: null,
+    autoSubmitEndsAt: new Map(),
     playerColours: new Map(),
     participants: [],
     auctionSubmittedIds: new Set(),
@@ -100,7 +105,9 @@ export function createGame(options: TradingExchangeGameOptions = {}) {
   const onStateChange = options.onStateChange || (() => {});
   let match = createEmptyMatch();
   let inactivityTimer: ReturnType<typeof setTimeout> | null = null;
+  const autoSubmitTimers = new Map<string, ReturnType<typeof setTimeout>>();
   let cardsPerPlayer = DEFAULT_CARDS_PER_PLAYER;
+  let autoSubmitMs = DEFAULT_AUTO_SUBMIT_MS;
 
   const { playerStore, buildBaseState } = createGameBase({
     categories: [],
@@ -120,6 +127,70 @@ export function createGame(options: TradingExchangeGameOptions = {}) {
       clearTimeout(inactivityTimer);
       inactivityTimer = null;
     }
+  }
+
+  /** Clear a single player's auto-submit timer. */
+  function clearAutoSubmitTimer(playerId: string): void {
+    const timer = autoSubmitTimers.get(playerId);
+    if (timer) {
+      clearTimeout(timer);
+      autoSubmitTimers.delete(playerId);
+    }
+    match.autoSubmitEndsAt.delete(playerId);
+  }
+
+  /** Clear all auto-submit timers. */
+  function clearAllAutoSubmitTimers(): void {
+    for (const timer of autoSubmitTimers.values()) clearTimeout(timer);
+    autoSubmitTimers.clear();
+    match.autoSubmitEndsAt.clear();
+  }
+
+  /** Start an auto-submit timer for a player whose order just traded. */
+  function startAutoSubmitTimer(playerId: string): void {
+    if (match.autoSubmitMs <= 0 || match.state !== 'trading') return;
+    clearAutoSubmitTimer(playerId);
+    const now = Date.now();
+    match.autoSubmitEndsAt.set(playerId, now + match.autoSubmitMs);
+    autoSubmitTimers.set(playerId, setTimeout(() => {
+      handleAutoSubmit(playerId);
+    }, match.autoSubmitMs));
+  }
+
+  /** Start auto-submit timers for any player with a traded side (post-auction). */
+  function startAutoSubmitForTradedPlayers(): void {
+    for (const [playerId, order] of match.orders) {
+      if (order.bid === null || order.offer === null) {
+        startAutoSubmitTimer(playerId);
+      }
+    }
+  }
+
+  /** Auto-submit a player's current input values. */
+  function handleAutoSubmit(playerId: string): void {
+    clearAutoSubmitTimer(playerId);
+    if (match.state !== 'trading') return;
+    const order = match.orders.get(playerId);
+    if (!order) return;
+    const needsBid = order.bid === null;
+    const needsOffer = order.offer === null;
+    if (!needsBid && !needsOffer) return;
+    // Re-submit at whatever values are currently set (the non-null sides)
+    // Use the last trade price as fallback for the traded side
+    const bid = order.bid ?? findLastTradePrice(playerId, 'buy');
+    const offer = order.offer ?? findLastTradePrice(playerId, 'sell');
+    if (bid === null || offer === null || bid >= offer) return;
+    handleContinuousSubmission(playerId, bid, offer);
+  }
+
+  /** Find the last trade price for a player on a given side. */
+  function findLastTradePrice(playerId: string, side: 'buy' | 'sell'): number | null {
+    for (let i = match.trades.length - 1; i >= 0; i--) {
+      const t = match.trades[i];
+      if (side === 'buy' && t.buyerId === playerId) return Math.floor(t.price);
+      if (side === 'sell' && t.sellerId === playerId) return Math.ceil(t.price);
+    }
+    return null;
   }
 
   /** Assign a colour to each player from the palette. */
@@ -162,7 +233,7 @@ export function createGame(options: TradingExchangeGameOptions = {}) {
     return entries;
   }
 
-  /** Record a trade and update affected orders. */
+  /** Record a trade and update affected orders. Starts auto-submit timers. */
   function recordTrade(buyerId: string, sellerId: string, price: number): void {
     match.trades.push({
       buyerId,
@@ -171,9 +242,15 @@ export function createGame(options: TradingExchangeGameOptions = {}) {
       timestamp: Date.now(),
     });
     const buyerOrder = match.orders.get(buyerId);
-    if (buyerOrder) buyerOrder.bid = null;
+    if (buyerOrder) {
+      buyerOrder.bid = null;
+      startAutoSubmitTimer(buyerId);
+    }
     const sellerOrder = match.orders.get(sellerId);
-    if (sellerOrder) sellerOrder.offer = null;
+    if (sellerOrder) {
+      sellerOrder.offer = null;
+      startAutoSubmitTimer(sellerId);
+    }
   }
 
   /** Process an auction bid/offer submission from a player. */
@@ -194,6 +271,7 @@ export function createGame(options: TradingExchangeGameOptions = {}) {
     if (match.auctionSubmittedIds.size >= match.participants.length) {
       runAuctionMatching();
       startTradingRound();
+      startAutoSubmitForTradedPlayers();
     }
 
     notifyChange();
@@ -256,6 +334,7 @@ export function createGame(options: TradingExchangeGameOptions = {}) {
       return { ok: false, reason: 'not_participant' };
     }
 
+    clearAutoSubmitTimer(playerId);
     const now = Date.now();
     match.orders.set(playerId, { bid, offer, bidTs: now, offerTs: now });
 
@@ -289,6 +368,7 @@ export function createGame(options: TradingExchangeGameOptions = {}) {
   /** Settle all outstanding positions at true value and compute leaderboard. */
   function finishGame(): void {
     clearInactivityTimer();
+    clearAllAutoSubmitTimers();
     match.state = 'finished';
     match.roundEndsAt = null;
     match.revealedCardCount = match.cardsPerPlayer;
@@ -416,12 +496,13 @@ export function createGame(options: TradingExchangeGameOptions = {}) {
   function getState(): Omit<TradingExchangeState, 'game' | 'games'> {
     return {
       ...buildBaseState(),
-      gameSettings: { cardsPerPlayer },
+      gameSettings: { cardsPerPlayer, autoSubmitMs },
       exchange: {
         id: match.id,
         state: match.state,
         cardsPerPlayer: match.cardsPerPlayer,
         inactivityTimeoutMs: match.inactivityTimeoutMs,
+        autoSubmitMs: match.autoSubmitMs,
         playerCards: buildPlayerCards(),
         revealedCardCount: match.revealedCardCount,
         currentRound: match.currentRound,
@@ -429,6 +510,7 @@ export function createGame(options: TradingExchangeGameOptions = {}) {
         orders: buildOrders(),
         trades: match.trades.map(buildTrade),
         roundEndsAt: match.roundEndsAt,
+        autoSubmitEndsAt: Object.fromEntries(match.autoSubmitEndsAt),
         playerColours: buildPlayerColours(),
         participants: match.participants.slice(),
         auctionSubmittedIds: Array.from(match.auctionSubmittedIds),
@@ -473,6 +555,7 @@ export function createGame(options: TradingExchangeGameOptions = {}) {
       state: 'auction',
       cardsPerPlayer,
       inactivityTimeoutMs: durationMs,
+      autoSubmitMs: autoSubmitMs,
       playerCards: hands,
       revealedCardCount: 0,
       currentRound: 0,
@@ -480,6 +563,7 @@ export function createGame(options: TradingExchangeGameOptions = {}) {
       orders: new Map(),
       trades: [],
       roundEndsAt: null,
+      autoSubmitEndsAt: new Map(),
       playerColours: assignColours(playerIds),
       participants: playerIds,
       auctionSubmittedIds: new Set(),
@@ -527,17 +611,30 @@ export function createGame(options: TradingExchangeGameOptions = {}) {
 
   /** Update admin-configurable settings (only when idle). */
   function updateSettings(settings: Record<string, unknown>) {
-    if (match.state !== 'idle') return { ok: false, reason: 'game_active' };
-    if ('cardsPerPlayer' in settings) {
-      const val = settings.cardsPerPlayer;
-      if (typeof val === 'number' && Number.isInteger(val) && val >= 1 && val <= 5) {
-        cardsPerPlayer = val;
-        notifyChange();
-        return { ok: true };
-      }
-      return { ok: false, reason: 'invalid_value' };
+    if (match.state === 'auction' || match.state === 'trading') {
+      return { ok: false, reason: 'game_active' };
     }
-    return { ok: false, reason: 'unknown_setting' };
+    let changed = false;
+    for (const key of Object.keys(settings)) {
+      const val = settings[key];
+      if (key === 'cardsPerPlayer') {
+        if (typeof val !== 'number' || !Number.isInteger(val) || val < 1 || val > 13) {
+          return { ok: false, reason: 'invalid_value' };
+        }
+        cardsPerPlayer = val;
+        changed = true;
+      } else if (key === 'autoSubmitMs') {
+        if (typeof val !== 'number' || !Number.isInteger(val) || val < 0 || val > 60000) {
+          return { ok: false, reason: 'invalid_value' };
+        }
+        autoSubmitMs = val;
+        changed = true;
+      } else {
+        return { ok: false, reason: 'unknown_setting' };
+      }
+    }
+    if (changed) notifyChange();
+    return { ok: true };
   }
 
   /** Get the current game phase. */
@@ -551,9 +648,16 @@ export function createGame(options: TradingExchangeGameOptions = {}) {
       return { ok: false, reason: 'not_active' };
     }
     clearInactivityTimer();
+    clearAllAutoSubmitTimers();
     match = createEmptyMatch();
     notifyChange();
     return { ok: true };
+  }
+
+  /** Clean up all timers. */
+  function dispose(): void {
+    clearInactivityTimer();
+    clearAllAutoSubmitTimers();
   }
 
   return {
@@ -566,5 +670,6 @@ export function createGame(options: TradingExchangeGameOptions = {}) {
     handleAction,
     updateSettings,
     endGame,
+    dispose,
   };
 }
