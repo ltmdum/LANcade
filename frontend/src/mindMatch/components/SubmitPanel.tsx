@@ -6,7 +6,7 @@ import './SubmitPanel.css';
 
 interface SubmitPanelProps {
   playerId: string;
-  playerPassword: string;
+  accessKey: string;
   hasSubmitted: boolean;
   playerSubmission?: MindMatchSubmission;
 }
@@ -18,7 +18,7 @@ interface SubmitPanelProps {
  */
 export function SubmitPanel({
   playerId,
-  playerPassword,
+  accessKey,
   hasSubmitted,
   playerSubmission,
 }: SubmitPanelProps) {
@@ -39,7 +39,7 @@ export function SubmitPanel({
     }
 
     try {
-      const { response, data } = await submitWord(playerId, wordInput, playerPassword);
+      const { response, data } = await submitWord(playerId, wordInput, accessKey);
       if (!response.ok) {
         setStatus(data.reason === 'empty' ? 'Please enter a word.' : 'Could not submit word.');
         return;

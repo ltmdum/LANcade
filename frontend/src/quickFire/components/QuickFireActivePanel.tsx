@@ -13,6 +13,7 @@ interface QuickFireActivePanelProps {
   playerName?: string;
   myScore: number;
   isAdmin: boolean;
+  isParticipating?: boolean;
   timeUp: boolean;
   wordInput: string;
   onWordInputChange: (value: string) => void;
@@ -33,6 +34,7 @@ export function QuickFireActivePanel({
   playerName,
   myScore,
   isAdmin,
+  isParticipating = true,
   timeUp,
   wordInput,
   onWordInputChange,
@@ -41,7 +43,7 @@ export function QuickFireActivePanel({
 }: QuickFireActivePanelProps) {
   return (
     <Panel className="categoryclash1-active-panel">
-      <PlayerScoreTags playerName={playerName} score={myScore} />
+      {isParticipating && <PlayerScoreTags playerName={playerName} score={myScore} />}
       <LetterDisplay letter={letter} countdown={countdown} showCountdown />
       <div className="categoryclash1-status-message">{statusMessage}</div>
       {isAdmin && (
@@ -50,7 +52,7 @@ export function QuickFireActivePanel({
         </button>
       )}
       <div className="categoryclash1-connection">{connection}</div>
-      {!timeUp && (
+      {isParticipating && !timeUp && (
         <WordSubmitForm
           value={wordInput}
           onChange={onWordInputChange}

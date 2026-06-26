@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { PlayerGuess } from './components/PlayerGuess';
 import { GameResult } from './components/GameResult';
 import { PlayAgainPanel } from '../shared/components/PlayAgainPanel';
-import { submitWord } from '../shared/utils/api';
+import { submitWord, startRound } from '../shared/utils/api';
 import type { GameProps } from '../shared/types/GameProps';
 import type { FiveLetterWordState } from '@lancade/shared';
 import './FiveLetterWordGame.css';
@@ -19,9 +19,9 @@ interface FiveLetterWordGameProps extends GameProps {
 export function FiveLetterWordGame({
   serverState,
   playerId,
-  playerPassword,
-  adminSessionId,
+  accessKey,
   isAdmin,
+  isParticipating,
   setShowConfig,
 }: FiveLetterWordGameProps) {
   const [wordInput, setWordInput] = useState('');
@@ -49,7 +49,7 @@ export function FiveLetterWordGame({
 
     setStatus('');
     try {
-      const { response, data } = await submitWord(playerId, wordInput, playerPassword);
+      const { response, data } = await submitWord(playerId, wordInput, accessKey);
       
       if (!response.ok) {
         const reason = data?.reason || 'unknown';
@@ -74,20 +74,13 @@ export function FiveLetterWordGame({
   async function handlePlayAgain() {
     setAdminStatus('');
     try {
-      const response = await fetch('/api/admin/start', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${adminSessionId}`,
-        },
-        body: JSON.stringify({ durationMs: 1000 }),
-      });
-      
+      const { response } = await startRound(1000, accessKey);
+
       if (!response.ok) {
         setAdminStatus('Could not restart');
         return;
       }
-      
+
       setShowConfig(false);
     } catch {
       setAdminStatus('Could not restart');
@@ -96,27 +89,12 @@ export function FiveLetterWordGame({
 
   if (match.state === 'idle') return null;
 
-  if (isAdmin && !serverState.players?.some(p => p.id === playerId)) {
-    if (match.state === 'finished') {
-      return (
-        <PlayAgainPanel
-          onPlayAgain={handlePlayAgain}
-          onBackToConfig={() => setShowConfig(true)}
-          status={adminStatus}
-          playAgainText="Play Again"
-          title="Next Steps"
-        />
-      );
-    }
-    return null;
-  }
-
   // Determine if input should be enabled
-  const isInputEnabled = match.state === 'active' && myState && !myState.solved && myState.grid.length < 6;
+  const isInputEnabled = isParticipating && match.state === 'active' && myState && !myState.solved && myState.grid.length < 6;
 
   return (
     <div className="wordsprint-game">
-      {match.state === 'active' && (
+      {match.state === 'active' && isParticipating && (
         <PlayerGuess
           playerState={myState}
           rowBests={match.rowBests}
@@ -125,6 +103,17 @@ export function FiveLetterWordGame({
           onSubmit={handleSubmit}
           isInputEnabled={!!isInputEnabled}
           status={status}
+        />
+      )}
+      {match.state === 'active' && !isParticipating && (
+        <PlayerGuess
+          playerState={undefined}
+          rowBests={match.rowBests}
+          wordInput=""
+          onWordInputChange={() => {}}
+          onSubmit={() => {}}
+          isInputEnabled={false}
+          status=""
         />
       )}
 

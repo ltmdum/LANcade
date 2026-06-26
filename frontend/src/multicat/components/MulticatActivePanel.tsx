@@ -12,6 +12,7 @@ interface MulticatActivePanelProps {
   connection: string;
   myScore: number;
   isAdmin: boolean;
+  isParticipating?: boolean;
   categories: string[];
   timeUp: boolean;
   acceptedByCategory: Map<string, string>;
@@ -33,6 +34,7 @@ export function MulticatActivePanel({
   connection,
   myScore,
   isAdmin,
+  isParticipating = true,
   categories,
   timeUp,
   acceptedByCategory,
@@ -54,7 +56,7 @@ export function MulticatActivePanel({
 
   return (
     <Panel className="categoryclash2-active-panel">
-      <PlayerScoreTags score={myScore} />
+      {isParticipating && <PlayerScoreTags score={myScore} />}
       <LetterDisplay letter={letter} countdown={countdown} showCountdown />
       <div className="categoryclash2-status-message">{statusMessage}</div>
       <div className="categoryclash2-connection">{connection}</div>
@@ -63,20 +65,22 @@ export function MulticatActivePanel({
           New Letter
         </button>
       )}
-      <div className="categoryclash2-categories">
-        {categories.map((category) => (
-          <CategoryWordInput
-            key={category}
-            category={category}
-            currentInput={getCurrentInput(category)}
-            acceptedWord={acceptedByCategory.get(category)}
-            letter={letter}
-            timeUp={timeUp}
-            onInputChange={onInputChange}
-            onSubmit={onWordSubmit}
-          />
-        ))}
-      </div>
+      {isParticipating && (
+        <div className="categoryclash2-categories">
+          {categories.map((category) => (
+            <CategoryWordInput
+              key={category}
+              category={category}
+              currentInput={getCurrentInput(category)}
+              acceptedWord={acceptedByCategory.get(category)}
+              letter={letter}
+              timeUp={timeUp}
+              onInputChange={onInputChange}
+              onSubmit={onWordSubmit}
+            />
+          ))}
+        </div>
+      )}
     </Panel>
   );
 }

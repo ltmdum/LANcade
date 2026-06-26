@@ -42,9 +42,9 @@ function deriveMatchFlags(match: AlphabetRaceState['match'], playerId: string) {
 export function AlphabetRaceGame({
   serverState,
   playerId,
-  playerPassword,
-  adminSessionId,
+  accessKey,
   isAdmin,
+  isParticipating,
   setShowConfig,
 }: AlphabetRaceGameProps) {
   const [wordInput, setWordInput] = useState('');
@@ -90,10 +90,11 @@ export function AlphabetRaceGame({
       clockSkewMs={clockSkewMs}
       wordInput={wordInput}
       onWordInputChange={setWordInput}
-      onWordSubmit={buildWordSubmitHandler({ wordInput, playerId, playerPassword, setStatus, setWordInput, triggerFlash })}
-      onVote={buildVoteHandler({ playerId, playerPassword, setVoteStatus, triggerFlash })}
-      onRestart={buildRestartHandler({ match, adminSessionId, setAdminStatus, setShowConfig })}
+      onWordSubmit={buildWordSubmitHandler({ wordInput, playerId, accessKey, setStatus, setWordInput, triggerFlash })}
+      onVote={buildVoteHandler({ playerId, accessKey, setVoteStatus, triggerFlash })}
+      onRestart={buildRestartHandler({ match, accessKey, setAdminStatus, setShowConfig })}
       setShowConfig={setShowConfig}
+      isParticipating={isParticipating}
     />
   );
 }
@@ -101,7 +102,7 @@ export function AlphabetRaceGame({
 interface WordSubmitHandlerConfig {
   wordInput: string;
   playerId: string;
-  playerPassword: string;
+  accessKey: string;
   setStatus: (s: string) => void;
   setWordInput: (s: string) => void;
   triggerFlash: (type: string) => void;
@@ -121,7 +122,7 @@ function buildWordSubmitHandler(config: WordSubmitHandlerConfig) {
     if (!trimmedWord) return;
 
     try {
-      const { response, data } = await submitWord(config.playerId, trimmedWord, config.playerPassword);
+      const { response, data } = await submitWord(config.playerId, trimmedWord, config.accessKey);
       if (response.ok) {
         config.triggerFlash('success');
         config.setStatus('Submitted. Waiting for votes...');
@@ -139,7 +140,7 @@ function buildWordSubmitHandler(config: WordSubmitHandlerConfig) {
 
 interface VoteHandlerConfig {
   playerId: string;
-  playerPassword: string;
+  accessKey: string;
   setVoteStatus: (s: string) => void;
   triggerFlash: (type: string) => void;
 }
@@ -154,7 +155,7 @@ function buildVoteHandler(config: VoteHandlerConfig) {
     config.setVoteStatus('');
     const result = await handleVoteSubmit({
       playerId: config.playerId,
-      playerPassword: config.playerPassword,
+      accessKey: config.accessKey,
       payload: { decision },
       errorMessages: {
         notEligible: 'You are not eligible to vote.',
@@ -173,7 +174,7 @@ function buildVoteHandler(config: VoteHandlerConfig) {
 
 interface RestartHandlerConfig {
   match: AlphabetRaceState['match'];
-  adminSessionId: string;
+  accessKey: string;
   setAdminStatus: (s: string) => void;
   setShowConfig: (show: boolean) => void;
 }
@@ -186,7 +187,7 @@ interface RestartHandlerConfig {
 function buildRestartHandler(config: RestartHandlerConfig) {
   return async () => {
     config.setAdminStatus('');
-    const result = await handlePlayAgain(config.match.voteTimeoutMs, config.adminSessionId);
+    const result = await handlePlayAgain(config.match.voteTimeoutMs, config.accessKey);
     config.setAdminStatus(result.statusMessage);
     if (result.success) {
       config.setShowConfig(false);
@@ -207,6 +208,7 @@ interface AlphabetRaceLayoutProps {
   players: PlayerInfo[];
   playerId: string;
   isAdmin: boolean;
+  isParticipating: boolean;
   flags: MatchFlags;
   flash: string;
   status: string;
@@ -227,11 +229,7 @@ interface AlphabetRaceLayoutProps {
  * @returns Layout element.
  */
 function AlphabetRaceLayout(props: AlphabetRaceLayoutProps) {
-  const { match, players, playerId, isAdmin, flags } = props;
-
-  if (isAdmin && !players.some((p) => p.id === playerId)) {
-    return <AdminNonPlayerView match={match} adminStatus={props.adminStatus} onRestart={props.onRestart} setShowConfig={props.setShowConfig} />;
-  }
+  const { match, players, isAdmin, isParticipating, flags } = props;
 
   if (!flags.isParticipant && !isAdmin) {
     return (
@@ -244,7 +242,7 @@ function AlphabetRaceLayout(props: AlphabetRaceLayoutProps) {
   return (
     <div className={props.flash ? `flash-${props.flash}` : ''}>
       <div className="alphabet-race-container">
-        <PhasePanel match={match} flags={flags} props={props} />
+        <PhasePanel match={match} flags={flags} isParticipating={isParticipating} props={props} />
         <LetterProgress
           letterSequence={match.letterSequence}
           currentLetterIndex={match.currentLetterIndex}
@@ -273,6 +271,7 @@ function AlphabetRaceLayout(props: AlphabetRaceLayoutProps) {
 interface PhasePanelProps {
   match: AlphabetRaceMatchState;
   flags: MatchFlags;
+  isParticipating: boolean;
   props: AlphabetRaceLayoutProps;
 }
 
@@ -281,13 +280,14 @@ interface PhasePanelProps {
  * @param params Phase panel params.
  * @returns Phase-specific panel element or null.
  */
-function PhasePanel({ match, flags, props }: PhasePanelProps) {
+function PhasePanel({ match, flags, isParticipating, props }: PhasePanelProps) {
   if (match.state === 'racing') {
     return (
       <RacingPanel
         currentLetter={match.currentLetter}
         category={match.category}
         isEligible={!flags.isIneligible}
+        isParticipating={isParticipating}
         wordInput={props.wordInput}
         statusMessage={props.status}
         onWordInputChange={props.onWordInputChange}
@@ -305,6 +305,7 @@ function PhasePanel({ match, flags, props }: PhasePanelProps) {
         clockSkewMs={props.clockSkewMs}
         isSubmitter={flags.isSubmitter}
         isIneligible={flags.isIneligible}
+        isParticipating={isParticipating}
         hasVoted={flags.hasVoted}
         voteStatus={props.voteStatus}
         votesAccept={match.votesAccept}
@@ -319,33 +320,5 @@ function PhasePanel({ match, flags, props }: PhasePanelProps) {
     return <AlphabetWinnerDisplay winnerName={match.winnerName} />;
   }
 
-  return null;
-}
-
-interface AdminNonPlayerViewProps {
-  match: AlphabetRaceMatchState;
-  adminStatus: string;
-  onRestart: () => void;
-  setShowConfig: (show: boolean) => void;
-}
-
-/**
- * View for admin users who are not playing.
- * Shows play again panel when the game is finished.
- * @param props Admin non-player view props.
- * @returns Admin non-player element or null.
- */
-function AdminNonPlayerView({ match, adminStatus, onRestart, setShowConfig }: AdminNonPlayerViewProps) {
-  if (match.state === 'finished') {
-    return (
-      <PlayAgainPanel
-        onPlayAgain={onRestart}
-        onBackToConfig={() => setShowConfig(true)}
-        status={adminStatus}
-        playAgainText="Play Again (Same Config)"
-        title="Next Steps"
-      />
-    );
-  }
   return null;
 }

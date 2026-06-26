@@ -4,7 +4,7 @@ import { submitWord } from '../../shared/utils/api';
 
 interface UndercoverGuessPanelProps {
   playerId: string;
-  playerPassword: string;
+  accessKey: string;
   isUndercover: boolean;
   undercoverPlayerName: string;
 }
@@ -18,7 +18,7 @@ interface UndercoverGuessPanelProps {
  */
 export function UndercoverGuessPanel({
   playerId,
-  playerPassword,
+  accessKey,
   isUndercover,
   undercoverPlayerName,
 }: UndercoverGuessPanelProps) {
@@ -38,7 +38,7 @@ export function UndercoverGuessPanel({
     }
 
     try {
-      const { response } = await submitWord(playerId, guessInput.trim(), playerPassword);
+      const { response } = await submitWord(playerId, guessInput.trim(), accessKey);
       if (!response.ok) {
         setStatus('Could not submit guess.');
         return;

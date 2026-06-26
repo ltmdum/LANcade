@@ -59,6 +59,9 @@ export interface CategoryClashRoundState {
   id: number;
   state: 'idle' | 'active' | 'voting' | 'results';
   letter: string | null;
+  /** Available letter tiles for grid-style games (e.g. Gridlock). Null for
+   *  games that do not use a letter tray. */
+  letters?: string[] | null;
   category: string | null;
   categories: string[];
   durationMs: number | null;

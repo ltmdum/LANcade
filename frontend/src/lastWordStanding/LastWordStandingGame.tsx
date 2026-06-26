@@ -28,9 +28,9 @@ export function LastWordStandingGame({
   connection,
   playerId,
   playerName,
-  playerPassword,
-  adminSessionId,
+  accessKey,
   isAdmin,
+  isParticipating,
   setShowConfig,
 }: LastWordStandingGameProps) {
   const [wordInput, setWordInput] = useState('');
@@ -124,7 +124,7 @@ export function LastWordStandingGame({
 
     const result = await handleWordSubmission(wordInput, {
       playerId,
-      playerPassword,
+      accessKey,
       letter: match.currentLetter,
     });
 
@@ -137,7 +137,7 @@ export function LastWordStandingGame({
     setVoteStatus('');
     const result = await handleVoteSubmit({
       playerId,
-      playerPassword,
+      accessKey,
       payload: { decision },
       errorMessages: {
         notEligible: 'You are not eligible to vote.',
@@ -155,7 +155,7 @@ export function LastWordStandingGame({
 
   async function onRestart() {
     setAdminStatus('');
-    const result = await handlePlayAgain(match.timeLimitMs!, adminSessionId);
+    const result = await handlePlayAgain(match.timeLimitMs!, accessKey);
     setAdminStatus(result.statusMessage);
     if (result.success) {
       setShowConfig(false);
@@ -163,21 +163,6 @@ export function LastWordStandingGame({
   }
 
   if (match.state === 'idle') return null;
-
-  if (isAdmin && !players.some(p => p.id === playerId)) {
-    if (match.state === 'finished') {
-      return (
-        <PlayAgainPanel
-          onPlayAgain={onRestart}
-          onBackToConfig={() => setShowConfig(true)}
-          status={adminStatus}
-          playAgainText="Play Again (Same Config)"
-          title="Next Steps"
-        />
-      );
-    }
-    return null;
-  }
 
   if (!isInMatch && !isAdmin) {
     return (
@@ -203,6 +188,7 @@ export function LastWordStandingGame({
           connection={connection}
           isCurrentPlayer={!!isCurrentPlayer}
           isEliminated={!!isEliminated}
+          isParticipating={isParticipating}
           wordInput={wordInput}
           onWordInputChange={setWordInput}
           onWordSubmit={onWordSubmit}
@@ -219,6 +205,7 @@ export function LastWordStandingGame({
           hasVoted={hasVoted}
           voteStatus={voteStatus}
           onVote={onVote}
+          isParticipating={isParticipating}
         />
       )}
 

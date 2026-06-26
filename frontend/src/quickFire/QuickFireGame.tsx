@@ -6,6 +6,7 @@ import { Leaderboard } from '../categoryclashshared/components/Leaderboard';
 import { PlayerResultsTable } from '../categoryclashshared/components/PlayerResultsTable';
 import { VotingPanel } from '../categoryclashshared/components/VotingPanel';
 import { toggleVoteSelection } from '../categoryclashshared/utils/voting';
+import { buildScoreboard } from '../categoryclashshared/utils/scoreboard';
 import { formatMs } from '../shared/utils/time';
 import { handleWordSubmission } from '../shared/utils/wordSubmission';
 import { handleVoteSubmit } from '../shared/utils/voting';
@@ -34,9 +35,9 @@ export function QuickFireGame({
   connection,
   playerId,
   playerName,
-  playerPassword,
-  adminSessionId,
+  accessKey,
   isAdmin,
+  isParticipating,
   setShowConfig,
 }: QuickFireGameProps) {
   const [wordInput, setWordInput] = useState('');
@@ -54,7 +55,7 @@ export function QuickFireGame({
 
   const triggerFlash = useFlashTrigger(flashTimerRef, setFlash);
   const clearCountdown = useClearCountdown(countdownTimerRef, setCountdown);
-  const notifyFinish = useNotifyFinish(playerId, playerPassword, finishSentRef);
+  const notifyFinish = useNotifyFinish(playerId, accessKey, finishSentRef);
 
   const round = serverState.round;
   const scoresByPlayer = round.scoresByPlayer || {};
@@ -62,20 +63,7 @@ export function QuickFireGame({
   const hasVoted = round.votesSubmittedIds?.includes(playerId) || false;
   const results = round.resultsByPlayer?.[playerId] || null;
 
-  const scoreboard = useMemo(() => {
-    if (!round.resultsByPlayer) return [];
-    const entries = Object.entries(round.resultsByPlayer).map(([id, data]) => ({
-      playerId: id,
-      ...data,
-    }));
-    entries.sort((a, b) => {
-      if (b.finalScore !== a.finalScore) return b.finalScore - a.finalScore;
-      if (a.votedOut !== b.votedOut) return a.votedOut - b.votedOut;
-      if (a.rejected !== b.rejected) return b.rejected - a.rejected;
-      return a.name.localeCompare(b.name);
-    });
-    return entries;
-  }, [round.resultsByPlayer]);
+  const scoreboard = useMemo(() => buildScoreboard(round.resultsByPlayer), [round.resultsByPlayer]);
 
   /** IDs of words that belong to the current player, used to exclude them from the voting list. */
   const myWordIds = useMemo(() => {
@@ -131,7 +119,7 @@ export function QuickFireGame({
 
   async function onPlayAgain() {
     setActionStatus('');
-    const result = await handlePlayAgain(round.durationMs!, adminSessionId);
+    const result = await handlePlayAgain(round.durationMs!, accessKey);
     setActionStatus(result.statusMessage);
     if (result.success) {
       setShowConfig(false);
@@ -156,7 +144,7 @@ export function QuickFireGame({
 
     const result = await handleWordSubmission(wordInput, {
       playerId,
-      playerPassword,
+      accessKey,
       letter: round.letter,
     });
 
@@ -173,7 +161,7 @@ export function QuickFireGame({
     setVoteStatus('');
     const result = await handleVoteSubmit({
       playerId,
-      playerPassword,
+      accessKey,
       payload: Array.from(voteSet),
       errorMessages: {
         notEligible: 'You must submit words to vote.',
@@ -192,19 +180,6 @@ export function QuickFireGame({
   const showView = round.letter && ['active', 'voting', 'results'].includes(round.state);
   if (!showView) return null;
 
-  if (isAdmin && !serverState.players?.some(p => p.id === playerId)) {
-    if (round.state === 'results') {
-      return (
-        <PlayAgainPanel
-          onPlayAgain={onPlayAgain}
-          onBackToConfig={() => setShowConfig(true)}
-          status={actionStatus}
-        />
-      );
-    }
-    return null;
-  }
-
   const statusMessage = status || (timeUp ? 'Time is up. Waiting for others...' : '');
 
   return (
@@ -218,6 +193,7 @@ export function QuickFireGame({
           playerName={playerName}
           myScore={myScore}
           isAdmin={isAdmin}
+          isParticipating={isParticipating}
           timeUp={timeUp}
           wordInput={wordInput}
           onWordInputChange={setWordInput}
@@ -234,6 +210,7 @@ export function QuickFireGame({
           onSubmitVotes={onVoteSubmit}
           hasVoted={hasVoted}
           voteStatus={voteStatus}
+          isParticipating={isParticipating}
         />
       )}
 

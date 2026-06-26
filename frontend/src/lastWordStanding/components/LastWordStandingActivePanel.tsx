@@ -14,6 +14,7 @@ interface LastWordStandingActivePanelProps {
   connection: string;
   isCurrentPlayer: boolean;
   isEliminated: boolean;
+  isParticipating?: boolean;
   wordInput: string;
   onWordInputChange: (value: string) => void;
   onWordSubmit: (e: React.FormEvent) => void;
@@ -34,6 +35,7 @@ export function LastWordStandingActivePanel({
   connection,
   isCurrentPlayer,
   isEliminated,
+  isParticipating = true,
   wordInput,
   onWordInputChange,
   onWordSubmit,
@@ -41,14 +43,14 @@ export function LastWordStandingActivePanel({
   return (
     <Panel className="wordrush-active-panel">
       <div className="wordrush-active-tags">
-        <span className="tag">Player: {playerName}</span>
+        {isParticipating && <span className="tag">Player: {playerName}</span>}
         <span className="tag">Current Turn: {currentPlayerName}</span>
         {lastChance && <span className="tag wordrush-active-last-chance">Last Chance</span>}
       </div>
       <LetterDisplay letter={letter} countdown={countdown} showCountdown />
       <div className="wordrush-active-status">{statusMessage}</div>
       <div className="wordrush-active-connection">{connection}</div>
-      {isCurrentPlayer && !isEliminated && (
+      {isParticipating && isCurrentPlayer && !isEliminated && (
         <WordSubmitForm
           value={wordInput}
           onChange={onWordInputChange}
@@ -56,7 +58,7 @@ export function LastWordStandingActivePanel({
           letter={letter}
         />
       )}
-      {isEliminated && (
+      {isParticipating && isEliminated && (
         <p className="wordrush-active-eliminated">
           You are out. Watching the rest of the game.
         </p>

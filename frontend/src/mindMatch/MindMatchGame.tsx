@@ -24,9 +24,9 @@ interface MindMatchGameProps extends GameProps {
 export function MindMatchGame({
   serverState,
   playerId,
-  playerPassword,
-  adminSessionId,
+  accessKey,
   isAdmin,
+  isParticipating,
   setShowConfig,
 }: MindMatchGameProps) {
   const [adminStatus, setAdminStatus] = useState('');
@@ -62,7 +62,7 @@ export function MindMatchGame({
     setAdminStatus('');
     // Mind Match doesn't use duration (rounds end when all submit), but API requires a value
     const durationMs = round.durationMs ?? 60000;
-    const result = await handlePlayAgain(durationMs, adminSessionId);
+    const result = await handlePlayAgain(durationMs, accessKey);
     setAdminStatus(result.statusMessage);
     if (result.success) {
       setShowConfig(false);
@@ -70,21 +70,6 @@ export function MindMatchGame({
   }
 
   if (round.state === 'idle' && !serverState.winnerId) {
-    return null;
-  }
-
-  if (isAdmin && !serverState.players?.some(p => p.id === playerId)) {
-    if (round.state === 'results' || serverState.winnerId) {
-      return (
-        <PlayAgainPanel
-          onPlayAgain={onRestart}
-          onBackToConfig={() => setShowConfig(true)}
-          status={adminStatus}
-          playAgainText={serverState.winnerId ? 'New Game' : 'Next Round'}
-          title={serverState.winnerId ? 'Game Over' : 'Next Steps'}
-        />
-      );
-    }
     return null;
   }
 
@@ -102,19 +87,19 @@ export function MindMatchGame({
         <PromptDisplay prompt={round.prompt} />
       )}
 
-      {round.state === 'submitting' && (
+      {round.state === 'submitting' && isParticipating && (
         <SubmitPanel
           playerId={playerId}
-          playerPassword={playerPassword}
+          accessKey={accessKey}
           hasSubmitted={hasSubmitted}
           playerSubmission={playerSubmission}
         />
       )}
 
-      {round.state === 'claiming' && (
+      {round.state === 'claiming' && isParticipating && (
         <ClaimPanel
           playerId={playerId}
-          playerPassword={playerPassword}
+          accessKey={accessKey}
           canMakeClaim={canMakeClaim}
           claimableTargets={claimableTargets}
           submissions={round.submissions || []}
@@ -123,10 +108,10 @@ export function MindMatchGame({
         />
       )}
 
-      {round.state === 'voting' && (
+      {round.state === 'voting' && isParticipating && (
         <VotePanel
           playerId={playerId}
-          playerPassword={playerPassword}
+          accessKey={accessKey}
           claims={round.claims || []}
           currentClaimIndex={round.currentClaimIndex}
           playerLookup={playerLookup}

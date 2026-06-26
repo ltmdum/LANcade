@@ -45,6 +45,17 @@ function createFinishedServerState() {
   };
 }
 
+/**
+ * Set the window location pathname for the duration of a test.
+ * @param pathname Pathname value to apply.
+ */
+function setPathname(pathname: string) {
+  Object.defineProperty(window, 'location', {
+    value: { ...window.location, pathname },
+    writable: true,
+  });
+}
+
 describe('App', () => {
   let originalPathname: string;
 
@@ -56,19 +67,31 @@ describe('App', () => {
   });
 
   afterEach(() => {
-    Object.defineProperty(window, 'location', {
-      value: { ...window.location, pathname: originalPathname },
-      writable: true,
-    });
+    setPathname(originalPathname);
   });
 
-  it('calls plugin render for admin who has not joined as player', () => {
-    // Set up admin page with admin session but no player identity
-    Object.defineProperty(window, 'location', {
-      value: { ...window.location, pathname: '/admin' },
-      writable: true,
+  it('calls plugin render for admin whose playerId is in serverState.players', () => {
+    // /admin/<key> path means admin mode. With a known playerId stored,
+    // the admin is participating and the game view renders.
+    setPathname('/admin/ABCDEFGH');
+    localStorage.setItem('playerId', 'player-1');
+
+    mockUseServerState.mockReturnValue({
+      serverState: createFinishedServerState(),
+      connection: 'Connected',
     });
-    localStorage.setItem('adminSessionId', 'admin-session-123');
+
+    render(<App />);
+
+    expect(mockRender).toHaveBeenCalled();
+    expect(screen.getByTestId('game-view')).toBeInTheDocument();
+  });
+
+  it('calls plugin render for spectator-admin (adminIsPlaying = false)', () => {
+    // Admin who has opted out of playing should still see the game view
+    // even without a known playerId — canSeeGame is true for non-playing admin.
+    setPathname('/admin/ABCDEFGH');
+    localStorage.setItem('adminIsPlaying', 'false');
 
     mockUseServerState.mockReturnValue({
       serverState: createFinishedServerState(),
@@ -82,11 +105,8 @@ describe('App', () => {
   });
 
   it('does not render game view for unauthenticated non-player', () => {
-    // Not admin, no player ID — no one is authenticated
-    Object.defineProperty(window, 'location', {
-      value: { ...window.location, pathname: '/' },
-      writable: true,
-    });
+    // No /admin/<key> or /p/<key> path — access.mode is 'none'.
+    setPathname('/');
 
     mockUseServerState.mockReturnValue({
       serverState: createFinishedServerState(),

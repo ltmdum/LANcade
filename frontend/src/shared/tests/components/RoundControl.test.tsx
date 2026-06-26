@@ -8,8 +8,8 @@ vi.stubGlobal('fetch', mockFetch);
 
 describe('RoundControl component', () => {
   const defaultProps = {
-    adminSessionId: 'admin-123',
-    onExpired: vi.fn(),
+    accessKey: 'admin-123',
+    onUnauthorized: vi.fn(),
     onRoundStarted: vi.fn(),
     playerCount: 2,
     minPlayers: 2,
@@ -36,14 +36,14 @@ describe('RoundControl component', () => {
     expect(screen.getByRole('button', { name: /start/i })).toBeInTheDocument();
   });
 
-  it('enables start button when admin session exists and player requirements met', () => {
+  it('enables start button when access key exists and player requirements met', () => {
     render(<RoundControl {...defaultProps} />);
 
     expect(screen.getByRole('button', { name: /start/i })).toBeEnabled();
   });
 
-  it('disables start button when no admin session', () => {
-    render(<RoundControl {...defaultProps} adminSessionId="" />);
+  it('disables start button when no access key', () => {
+    render(<RoundControl {...defaultProps} accessKey="" />);
 
     expect(screen.getByRole('button', { name: /start/i })).toBeDisabled();
   });
@@ -53,6 +53,25 @@ describe('RoundControl component', () => {
 
     expect(screen.getByRole('button', { name: /start/i })).toBeDisabled();
     expect(screen.getByText(/waiting for more participants/i)).toBeInTheDocument();
+  });
+
+  it('disables start button when admin needs to join as player', () => {
+    render(<RoundControl {...defaultProps} needsToJoinAsPlayer={true} />);
+
+    expect(screen.getByRole('button', { name: /start/i })).toBeDisabled();
+    expect(screen.getByText(/join as a player before starting/i)).toBeInTheDocument();
+  });
+
+  it('shows join-required message on start click when needsToJoinAsPlayer', async () => {
+    render(<RoundControl {...defaultProps} needsToJoinAsPlayer={true} />);
+
+    fireEvent.click(screen.getByRole('button', { name: /start/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/join as a player before starting the game/i)).toBeInTheDocument();
+    });
+
+    expect(mockFetch).not.toHaveBeenCalled();
   });
 
   it('uses custom title when provided', () => {
@@ -85,7 +104,7 @@ describe('RoundControl component', () => {
     await waitFor(() => {
       expect(mockFetch).toHaveBeenCalledWith('/api/admin/start', expect.objectContaining({
         method: 'POST',
-        body: JSON.stringify({ durationMs: 90000 }), // 1 min 30 sec
+        body: JSON.stringify({ durationMs: 90000, key: 'admin-123' }), // 1 min 30 sec
       }));
     });
   });
@@ -107,20 +126,20 @@ describe('RoundControl component', () => {
     });
   });
 
-  it('calls onExpired when API returns 401', async () => {
+  it('calls onUnauthorized when API returns 401', async () => {
     mockFetch.mockResolvedValueOnce({
       ok: false,
       status: 401,
       json: () => Promise.resolve({ error: 'unauthorized' }),
     });
 
-    const onExpired = vi.fn();
-    render(<RoundControl {...defaultProps} onExpired={onExpired} />);
+    const onUnauthorized = vi.fn();
+    render(<RoundControl {...defaultProps} onUnauthorized={onUnauthorized} />);
 
     fireEvent.click(screen.getByRole('button', { name: /start/i }));
 
     await waitFor(() => {
-      expect(onExpired).toHaveBeenCalled();
+      expect(onUnauthorized).toHaveBeenCalled();
     });
   });
 
@@ -192,7 +211,7 @@ describe('RoundControl component', () => {
     await waitFor(() => {
       expect(mockFetch).toHaveBeenCalledWith('/api/admin/start', expect.objectContaining({
         method: 'POST',
-        body: JSON.stringify({ durationMs: 2000 }),
+        body: JSON.stringify({ durationMs: 2000, key: 'admin-123' }),
       }));
     });
   });
@@ -211,7 +230,7 @@ describe('RoundControl component', () => {
     await waitFor(() => {
       expect(mockFetch).toHaveBeenCalledWith('/api/admin/start', expect.objectContaining({
         method: 'POST',
-        body: JSON.stringify({ durationMs: 1000 }),
+        body: JSON.stringify({ durationMs: 1000, key: 'admin-123' }),
       }));
     });
   });

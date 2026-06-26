@@ -61,9 +61,9 @@ function createDefaultProps(serverState: FiveLetterWordState) {
     connection: 'connected' as const,
     playerId: 'player-1',
     playerName: 'Alice',
-    playerPassword: 'password123',
-    adminSessionId: '',
+    accessKey: 'KEY123',
     isAdmin: false,
+    isParticipating: true,
     setShowConfig: vi.fn(),
   };
 }
@@ -199,7 +199,7 @@ describe('FiveLetterWordGame', () => {
 
       const props = createDefaultProps(state);
       props.isAdmin = true;
-      props.adminSessionId = 'admin-123';
+      props.accessKey = 'admin-123';
 
       render(<FiveLetterWordGame {...props} />);
 
@@ -254,7 +254,7 @@ describe('FiveLetterWordGame', () => {
 
       const props = createDefaultProps(state);
       props.isAdmin = true;
-      props.adminSessionId = 'admin-123';
+      props.accessKey = 'admin-123';
 
       render(<FiveLetterWordGame {...props} />);
 
@@ -273,7 +273,7 @@ describe('FiveLetterWordGame', () => {
       expect(screen.queryByRole('button', { name: /play again/i })).not.toBeInTheDocument();
     });
 
-    it('admin non-player sees controls in finished state', () => {
+    it('non-participating admin sees controls in finished state', () => {
       const state = createBaseState();
       state.match.state = 'finished';
       state.match.winnerId = 'player-1';
@@ -284,45 +284,63 @@ describe('FiveLetterWordGame', () => {
       props.playerId = '';
       props.playerName = '';
       props.isAdmin = true;
-      props.adminSessionId = 'admin-123';
+      props.isParticipating = false;
+      props.accessKey = 'admin-123';
 
       render(<FiveLetterWordGame {...props} />);
 
       expect(screen.getByRole('button', { name: /play again/i })).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /back to config/i })).toBeInTheDocument();
-      // Non-playing admin should NOT see game result UI
+      // Non-playing admin sees the game result (Alice won), not their own result
       expect(screen.queryByText(/You won/)).not.toBeInTheDocument();
-      expect(screen.queryByText('APPLE')).not.toBeInTheDocument();
     });
 
-    it('admin non-player renders nothing during active state', () => {
+    it('non-participating admin shows empty observer view during active state', () => {
       const state = createBaseState();
       state.match.state = 'active';
+      // Give player-1 a submitted guess; admin (non-participating) should NOT see it as their own
+      state.match.playerStates[0].grid = [
+        {
+          word: 'CRANE',
+          letters: ['absent', 'absent', 'present', 'absent', 'correct'],
+        },
+      ];
 
       const props = createDefaultProps(state);
       props.playerId = '';
       props.playerName = '';
       props.isAdmin = true;
-      props.adminSessionId = 'admin-123';
+      props.isParticipating = false;
+      props.accessKey = 'admin-123';
 
       const { container } = render(<FiveLetterWordGame {...props} />);
 
-      expect(container.firstChild).toBeNull();
+      // Non-participating admin sees no submitted rows (empty grid only)
+      const submittedRows = container.querySelectorAll('.guess-row-submitted');
+      expect(submittedRows.length).toBe(0);
     });
 
-    it('admin with stale playerId renders nothing during active state', () => {
+    it('admin with stale playerId shows empty observer view during active state', () => {
       const state = createBaseState();
       state.match.state = 'active';
+      state.match.playerStates[0].grid = [
+        {
+          word: 'CRANE',
+          letters: ['absent', 'absent', 'present', 'absent', 'correct'],
+        },
+      ];
 
       const props = createDefaultProps(state);
       props.playerId = 'stale-id';
       props.playerName = 'Stale';
       props.isAdmin = true;
-      props.adminSessionId = 'admin-123';
+      props.isParticipating = false;
+      props.accessKey = 'admin-123';
 
       const { container } = render(<FiveLetterWordGame {...props} />);
 
-      expect(container.firstChild).toBeNull();
+      const submittedRows = container.querySelectorAll('.guess-row-submitted');
+      expect(submittedRows.length).toBe(0);
     });
 
     it('admin with stale playerId sees PlayAgainPanel in finished state', () => {
@@ -336,13 +354,14 @@ describe('FiveLetterWordGame', () => {
       props.playerId = 'stale-id';
       props.playerName = 'Stale';
       props.isAdmin = true;
-      props.adminSessionId = 'admin-123';
+      props.isParticipating = false;
+      props.accessKey = 'admin-123';
 
       render(<FiveLetterWordGame {...props} />);
 
       expect(screen.getByRole('button', { name: /play again/i })).toBeInTheDocument();
+      // Stale-id is not the winner, so should not see "You won"
       expect(screen.queryByText(/You won/)).not.toBeInTheDocument();
-      expect(screen.queryByText('APPLE')).not.toBeInTheDocument();
     });
 
     it('renders player summary in multiplayer', () => {

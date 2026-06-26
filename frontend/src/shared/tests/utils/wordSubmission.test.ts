@@ -74,7 +74,7 @@ describe('handleWordSubmission', () => {
 
     const result = await handleWordSubmission('Apple', {
       playerId: 'p1',
-      playerPassword: 'pw',
+      accessKey: 'KEY123',
       letter: 'A',
       category: 'Animals',
     });
@@ -83,5 +83,18 @@ describe('handleWordSubmission', () => {
     expect(result.statusMessage).toBe(
       "Honk! You've already used Apple for Foods, you silly goose!"
     );
+  });
+
+  it('passes accessKey as the third argument to submitWord', async () => {
+    stubSubmitWord(200, { ok: true });
+
+    await handleWordSubmission('Apple', {
+      playerId: 'p1',
+      accessKey: 'KEY123',
+      letter: 'A',
+      category: 'Animals',
+    });
+
+    expect(mockSubmitWord).toHaveBeenCalledWith('p1', 'Apple', 'KEY123', 'Animals');
   });
 });

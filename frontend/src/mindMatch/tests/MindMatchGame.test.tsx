@@ -52,9 +52,9 @@ function createDefaultProps(serverState: MindMatchState) {
     connection: 'connected' as const,
     playerId: 'player-1',
     playerName: 'Alice',
-    playerPassword: 'password123',
-    adminSessionId: '',
+    accessKey: 'KEY123',
     isAdmin: false,
+    isParticipating: true,
     setShowConfig: vi.fn(),
   };
 }
@@ -334,7 +334,7 @@ describe('MindMatchGame', () => {
 
       const props = createDefaultProps(state);
       props.isAdmin = true;
-      props.adminSessionId = 'admin-123';
+      props.accessKey = 'admin-123';
 
       render(<MindMatchGame {...props} />);
 
@@ -343,8 +343,8 @@ describe('MindMatchGame', () => {
     });
   });
 
-  describe('admin non-player', () => {
-    it('admin non-player sees controls in results state', () => {
+  describe('non-participating admin', () => {
+    it('sees controls in results state', () => {
       const state = createBaseState();
       state.round.state = 'results';
       state.round.prompt = { id: 1, text: 'body', blankPosition: 'before' };
@@ -358,16 +358,16 @@ describe('MindMatchGame', () => {
       props.playerId = '';
       props.playerName = '';
       props.isAdmin = true;
-      props.adminSessionId = 'admin-123';
+      props.isParticipating = false;
+      props.accessKey = 'admin-123';
 
       render(<MindMatchGame {...props} />);
 
       expect(screen.getByRole('button', { name: /next round/i })).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /back to config/i })).toBeInTheDocument();
-      expect(screen.queryByText(/Round Results/)).not.toBeInTheDocument();
     });
 
-    it('admin non-player renders nothing during submitting state', () => {
+    it('does not render submit panel during submitting state', () => {
       const state = createBaseState();
       state.round.state = 'submitting';
       state.round.prompt = { id: 1, text: 'body', blankPosition: 'before' };
@@ -376,14 +376,17 @@ describe('MindMatchGame', () => {
       props.playerId = '';
       props.playerName = '';
       props.isAdmin = true;
-      props.adminSessionId = 'admin-123';
+      props.isParticipating = false;
+      props.accessKey = 'admin-123';
 
-      const { container } = render(<MindMatchGame {...props} />);
+      render(<MindMatchGame {...props} />);
 
-      expect(container.firstChild).toBeNull();
+      // Non-participating admin sees prompt + scoreboard but no submit form
+      expect(screen.queryByText('Your Answer')).not.toBeInTheDocument();
+      expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
     });
 
-    it('admin with stale playerId renders nothing during submitting state', () => {
+    it('admin with stale playerId does not render submit panel during submitting state', () => {
       const state = createBaseState();
       state.round.state = 'submitting';
       state.round.prompt = { id: 1, text: 'body', blankPosition: 'before' };
@@ -392,11 +395,13 @@ describe('MindMatchGame', () => {
       props.playerId = 'stale-id';
       props.playerName = 'Stale';
       props.isAdmin = true;
-      props.adminSessionId = 'admin-123';
+      props.isParticipating = false;
+      props.accessKey = 'admin-123';
 
-      const { container } = render(<MindMatchGame {...props} />);
+      render(<MindMatchGame {...props} />);
 
-      expect(container.firstChild).toBeNull();
+      expect(screen.queryByText('Your Answer')).not.toBeInTheDocument();
+      expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
     });
 
     it('admin with stale playerId sees controls in results state', () => {
@@ -413,12 +418,12 @@ describe('MindMatchGame', () => {
       props.playerId = 'stale-id';
       props.playerName = 'Stale';
       props.isAdmin = true;
-      props.adminSessionId = 'admin-123';
+      props.isParticipating = false;
+      props.accessKey = 'admin-123';
 
       render(<MindMatchGame {...props} />);
 
       expect(screen.getByRole('button', { name: /next round/i })).toBeInTheDocument();
-      expect(screen.queryByText(/Round Results/)).not.toBeInTheDocument();
     });
   });
 
@@ -443,7 +448,7 @@ describe('MindMatchGame', () => {
 
       const props = createDefaultProps(state);
       props.isAdmin = true;
-      props.adminSessionId = 'admin-123';
+      props.accessKey = 'admin-123';
 
       render(<MindMatchGame {...props} />);
 

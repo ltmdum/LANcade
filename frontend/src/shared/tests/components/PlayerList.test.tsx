@@ -35,14 +35,14 @@ describe('PlayerList component', () => {
     expect(screen.getByText(/no players yet/i)).toBeInTheDocument();
   });
 
-  it('does not show eject buttons when no admin session', () => {
+  it('does not show eject buttons when no access key', () => {
     render(<PlayerList players={defaultPlayers} />);
 
     expect(screen.queryByRole('button', { name: /eject/i })).not.toBeInTheDocument();
   });
 
-  it('shows eject buttons when admin session exists', () => {
-    render(<PlayerList players={defaultPlayers} adminSessionId="admin-123" />);
+  it('shows eject buttons when access key exists', () => {
+    render(<PlayerList players={defaultPlayers} accessKey="admin-123" />);
 
     const ejectButtons = screen.getAllByRole('button', { name: /eject/i });
     expect(ejectButtons.length).toBe(3);
@@ -58,8 +58,8 @@ describe('PlayerList component', () => {
     render(
       <PlayerList
         players={defaultPlayers}
-        adminSessionId="admin-123"
-        onExpired={vi.fn()}
+        accessKey="admin-123"
+        onUnauthorized={vi.fn()}
       />
     );
 
@@ -69,24 +69,24 @@ describe('PlayerList component', () => {
     await waitFor(() => {
       expect(mockFetch).toHaveBeenCalledWith('/api/admin/eject', expect.objectContaining({
         method: 'POST',
-        body: JSON.stringify({ playerId: 'player-1' }),
+        body: JSON.stringify({ playerId: 'player-1', key: 'admin-123' }),
       }));
     });
   });
 
-  it('calls onExpired when API returns 401', async () => {
+  it('calls onUnauthorized when API returns 401', async () => {
     mockFetch.mockResolvedValueOnce({
       ok: false,
       status: 401,
       json: () => Promise.resolve({ error: 'unauthorized' }),
     });
 
-    const onExpired = vi.fn();
+    const onUnauthorized = vi.fn();
     render(
       <PlayerList
         players={defaultPlayers}
-        adminSessionId="admin-123"
-        onExpired={onExpired}
+        accessKey="admin-123"
+        onUnauthorized={onUnauthorized}
       />
     );
 
@@ -94,7 +94,7 @@ describe('PlayerList component', () => {
     fireEvent.click(ejectButtons[0]);
 
     await waitFor(() => {
-      expect(onExpired).toHaveBeenCalled();
+      expect(onUnauthorized).toHaveBeenCalled();
     });
   });
 
@@ -109,8 +109,8 @@ describe('PlayerList component', () => {
     render(
       <PlayerList
         players={defaultPlayers}
-        adminSessionId="admin-123"
-        onExpired={vi.fn()}
+        accessKey="admin-123"
+        onUnauthorized={vi.fn()}
       />
     );
 

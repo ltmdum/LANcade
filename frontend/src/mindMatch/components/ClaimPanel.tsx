@@ -6,7 +6,7 @@ import './ClaimPanel.css';
 
 interface ClaimPanelProps {
   playerId: string;
-  playerPassword: string;
+  accessKey: string;
   canMakeClaim: boolean;
   claimableTargets: string[];
   submissions: MindMatchSubmission[];
@@ -21,7 +21,7 @@ interface ClaimPanelProps {
  */
 export function ClaimPanel({
   playerId,
-  playerPassword,
+  accessKey,
   canMakeClaim,
   claimableTargets,
   submissions,
@@ -53,7 +53,7 @@ export function ClaimPanel({
   async function handleClaim(targetWord: string) {
     setStatus('');
     try {
-      const { response, data } = await submitWord(playerId, targetWord, playerPassword);
+      const { response, data } = await submitWord(playerId, targetWord, accessKey);
       if (!response.ok) {
         const reason = data.reason;
         if (reason === 'target_not_similar_enough') {
@@ -77,7 +77,7 @@ export function ClaimPanel({
   async function handleSkip() {
     setStatus('');
     try {
-      const { response, data } = await finishRound(playerId, roundId, playerPassword);
+      const { response, data } = await finishRound(playerId, roundId, accessKey);
       if (!response.ok) {
         const reason = data?.reason;
         if (reason === 'no_action_required') {

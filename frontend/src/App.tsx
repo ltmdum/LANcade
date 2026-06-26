@@ -9,43 +9,48 @@ import { PlayerList } from './shared/components/PlayerList';
 import { EndGameButton } from './shared/components/EndGameButton';
 import { GameInfoModal } from './shared/components/GameInfoModal';
 import { GameSettingsPanel } from './shared/components/GameSettingsPanel';
+import { parseAccess } from './shared/utils/accessMode';
 import { gamePluginRegistry } from './plugins';
 import './App.css';
 
 function App() {
-  const isAdminPage = window.location.pathname === '/admin';
-  
-  const [adminSessionId, setAdminSessionId] = useState(
-    localStorage.getItem('adminSessionId') || ''
-  );
+  const access = useMemo(() => parseAccess(window.location.pathname), []);
+  const isAdmin = access.mode === 'admin';
+  const accessKey = access.key;
+
   const [playerName, setPlayerName] = useState(localStorage.getItem('playerName') || '');
-  const [playerPassword, setPlayerPassword] = useState(localStorage.getItem('playerPassword') || '');
   const [playerId, setPlayerId] = useState(localStorage.getItem('playerId') || '');
-  const [showConfig, setShowConfig] = useState(isAdminPage);
+  const [adminIsPlaying, setAdminIsPlaying] = useState(() => {
+    if (!isAdmin) return false;
+    const stored = localStorage.getItem('adminIsPlaying');
+    return stored === null ? true : stored === 'true';
+  });
+  const [showConfig, setShowConfig] = useState(isAdmin);
   const [showGameInfo, setShowGameInfo] = useState(false);
 
-  const buildAuthQuery = useCallback(() => {
-    if (isAdminPage && adminSessionId) {
-      return `adminSessionId=${encodeURIComponent(adminSessionId)}`;
-    }
-    if (playerPassword) {
-      return `password=${encodeURIComponent(playerPassword)}`;
-    }
-    return '';
-  }, [isAdminPage, adminSessionId, playerPassword]);
-
-  const authKey = `${adminSessionId || ''}|${playerPassword || ''}`;
-
-  const handleAdminExpired = useCallback(() => {
-    localStorage.removeItem('adminSessionId');
-    setAdminSessionId('');
+  const handleAdminIsPlaying = useCallback((next: boolean) => {
+    setAdminIsPlaying(next);
+    localStorage.setItem('adminIsPlaying', String(next));
   }, []);
 
+  const clearPlayerIdentity = useCallback(() => {
+    localStorage.removeItem('playerId');
+    setPlayerId('');
+  }, []);
+
+  const handleUnauthorized = useCallback(() => {
+    // Server rejected our key (e.g. server restarted with new keys).
+    // Wipe local player identity; the URL key is now stale.
+    clearPlayerIdentity();
+  }, [clearPlayerIdentity]);
+
   const { serverState, connection } = useServerState({
-    getAuthQuery: buildAuthQuery,
-    authKey,
-    waitingMessage: isAdminPage ? 'Waiting for admin or player access...' : 'Waiting for password...',
-    onAdminUnauthorized: adminSessionId ? handleAdminExpired : undefined,
+    accessKey,
+    waitingMessage:
+      access.mode === 'none'
+        ? 'Open this app from your invite link to continue.'
+        : 'Connecting...',
+    onUnauthorized: handleUnauthorized,
   });
 
   const gameInfo = serverState?.game;
@@ -58,12 +63,10 @@ function App() {
   const selectedCategories = settings?.selectedCategories || [];
   const categoryMode = settings?.categoryMode || 'single';
 
-  // Get plugin configuration for the current game
   const pluginConfig = useMemo(() => {
     return gamePluginRegistry.getConfig(gameId);
   }, [gameId]);
 
-  // Find the plugin that can render this game
   const activePlugin = useMemo(() => {
     if (!serverState || !gameId) return undefined;
     return gamePluginRegistry.findPluginForState(serverState, gameId);
@@ -74,37 +77,38 @@ function App() {
     return serverState.players.some((player) => player.id === playerId);
   }, [playerId, serverState?.players]);
 
+  const needsToJoinAsPlayer = isAdmin && adminIsPlaying && !isKnownPlayer;
+
   const phase = useMemo(() => {
     if (!serverState || !activePlugin) return 'idle';
     return activePlugin.getPhase(serverState);
   }, [serverState, activePlugin]);
 
   useEffect(() => {
-    if (isAdminPage && showConfig && phase !== 'idle' && phase !== 'finished' && phase !== 'results') {
+    if (isAdmin && showConfig && phase !== 'idle' && phase !== 'finished' && phase !== 'results') {
       setShowConfig(false);
     }
-  }, [isAdminPage, phase, showConfig]);
+  }, [isAdmin, phase, showConfig]);
+
+  const isParticipating = isAdmin ? adminIsPlaying && isKnownPlayer : isKnownPlayer;
+  const canSeeGame = isParticipating || (isAdmin && !adminIsPlaying);
 
   const renderGameView = () => {
-    const isActiveAdmin = isAdminPage && !!adminSessionId;
-    if (!serverState || (!isKnownPlayer && !isActiveAdmin) || !activePlugin) return null;
-    
+    if (!serverState || !canSeeGame || !activePlugin) return null;
+
     return activePlugin.render({
       serverState,
       connection,
       playerId,
       playerName,
-      playerPassword,
-      adminSessionId,
-      isAdmin: isAdminPage && !!adminSessionId,
+      accessKey,
+      isAdmin,
+      isParticipating,
       setShowConfig,
     });
   };
 
-  // Get slogan from plugin config for header display
   const gameSlogan = pluginConfig?.slogan || '';
-
-  // Get timer defaults from plugin config
   const defaultMinutes = pluginConfig?.defaultTimer?.minutes || '01';
   const defaultSeconds = pluginConfig?.defaultTimer?.seconds || '30';
   const roundControlTitle = pluginConfig?.roundControlTitle || 'Round Control';
@@ -116,28 +120,42 @@ function App() {
   const gameSettingsValues = (serverState as unknown as Record<string, unknown> | undefined)?.gameSettings as Record<string, unknown> | undefined;
   const playerCount = serverState?.players?.length || 0;
 
-  // Function to get game description for the game selector info buttons
   const getGameDescription = useCallback((id: string) => {
     return gamePluginRegistry.getConfig(id)?.description;
   }, []);
 
-  // Function to get full game info for the info modal
   const getGameInfo = useCallback((id: string) => {
     const config = gamePluginRegistry.getConfig(id);
     if (!config) return undefined;
     return { name: config.name, description: config.description, instructions: config.instructions };
   }, []);
 
-  // Header display logic
-  const showPlayHeader = (phase === 'active' || phase === 'voting' || phase === 'results' || phase === 'finished') 
-    && (isKnownPlayer || isAdminPage) 
+  const showPlayHeader = (phase === 'active' || phase === 'voting' || phase === 'results' || phase === 'finished')
+    && canSeeGame
     && !showConfig;
 
-  // Category display for header (delegated to plugin)
   const headerCategory = useMemo(() => {
     if (!serverState || !activePlugin) return 'Category';
     return activePlugin.getHeaderCategory(serverState);
   }, [serverState, activePlugin]);
+
+  if (access.mode === 'none') {
+    return (
+      <div className="app-container">
+        <div className="app-content">
+          <div className="card">
+            <header className="app-header">
+              <p className="app-header-label">LANcade</p>
+              <h1 className="app-header-title">Open your invite link</h1>
+              <p className="app-header-description">
+                Ask the host to share their player link, then tap it from your phone.
+              </p>
+            </header>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="app-container">
@@ -165,7 +183,7 @@ function App() {
             ) : (
               <>
                 <p className="app-header-label">
-                  {isAdminPage ? 'Admin Console' : 'LAN Game'}
+                  {isAdmin ? 'Admin Console' : 'LAN Game'}
                 </p>
                 <h1 className="app-header-title">{gameName}</h1>
                 {gameSlogan && (
@@ -179,25 +197,30 @@ function App() {
           </header>
 
           {/* Config View for Admin */}
-          {isAdminPage && showConfig && (
+          {isAdmin && showConfig && (
             <>
-              <AdminPanel 
-                adminSessionId={adminSessionId}
-                setAdminSessionId={setAdminSessionId}
-              />
-              <JoinPanel
-                playerName={playerName}
-                setPlayerName={setPlayerName}
-                setPlayerPassword={setPlayerPassword}
+              <AdminPanel
+                accessKey={accessKey}
+                isPlaying={adminIsPlaying}
+                setIsPlaying={handleAdminIsPlaying}
                 playerId={playerId}
-                setPlayerId={setPlayerId}
-                title="Join as Player"
+                clearPlayerIdentity={clearPlayerIdentity}
               />
+              {adminIsPlaying && (
+                <JoinPanel
+                  accessKey={accessKey}
+                  playerName={playerName}
+                  setPlayerName={setPlayerName}
+                  playerId={playerId}
+                  setPlayerId={setPlayerId}
+                  title="Join as Player"
+                />
+              )}
               <GameSelector
                 games={availableGames}
                 selectedGameId={gameId}
-                adminSessionId={adminSessionId}
-                onExpired={handleAdminExpired}
+                accessKey={accessKey}
+                onUnauthorized={handleUnauthorized}
                 getGameDescription={getGameDescription}
                 getGameInfo={getGameInfo}
               />
@@ -207,21 +230,21 @@ function App() {
                   selectedCategory={selectedCategory}
                   selectedCategories={selectedCategories}
                   categoryMode={categoryMode}
-                  adminSessionId={adminSessionId}
-                  onExpired={handleAdminExpired}
+                  accessKey={accessKey}
+                  onUnauthorized={handleUnauthorized}
                 />
               )}
-              {gameSettingsControls && adminSessionId && (
+              {gameSettingsControls && (
                 <GameSettingsPanel
                   controls={gameSettingsControls}
                   values={gameSettingsValues || {}}
-                  adminSessionId={adminSessionId}
-                  onExpired={handleAdminExpired}
+                  accessKey={accessKey}
+                  onUnauthorized={handleUnauthorized}
                 />
               )}
               <RoundControl
-                adminSessionId={adminSessionId}
-                onExpired={handleAdminExpired}
+                accessKey={accessKey}
+                onUnauthorized={handleUnauthorized}
                 onRoundStarted={() => setShowConfig(false)}
                 title={roundControlTitle}
                 defaultMinutes={defaultMinutes}
@@ -230,21 +253,22 @@ function App() {
                 minPlayers={minPlayers}
                 hideTimer={hideTimer}
                 customDuration={customDuration}
+                needsToJoinAsPlayer={needsToJoinAsPlayer}
               />
               <PlayerList
                 players={serverState?.players || []}
-                adminSessionId={adminSessionId}
-                onExpired={handleAdminExpired}
+                accessKey={accessKey}
+                onUnauthorized={handleUnauthorized}
               />
             </>
           )}
 
-          {/* Join View for Players */}
-          {!isKnownPlayer && (!isAdminPage || !showConfig) && (
+          {/* Join View for Players (player-only URL — admin uses the panel above) */}
+          {!isAdmin && !isKnownPlayer && (
             <JoinPanel
+              accessKey={accessKey}
               playerName={playerName}
               setPlayerName={setPlayerName}
-              setPlayerPassword={setPlayerPassword}
               playerId={playerId}
               setPlayerId={setPlayerId}
               title={joinPanelTitle}
@@ -252,13 +276,13 @@ function App() {
           )}
 
           {/* Game View */}
-          {(!showConfig || !isAdminPage) && renderGameView()}
+          {(!showConfig || !isAdmin) && renderGameView()}
 
           {/* Admin End Game Button - shown during any active game phase (not idle or finished) */}
-          {isAdminPage && adminSessionId && !showConfig && phase !== 'idle' && phase !== 'finished' && phase !== 'results' && (
+          {isAdmin && !showConfig && phase !== 'idle' && phase !== 'finished' && phase !== 'results' && (
             <EndGameButton
-              adminSessionId={adminSessionId}
-              onExpired={handleAdminExpired}
+              accessKey={accessKey}
+              onUnauthorized={handleUnauthorized}
               onEnded={() => setShowConfig(true)}
             />
           )}

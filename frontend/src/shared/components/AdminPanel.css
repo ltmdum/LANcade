@@ -1,10 +1,42 @@
 /* AdminPanel component styles */
-.admin-panel-form {
-  @apply flex gap-2;
+.admin-panel-toggle-row {
+  @apply flex items-center justify-between gap-3;
 }
 
-.admin-panel-input {
-  @apply input flex-1;
+.admin-panel-toggle-label {
+  @apply text-sm;
+  color: var(--text-secondary);
+}
+
+.admin-panel-toggle {
+  @apply relative inline-flex items-center cursor-pointer;
+  width: 44px;
+  height: 24px;
+}
+
+.admin-panel-toggle input {
+  @apply absolute opacity-0 w-0 h-0;
+}
+
+.admin-panel-toggle-track {
+  @apply absolute inset-0 rounded-full transition-colors;
+  background-color: var(--surface-muted, #475569);
+}
+
+.admin-panel-toggle input:checked + .admin-panel-toggle-track {
+  background-color: var(--accent, #00C6F5);
+}
+
+.admin-panel-toggle-thumb {
+  @apply absolute bg-white rounded-full transition-transform;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+}
+
+.admin-panel-toggle input:checked + .admin-panel-toggle-track > .admin-panel-toggle-thumb {
+  transform: translateX(20px);
 }
 
 .admin-panel-status {

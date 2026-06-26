@@ -4,7 +4,7 @@ import { submitWord } from '../../shared/utils/api';
 
 interface RevealPanelProps {
   playerId: string;
-  playerPassword: string;
+  accessKey: string;
   hasRevealed: boolean;
   myRole: string | null;
   word: string | null;
@@ -20,7 +20,7 @@ interface RevealPanelProps {
  */
 export function RevealPanel({
   playerId,
-  playerPassword,
+  accessKey,
   hasRevealed,
   myRole,
   word,
@@ -35,7 +35,7 @@ export function RevealPanel({
   async function handleReveal() {
     setStatus('');
     try {
-      const { response, data } = await submitWord(playerId, 'REVEAL', playerPassword);
+      const { response, data } = await submitWord(playerId, 'REVEAL', accessKey);
       if (!response.ok) {
         setStatus('Could not reveal your role.');
         return;
@@ -52,7 +52,7 @@ export function RevealPanel({
   async function handleReady() {
     setStatus('');
     try {
-      const { response } = await submitWord(playerId, 'READY', playerPassword);
+      const { response } = await submitWord(playerId, 'READY', accessKey);
       if (!response.ok) {
         setStatus('Could not ready up.');
       }

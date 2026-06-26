@@ -8,6 +8,8 @@ interface WordSubmitFormProps {
   letter: string | null;
   disabled?: boolean;
   buttonText?: string;
+  /** Override the input placeholder. Defaults to "Word starting with <letter>". */
+  placeholder?: string;
 }
 
 /**
@@ -22,6 +24,7 @@ export function WordSubmitForm({
   letter,
   disabled = false,
   buttonText = 'Submit',
+  placeholder,
 }: WordSubmitFormProps) {
   const isEmpty = value.trim() === '';
 
@@ -32,7 +35,7 @@ export function WordSubmitForm({
         className="word-submit-input"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder={`Word starting with ${letter || ''}`}
+        placeholder={placeholder ?? `Word starting with ${letter || ''}`}
         disabled={disabled}
         maxLength={100}
       />

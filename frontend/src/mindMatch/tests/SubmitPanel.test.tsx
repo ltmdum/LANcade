@@ -14,7 +14,7 @@ describe('SubmitPanel', () => {
     render(
       <SubmitPanel
         playerId="player-1"
-        playerPassword="pass123"
+        accessKey="KEY123"
         hasSubmitted={false}
         playerSubmission={undefined}
       />
@@ -29,7 +29,7 @@ describe('SubmitPanel', () => {
     render(
       <SubmitPanel
         playerId="player-1"
-        playerPassword="pass123"
+        accessKey="KEY123"
         hasSubmitted={true}
         playerSubmission={{ playerId: 'player-1', playerName: 'Alice', word: 'serverWord' }}
       />
@@ -50,7 +50,7 @@ describe('SubmitPanel', () => {
     render(
       <SubmitPanel
         playerId="player-1"
-        playerPassword="pass123"
+        accessKey="KEY123"
         hasSubmitted={false}
         playerSubmission={undefined}
       />
@@ -71,7 +71,7 @@ describe('SubmitPanel', () => {
     render(
       <SubmitPanel
         playerId="player-1"
-        playerPassword="pass123"
+        accessKey="KEY123"
         hasSubmitted={true}
         playerSubmission={{ playerId: 'player-1', playerName: 'Alice', word: 'testWord' }}
       />
@@ -84,7 +84,7 @@ describe('SubmitPanel', () => {
     render(
       <SubmitPanel
         playerId="player-1"
-        playerPassword="pass123"
+        accessKey="KEY123"
         hasSubmitted={false}
         playerSubmission={undefined}
       />
@@ -102,7 +102,7 @@ describe('SubmitPanel', () => {
     render(
       <SubmitPanel
         playerId="player-1"
-        playerPassword="pass123"
+        accessKey="KEY123"
         hasSubmitted={true}
         playerSubmission={{ playerId: 'player-1', playerName: 'Alice', word: 'firstWord' }}
       />

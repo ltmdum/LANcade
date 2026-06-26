@@ -60,9 +60,9 @@ function render(props: GameComponentProps) {
       connection={props.connection}
       playerId={props.playerId}
       playerName={props.playerName}
-      playerPassword={props.playerPassword}
-      adminSessionId={props.adminSessionId}
+      accessKey={props.accessKey}
       isAdmin={props.isAdmin}
+      isParticipating={props.isParticipating}
       setShowConfig={props.setShowConfig}
     />
   );

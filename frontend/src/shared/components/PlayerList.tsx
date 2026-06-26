@@ -6,8 +6,8 @@ import './PlayerList.css';
 
 interface PlayerListProps {
   players: PlayerInfo[];
-  adminSessionId?: string;
-  onExpired?: () => void;
+  accessKey?: string;
+  onUnauthorized?: () => void;
 }
 
 /**
@@ -15,7 +15,7 @@ interface PlayerListProps {
  * @param props Player list props.
  * @returns Player list element.
  */
-export function PlayerList({ players, adminSessionId, onExpired }: PlayerListProps) {
+export function PlayerList({ players, accessKey, onUnauthorized }: PlayerListProps) {
   const [ejecting, setEjecting] = useState<string | null>(null);
 
   /**
@@ -23,12 +23,12 @@ export function PlayerList({ players, adminSessionId, onExpired }: PlayerListPro
    * @param playerId Player identifier.
    */
   async function handleEject(playerId: string) {
-    if (!adminSessionId) return;
+    if (!accessKey) return;
     setEjecting(playerId);
     try {
-      const { response } = await ejectPlayer(playerId, adminSessionId);
-      if (response.status === 401 && onExpired) {
-        onExpired();
+      const { response } = await ejectPlayer(playerId, accessKey);
+      if (response.status === 401 && onUnauthorized) {
+        onUnauthorized();
       }
     } catch {
       // Ignore errors
@@ -44,7 +44,7 @@ export function PlayerList({ players, adminSessionId, onExpired }: PlayerListPro
           {players.map((player) => (
             <li key={player.id} className="player-list-item">
               <span>{player.name}</span>
-              {adminSessionId && (
+              {accessKey && (
                 <button
                   type="button"
                   className="player-list-eject"

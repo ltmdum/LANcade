@@ -7,6 +7,7 @@ interface RacingPanelProps {
   currentLetter: string | null;
   category: string | null;
   isEligible: boolean;
+  isParticipating?: boolean;
   wordInput: string;
   statusMessage: string;
   onWordInputChange: (value: string) => void;
@@ -23,6 +24,7 @@ export function RacingPanel({
   currentLetter,
   category,
   isEligible,
+  isParticipating = true,
   wordInput,
   statusMessage,
   onWordInputChange,
@@ -33,17 +35,19 @@ export function RacingPanel({
       {category && <p className="alphabet-race-category">Category: {category}</p>}
       <div className="alphabet-race-letter">{currentLetter || '-'}</div>
       {statusMessage && <p className="alphabet-race-status">{statusMessage}</p>}
-      {isEligible ? (
-        <WordSubmitForm
-          value={wordInput}
-          onChange={onWordInputChange}
-          onSubmit={onWordSubmit}
-          letter={currentLetter}
-        />
-      ) : (
-        <p className="alphabet-race-ineligible">
-          You are sitting out this round. Waiting for submissions...
-        </p>
+      {isParticipating && (
+        isEligible ? (
+          <WordSubmitForm
+            value={wordInput}
+            onChange={onWordInputChange}
+            onSubmit={onWordSubmit}
+            letter={currentLetter}
+          />
+        ) : (
+          <p className="alphabet-race-ineligible">
+            You are sitting out this round. Waiting for submissions...
+          </p>
+        )
       )}
     </Panel>
   );

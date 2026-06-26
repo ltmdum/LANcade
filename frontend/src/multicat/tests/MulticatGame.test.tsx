@@ -51,9 +51,9 @@ function createDefaultProps(serverState: CategoryClashState) {
     connection: 'connected' as const,
     playerId: 'player-1',
     playerName: 'Alice',
-    playerPassword: 'password123',
-    adminSessionId: '',
+    accessKey: 'KEY123',
     isAdmin: false,
+    isParticipating: true,
     setShowConfig: vi.fn(),
   };
 }
@@ -180,7 +180,7 @@ describe('MulticatGame', () => {
 
       const props = createDefaultProps(state);
       props.isAdmin = true;
-      props.adminSessionId = 'admin-123';
+      props.accessKey = 'admin-123';
 
       render(<MulticatGame {...props} />);
 
@@ -258,7 +258,7 @@ describe('MulticatGame', () => {
 
       const props = createDefaultProps(state);
       props.isAdmin = true;
-      props.adminSessionId = 'admin-123';
+      props.accessKey = 'admin-123';
 
       render(<MulticatGame {...props} />);
 
@@ -275,7 +275,7 @@ describe('MulticatGame', () => {
 
       const props = createDefaultProps(state);
       props.isAdmin = true;
-      props.adminSessionId = 'admin-123';
+      props.accessKey = 'admin-123';
 
       render(<MulticatGame {...props} />);
 
@@ -284,7 +284,7 @@ describe('MulticatGame', () => {
       expect(screen.getByRole('button', { name: /back to config/i })).toBeInTheDocument();
     });
 
-    it('admin non-player sees controls in results state', () => {
+    it('non-participating admin sees controls in results state', () => {
       const state = createBaseState();
       state.round.state = 'results';
       state.round.letter = 'A';
@@ -295,49 +295,54 @@ describe('MulticatGame', () => {
       props.playerId = '';
       props.playerName = '';
       props.isAdmin = true;
-      props.adminSessionId = 'admin-123';
+      props.isParticipating = false;
+      props.accessKey = 'admin-123';
 
       render(<MulticatGame {...props} />);
 
       expect(screen.getByRole('button', { name: /play again/i })).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /back to config/i })).toBeInTheDocument();
-      // Non-playing admin should NOT see leaderboard or results text
-      expect(screen.queryByText(/no results/i)).not.toBeInTheDocument();
-      expect(screen.queryByText('Leaderboard')).not.toBeInTheDocument();
     });
 
-    it('admin non-player renders nothing during active state', () => {
+    it('non-participating admin sees active panel without word inputs', () => {
       const state = createBaseState();
       state.round.state = 'active';
       state.round.letter = 'A';
       state.round.durationMs = 60000;
+      state.round.categories = ['Animals', 'Food'];
 
       const props = createDefaultProps(state);
       props.playerId = '';
       props.playerName = '';
       props.isAdmin = true;
-      props.adminSessionId = 'admin-123';
+      props.isParticipating = false;
+      props.accessKey = 'admin-123';
 
-      const { container } = render(<MulticatGame {...props} />);
+      render(<MulticatGame {...props} />);
 
-      expect(container.firstChild).toBeNull();
+      // Letter shows but no input fields for non-participating admin
+      expect(screen.getByText('A')).toBeInTheDocument();
+      expect(screen.queryByPlaceholderText(/word/i)).not.toBeInTheDocument();
     });
 
-    it('admin with stale playerId renders nothing during active state', () => {
+    it('admin with stale playerId sees active panel without word inputs', () => {
       const state = createBaseState();
       state.round.state = 'active';
       state.round.letter = 'A';
       state.round.durationMs = 60000;
+      state.round.categories = ['Animals', 'Food'];
 
       const props = createDefaultProps(state);
       props.playerId = 'stale-id';
       props.playerName = 'Stale';
       props.isAdmin = true;
-      props.adminSessionId = 'admin-123';
+      props.isParticipating = false;
+      props.accessKey = 'admin-123';
 
-      const { container } = render(<MulticatGame {...props} />);
+      render(<MulticatGame {...props} />);
 
-      expect(container.firstChild).toBeNull();
+      expect(screen.getByText('A')).toBeInTheDocument();
+      expect(screen.queryByPlaceholderText(/word/i)).not.toBeInTheDocument();
     });
 
     it('admin with stale playerId sees controls in results state', () => {
@@ -351,12 +356,12 @@ describe('MulticatGame', () => {
       props.playerId = 'stale-id';
       props.playerName = 'Stale';
       props.isAdmin = true;
-      props.adminSessionId = 'admin-123';
+      props.isParticipating = false;
+      props.accessKey = 'admin-123';
 
       render(<MulticatGame {...props} />);
 
       expect(screen.getByRole('button', { name: /play again/i })).toBeInTheDocument();
-      expect(screen.queryByText(/no results/i)).not.toBeInTheDocument();
     });
 
     it('renders leaderboard for a player who did not submit any words', () => {

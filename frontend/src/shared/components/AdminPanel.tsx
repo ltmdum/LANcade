@@ -1,70 +1,72 @@
-import React, { useState } from 'react';
 import { Panel } from './Panel';
-import { claimAdmin } from '../utils/api';
+import { ejectPlayer } from '../utils/api';
 import './AdminPanel.css';
 
 interface AdminPanelProps {
-  adminSessionId: string;
-  setAdminSessionId: (id: string) => void;
+  /** Admin access key from the URL. */
+  accessKey: string;
+  /** Whether the admin has opted to play this game. */
+  isPlaying: boolean;
+  /** Toggle the admin participation flag. */
+  setIsPlaying: (next: boolean) => void;
+  /** Current player ID, if the admin has joined. */
+  playerId: string;
+  /** Clear the local player identity (e.g. after self-eject). */
+  clearPlayerIdentity: () => void;
 }
 
 /**
- * Admin login panel for claiming an admin session.
+ * Admin participation toggle. The admin is authenticated via the access key
+ * in the URL, so this panel only chooses whether the admin participates as
+ * a player or spectates.
  * @param props Admin panel props.
  * @returns Admin panel element.
  */
-export function AdminPanel({ adminSessionId, setAdminSessionId }: AdminPanelProps) {
-  const [adminPassword, setAdminPassword] = useState('');
-  const [adminStatus, setAdminStatus] = useState('Enter password to claim admin.');
-
+export function AdminPanel({
+  accessKey,
+  isPlaying,
+  setIsPlaying,
+  playerId,
+  clearPlayerIdentity,
+}: AdminPanelProps) {
   /**
-   * Handle admin claim form submission.
-   * @param e Form submit event.
+   * Toggle handler. When switching off and a player record exists, eject the
+   * admin from the player list so they no longer appear as a participant.
    */
-  async function handleClaimAdmin(e: React.FormEvent) {
-    e.preventDefault();
-    setAdminStatus('');
-    if (!adminPassword.trim()) {
-      setAdminStatus('Enter the admin password.');
-      return;
-    }
-    try {
-      const { response, data } = await claimAdmin(adminPassword);
-      if (response.status === 409) {
-        setAdminStatus('Admin already claimed.');
-        return;
+  async function handleToggle(next: boolean) {
+    if (!next && playerId && accessKey) {
+      try {
+        await ejectPlayer(playerId, accessKey);
+      } catch {
+        // Local state still gets cleared below.
       }
-      if (!response.ok) {
-        setAdminStatus('Admin password incorrect.');
-        return;
-      }
-      localStorage.setItem('adminSessionId', data.sessionId);
-      setAdminSessionId(data.sessionId);
-      setAdminStatus('Admin claimed.');
-      setAdminPassword('');
-    } catch {
-      setAdminStatus('Unable to claim admin.');
+      clearPlayerIdentity();
     }
+    setIsPlaying(next);
   }
 
   return (
-    <Panel title="Admin Access">
-      <form onSubmit={handleClaimAdmin} className="admin-panel-form">
-        <input
-          type="text"
-          className="admin-panel-input"
-          value={adminPassword}
-          onChange={(e) => setAdminPassword(e.target.value)}
-          placeholder="Admin password"
-        />
-        <button type="submit" className="btn btn-primary">
-          Claim Admin
-        </button>
-      </form>
-      <p className="admin-panel-status">{adminStatus}</p>
-      {adminSessionId && (
-        <p className="admin-panel-active">✓ Admin session active</p>
-      )}
+    <Panel title="Admin-only/Player">
+      <label className="admin-panel-toggle-row">
+        <span className="admin-panel-toggle-label">
+          Play
+        </span>
+        <span className="admin-panel-toggle">
+          <input
+            type="checkbox"
+            checked={isPlaying}
+            onChange={(e) => handleToggle(e.target.checked)}
+          />
+          <span className="admin-panel-toggle-track">
+            <span className="admin-panel-toggle-thumb" />
+          </span>
+        </span>
+      </label>
+      <p className="admin-panel-status">
+        {isPlaying
+          ? 'You will join as a player. Enter your name below.'
+          : 'You will spectate. Toggle on to play the next game.'}
+      </p>
     </Panel>
   );
 }

@@ -12,12 +12,12 @@ export interface GameComponentProps {
   playerId: string;
   /** Current player's name */
   playerName: string;
-  /** Player authentication password */
-  playerPassword: string;
-  /** Admin session ID (if admin) */
-  adminSessionId: string;
+  /** Access key parsed from the invite URL (player or admin). */
+  accessKey: string;
   /** Whether the current user is an admin */
   isAdmin: boolean;
+  /** Whether the current user is actively playing the round (false for non-playing admin). */
+  isParticipating: boolean;
   /** Callback to show/hide config panel */
   setShowConfig: (show: boolean) => void;
 }

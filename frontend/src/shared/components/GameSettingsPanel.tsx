@@ -7,8 +7,8 @@ import './GameSettingsPanel.css';
 interface GameSettingsPanelProps {
   controls: GameSettingControl[];
   values: Record<string, unknown>;
-  adminSessionId: string;
-  onExpired: () => void;
+  accessKey: string;
+  onUnauthorized: () => void;
 }
 
 /**
@@ -20,16 +20,16 @@ interface GameSettingsPanelProps {
 export function GameSettingsPanel({
   controls,
   values,
-  adminSessionId,
-  onExpired,
+  accessKey,
+  onUnauthorized,
 }: GameSettingsPanelProps) {
   const baseId = useId();
 
   async function handleChange(key: string, value: number) {
-    if (!adminSessionId) return;
+    if (!accessKey) return;
     try {
-      const { response } = await updateGameSettings({ [key]: value }, adminSessionId);
-      if (response.status === 401) onExpired();
+      const { response } = await updateGameSettings({ [key]: value }, accessKey);
+      if (response.status === 401) onUnauthorized();
     } catch { /* ignore */ }
   }
 

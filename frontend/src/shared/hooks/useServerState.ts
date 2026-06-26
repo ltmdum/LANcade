@@ -2,10 +2,12 @@ import { useState, useEffect, useRef } from 'react';
 import type { GameState } from '@lancade/shared';
 
 interface UseServerStateOptions {
-  getAuthQuery: () => string;
-  authKey: string;
+  /** Access key from the invite URL, or empty when no link is present. */
+  accessKey: string;
+  /** Message shown when there is no key yet. */
   waitingMessage?: string;
-  onAdminUnauthorized?: () => void;
+  /** Called when the server rejects the current key. */
+  onUnauthorized?: () => void;
 }
 
 interface UseServerStateReturn {
@@ -19,8 +21,8 @@ interface UseServerStateReturn {
  * @returns Current server state and connection status.
  */
 export function useServerState(options: UseServerStateOptions): UseServerStateReturn {
-  const { getAuthQuery, authKey, onAdminUnauthorized } = options;
-  const waitingMessage = options.waitingMessage || 'Waiting for access...';
+  const { accessKey, onUnauthorized } = options;
+  const waitingMessage = options.waitingMessage || 'Waiting for an invite link...';
 
   const [serverState, setServerState] = useState<GameState | null>(null);
   const [connection, setConnection] = useState('Disconnected');
@@ -28,13 +30,14 @@ export function useServerState(options: UseServerStateOptions): UseServerStateRe
 
   useEffect(() => {
     let cancelled = false;
-    const query = getAuthQuery();
 
-    if (!query) {
+    if (!accessKey) {
       setConnection(waitingMessage);
       setServerState(null);
       return () => {};
     }
+
+    const query = `key=${encodeURIComponent(accessKey)}`;
 
     function closeEventSource() {
       if (eventSourceRef.current) {
@@ -73,8 +76,8 @@ export function useServerState(options: UseServerStateOptions): UseServerStateRe
         if (cancelled) return;
 
         if (response.status === 401) {
-          if (onAdminUnauthorized) {
-            onAdminUnauthorized();
+          if (onUnauthorized) {
+            onUnauthorized();
           }
           setConnection('Unauthorized');
           return;
@@ -104,7 +107,7 @@ export function useServerState(options: UseServerStateOptions): UseServerStateRe
       cancelled = true;
       closeEventSource();
     };
-  }, [authKey, getAuthQuery, onAdminUnauthorized, waitingMessage]);
+  }, [accessKey, onUnauthorized, waitingMessage]);
 
   return { serverState, connection };
 }

@@ -60,9 +60,9 @@ function createDefaultProps(serverState: UndercoverAgentState) {
     connection: 'connected' as const,
     playerId: 'player-1',
     playerName: 'Alice',
-    playerPassword: 'password123',
-    adminSessionId: '',
+    accessKey: 'KEY123',
     isAdmin: false,
+    isParticipating: true,
     setShowConfig: vi.fn(),
   };
 }
@@ -422,7 +422,7 @@ describe('UndercoverAgentGame', () => {
 
       const props = createDefaultProps(state);
       props.isAdmin = true;
-      props.adminSessionId = 'admin-123';
+      props.accessKey = 'admin-123';
 
       render(<UndercoverAgentGame {...props} />);
 
@@ -580,7 +580,7 @@ describe('UndercoverAgentGame', () => {
     });
   });
 
-  describe('admin non-player', () => {
+  describe('non-participating admin', () => {
     it('shows play again panel in finished state', () => {
       const state = createBaseState();
       state.match.state = 'finished';
@@ -593,17 +593,19 @@ describe('UndercoverAgentGame', () => {
       props.playerId = 'non-player-admin';
       props.playerName = 'Admin';
       props.isAdmin = true;
-      props.adminSessionId = 'admin-123';
+      props.isParticipating = false;
+      props.accessKey = 'admin-123';
 
       render(<UndercoverAgentGame {...props} />);
 
       expect(
         screen.getByRole('button', { name: /new game/i })
       ).toBeInTheDocument();
-      expect(screen.getByText('Game Over')).toBeInTheDocument();
+      // "Game Over" appears both in the result panel title and the play-again panel
+      expect(screen.getAllByText('Game Over').length).toBeGreaterThanOrEqual(1);
     });
 
-    it('renders nothing during reveal for non-player admin', () => {
+    it('does not render role reveal panel during reveal', () => {
       const state = createBaseState();
       state.match.state = 'reveal';
       state.match.word = 'secret';
@@ -612,16 +614,19 @@ describe('UndercoverAgentGame', () => {
       props.playerId = 'non-player-admin';
       props.playerName = 'Admin';
       props.isAdmin = true;
-      props.adminSessionId = 'admin-123';
+      props.isParticipating = false;
+      props.accessKey = 'admin-123';
 
-      const { container } = render(
-        <UndercoverAgentGame {...props} />
-      );
+      render(<UndercoverAgentGame {...props} />);
 
-      expect(container.firstChild).toBeNull();
+      // Non-participating admin sees no "Your Role" panel and no reveal button
+      expect(screen.queryByText('Your Role')).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('button', { name: /reveal your role/i })
+      ).not.toBeInTheDocument();
     });
 
-    it('renders nothing during submitting for non-player admin', () => {
+    it('does not render submit panel during submitting', () => {
       const state = createBaseState();
       state.match.state = 'submitting';
       state.match.currentTurnPlayerId = 'player-1';
@@ -631,16 +636,19 @@ describe('UndercoverAgentGame', () => {
       props.playerId = 'non-player-admin';
       props.playerName = 'Admin';
       props.isAdmin = true;
-      props.adminSessionId = 'admin-123';
+      props.isParticipating = false;
+      props.accessKey = 'admin-123';
 
-      const { container } = render(
-        <UndercoverAgentGame {...props} />
-      );
+      render(<UndercoverAgentGame {...props} />);
 
-      expect(container.firstChild).toBeNull();
+      // Non-participating admin sees word list but not "it's your turn" / "waiting" UI
+      expect(
+        screen.queryByPlaceholderText(/your clue word/i)
+      ).not.toBeInTheDocument();
+      expect(screen.queryByText(/it's your turn/i)).not.toBeInTheDocument();
     });
 
-    it('renders nothing during voting for non-player admin', () => {
+    it('does not render vote panel during voting', () => {
       const state = createBaseState();
       state.match.state = 'voting';
       state.match.currentVoteRound = 0;
@@ -653,13 +661,15 @@ describe('UndercoverAgentGame', () => {
       props.playerId = 'non-player-admin';
       props.playerName = 'Admin';
       props.isAdmin = true;
-      props.adminSessionId = 'admin-123';
+      props.isParticipating = false;
+      props.accessKey = 'admin-123';
 
-      const { container } = render(
-        <UndercoverAgentGame {...props} />
-      );
+      render(<UndercoverAgentGame {...props} />);
 
-      expect(container.firstChild).toBeNull();
+      // Non-participating admin sees no voting cards or vote prompt
+      expect(
+        screen.queryByText(/who do you think is the undercover agent/i)
+      ).not.toBeInTheDocument();
     });
   });
 });

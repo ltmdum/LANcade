@@ -14,8 +14,8 @@ interface GameInfoData {
 interface GameSelectorProps {
   games: GameInfo[];
   selectedGameId: string;
-  adminSessionId: string;
-  onExpired: () => void;
+  accessKey: string;
+  onUnauthorized: () => void;
   getGameDescription?: (gameId: string) => string | undefined;
   getGameInfo?: (gameId: string) => GameInfoData | undefined;
 }
@@ -28,8 +28,8 @@ interface GameSelectorProps {
 export function GameSelector({
   games,
   selectedGameId,
-  adminSessionId,
-  onExpired,
+  accessKey,
+  onUnauthorized,
   getGameDescription,
   getGameInfo,
 }: GameSelectorProps) {
@@ -42,15 +42,15 @@ export function GameSelector({
    * @param gameId Game identifier.
    */
   async function handleSelectGame(gameId: string) {
-    if (!adminSessionId) {
-      setStatus('Claim admin before selecting a game.');
+    if (!accessKey) {
+      setStatus('Admin access required.');
       return;
     }
     setStatus('');
     try {
-      const { response } = await selectGame(gameId, adminSessionId);
+      const { response } = await selectGame(gameId, accessKey);
       if (response.status === 401) {
-        onExpired();
+        onUnauthorized();
         return;
       }
       if (response.status === 409) {
@@ -80,7 +80,7 @@ export function GameSelector({
                   name="game"
                   checked={game.id === selectedGameId}
                   onChange={() => handleSelectGame(game.id)}
-                  disabled={!adminSessionId}
+                  disabled={!accessKey}
                   className="game-selector-radio"
                 />
                 <span className="game-selector-name">{game.name}</span>

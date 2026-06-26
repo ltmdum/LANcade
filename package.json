@@ -16,6 +16,7 @@
     "validate-config": "node scripts/validate-games-config.js"
   },
   "devDependencies": {
-    "concurrently": "^8.2.2"
+    "concurrently": "^8.2.2",
+    "word-list": "^4.1.0"
   }
 }

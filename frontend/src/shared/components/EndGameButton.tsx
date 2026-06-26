@@ -3,8 +3,8 @@ import { handleEndGame } from '../utils/endGameActions';
 import './EndGameButton.css';
 
 interface EndGameButtonProps {
-  adminSessionId: string;
-  onExpired: () => void;
+  accessKey: string;
+  onUnauthorized: () => void;
   onEnded?: () => void;
 }
 
@@ -15,8 +15,8 @@ interface EndGameButtonProps {
  * @returns End game button element.
  */
 export function EndGameButton({
-  adminSessionId,
-  onExpired,
+  accessKey,
+  onUnauthorized,
   onEnded,
 }: EndGameButtonProps) {
   const [showConfirmation, setShowConfirmation] = useState(false);
@@ -44,11 +44,11 @@ export function EndGameButton({
    */
   async function handleConfirm() {
     const result = await handleEndGame({
-      adminSessionId,
+      accessKey,
       setShowConfirmation,
       setStatus,
       setIsEnding,
-      onExpired,
+      onUnauthorized,
       onEnded,
     });
 
@@ -63,7 +63,7 @@ export function EndGameButton({
         type="button"
         className="btn btn-danger end-game-button"
         onClick={handleClick}
-        disabled={!adminSessionId || isEnding}
+        disabled={!accessKey || isEnding}
       >
         End Game
       </button>

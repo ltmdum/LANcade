@@ -5,7 +5,7 @@ import type { UndercoverSubmission, UndercoverVoteRound } from '@lancade/shared'
 
 interface UndercoverVotePanelProps {
   playerId: string;
-  playerPassword: string;
+  accessKey: string;
   participants: string[];
   submissions: UndercoverSubmission[];
   voteRounds: UndercoverVoteRound[];
@@ -22,7 +22,7 @@ interface UndercoverVotePanelProps {
  */
 export function UndercoverVotePanel({
   playerId,
-  playerPassword,
+  accessKey,
   participants,
   submissions,
   voteRounds,
@@ -52,7 +52,7 @@ export function UndercoverVotePanel({
         body: JSON.stringify({
           playerId,
           votes: { targetPlayerId: selectedTarget },
-          password: playerPassword,
+          key: accessKey,
         }),
       });
       const data = await response.json();

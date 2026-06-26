@@ -18,8 +18,8 @@ describe('EndGameButton component', () => {
   it('renders the End Game button', () => {
     render(
       <EndGameButton
-        adminSessionId="admin-123"
-        onExpired={vi.fn()}
+        accessKey="admin-123"
+        onUnauthorized={vi.fn()}
         onEnded={vi.fn()}
       />
     );
@@ -27,11 +27,11 @@ describe('EndGameButton component', () => {
     expect(screen.getByRole('button', { name: /end game/i })).toBeInTheDocument();
   });
 
-  it('disables button when adminSessionId is empty', () => {
+  it('disables button when accessKey is empty', () => {
     render(
       <EndGameButton
-        adminSessionId=""
-        onExpired={vi.fn()}
+        accessKey=""
+        onUnauthorized={vi.fn()}
         onEnded={vi.fn()}
       />
     );
@@ -39,11 +39,11 @@ describe('EndGameButton component', () => {
     expect(screen.getByRole('button', { name: /end game/i })).toBeDisabled();
   });
 
-  it('enables button when adminSessionId is provided', () => {
+  it('enables button when accessKey is provided', () => {
     render(
       <EndGameButton
-        adminSessionId="admin-123"
-        onExpired={vi.fn()}
+        accessKey="admin-123"
+        onUnauthorized={vi.fn()}
         onEnded={vi.fn()}
       />
     );
@@ -54,8 +54,8 @@ describe('EndGameButton component', () => {
   it('shows confirmation popup when button is clicked', () => {
     render(
       <EndGameButton
-        adminSessionId="admin-123"
-        onExpired={vi.fn()}
+        accessKey="admin-123"
+        onUnauthorized={vi.fn()}
         onEnded={vi.fn()}
       />
     );
@@ -71,8 +71,8 @@ describe('EndGameButton component', () => {
   it('hides confirmation popup when cancel is clicked', () => {
     render(
       <EndGameButton
-        adminSessionId="admin-123"
-        onExpired={vi.fn()}
+        accessKey="admin-123"
+        onUnauthorized={vi.fn()}
         onEnded={vi.fn()}
       />
     );
@@ -94,14 +94,14 @@ describe('EndGameButton component', () => {
     const onEnded = vi.fn();
     render(
       <EndGameButton
-        adminSessionId="admin-123"
-        onExpired={vi.fn()}
+        accessKey="admin-123"
+        onUnauthorized={vi.fn()}
         onEnded={onEnded}
       />
     );
 
     fireEvent.click(screen.getByRole('button', { name: /end game/i }));
-    
+
     // Click the confirm button (second "End Game" button in the popup)
     const buttons = screen.getAllByRole('button', { name: /end game/i });
     fireEvent.click(buttons[1]);
@@ -110,22 +110,25 @@ describe('EndGameButton component', () => {
       expect(onEnded).toHaveBeenCalled();
     });
 
-    expect(mockFetch).toHaveBeenCalledWith('/api/admin/end', expect.any(Object));
+    expect(mockFetch).toHaveBeenCalledWith('/api/admin/end', expect.objectContaining({
+      method: 'POST',
+      body: JSON.stringify({ key: 'admin-123' }),
+    }));
   });
 
-  it('calls onExpired when API returns 401', async () => {
+  it('calls onUnauthorized when API returns 401', async () => {
     mockFetch.mockResolvedValueOnce({
       ok: false,
       status: 401,
       json: () => Promise.resolve({ error: 'unauthorized' }),
     });
 
-    const onExpired = vi.fn();
+    const onUnauthorized = vi.fn();
     const onEnded = vi.fn();
     render(
       <EndGameButton
-        adminSessionId="admin-123"
-        onExpired={onExpired}
+        accessKey="admin-123"
+        onUnauthorized={onUnauthorized}
         onEnded={onEnded}
       />
     );
@@ -135,7 +138,7 @@ describe('EndGameButton component', () => {
     fireEvent.click(buttons[1]);
 
     await waitFor(() => {
-      expect(onExpired).toHaveBeenCalled();
+      expect(onUnauthorized).toHaveBeenCalled();
     });
 
     expect(onEnded).not.toHaveBeenCalled();
@@ -150,8 +153,8 @@ describe('EndGameButton component', () => {
 
     render(
       <EndGameButton
-        adminSessionId="admin-123"
-        onExpired={vi.fn()}
+        accessKey="admin-123"
+        onUnauthorized={vi.fn()}
         onEnded={vi.fn()}
       />
     );

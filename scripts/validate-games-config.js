@@ -30,6 +30,7 @@ const KNOWN_GAMES = new Set([
   'alphabetrace',
   'undercoveragent',
   'tradingexchange',
+  'gridlock',
 ]);
 
 function validateConfig() {

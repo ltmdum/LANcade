@@ -60,9 +60,9 @@ function createDefaultProps(serverState: AlphabetRaceState) {
     connection: 'connected' as const,
     playerId: 'player-1',
     playerName: 'Alice',
-    playerPassword: 'password123',
-    adminSessionId: '',
+    accessKey: 'KEY123',
     isAdmin: false,
+    isParticipating: true,
     setShowConfig: vi.fn(),
   };
 }
@@ -282,7 +282,7 @@ describe('AlphabetRaceGame', () => {
 
       const props = createDefaultProps(state);
       props.isAdmin = true;
-      props.adminSessionId = 'admin-123';
+      props.accessKey = 'admin-123';
 
       render(<AlphabetRaceGame {...props} />);
 
@@ -291,7 +291,7 @@ describe('AlphabetRaceGame', () => {
     });
   });
 
-  describe('admin non-player', () => {
+  describe('non-participating admin', () => {
     it('shows play again panel in finished state', () => {
       const state = createBaseState();
       state.match.state = 'finished';
@@ -303,7 +303,8 @@ describe('AlphabetRaceGame', () => {
       props.playerId = '';
       props.playerName = '';
       props.isAdmin = true;
-      props.adminSessionId = 'admin-123';
+      props.isParticipating = false;
+      props.accessKey = 'admin-123';
 
       render(<AlphabetRaceGame {...props} />);
 
@@ -311,7 +312,7 @@ describe('AlphabetRaceGame', () => {
       expect(screen.getByRole('button', { name: /back to configuration/i })).toBeInTheDocument();
     });
 
-    it('renders nothing during racing', () => {
+    it('does not render word submit form during racing', () => {
       const state = createBaseState();
       state.match.state = 'racing';
       state.match.currentLetter = 'A';
@@ -320,14 +321,17 @@ describe('AlphabetRaceGame', () => {
       props.playerId = '';
       props.playerName = '';
       props.isAdmin = true;
-      props.adminSessionId = 'admin-123';
+      props.isParticipating = false;
+      props.accessKey = 'admin-123';
 
-      const { container } = render(<AlphabetRaceGame {...props} />);
+      render(<AlphabetRaceGame {...props} />);
 
-      expect(container.firstChild).toBeNull();
+      // Non-participating admin still sees the letter and category, but no submit form
+      expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /submit/i })).not.toBeInTheDocument();
     });
 
-    it('admin with stale playerId renders nothing during racing', () => {
+    it('admin with stale playerId does not render word submit form during racing', () => {
       const state = createBaseState();
       state.match.state = 'racing';
       state.match.currentLetter = 'A';
@@ -336,11 +340,13 @@ describe('AlphabetRaceGame', () => {
       props.playerId = 'stale-id';
       props.playerName = 'Stale';
       props.isAdmin = true;
-      props.adminSessionId = 'admin-123';
+      props.isParticipating = false;
+      props.accessKey = 'admin-123';
 
-      const { container } = render(<AlphabetRaceGame {...props} />);
+      render(<AlphabetRaceGame {...props} />);
 
-      expect(container.firstChild).toBeNull();
+      expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /submit/i })).not.toBeInTheDocument();
     });
 
     it('admin with stale playerId sees controls in finished state', () => {
@@ -354,7 +360,8 @@ describe('AlphabetRaceGame', () => {
       props.playerId = 'stale-id';
       props.playerName = 'Stale';
       props.isAdmin = true;
-      props.adminSessionId = 'admin-123';
+      props.isParticipating = false;
+      props.accessKey = 'admin-123';
 
       render(<AlphabetRaceGame {...props} />);
 

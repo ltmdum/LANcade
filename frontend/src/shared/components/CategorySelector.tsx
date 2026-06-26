@@ -8,8 +8,8 @@ interface CategorySelectorProps {
   selectedCategory: string;
   selectedCategories?: string[];
   categoryMode?: 'single' | 'multi';
-  adminSessionId: string;
-  onExpired: () => void;
+  accessKey: string;
+  onUnauthorized: () => void;
 }
 
 /**
@@ -22,8 +22,8 @@ export function CategorySelector({
   selectedCategory,
   selectedCategories = [],
   categoryMode = 'single',
-  adminSessionId,
-  onExpired,
+  accessKey,
+  onUnauthorized,
 }: CategorySelectorProps) {
   const [status, setStatus] = useState('');
   const [customCategory, setCustomCategory] = useState('');
@@ -33,15 +33,15 @@ export function CategorySelector({
    * @param category Category name.
    */
   async function handleSelectCategory(category: string) {
-    if (!adminSessionId) {
-      setStatus('Claim admin before selecting a category.');
+    if (!accessKey) {
+      setStatus('Admin access required.');
       return;
     }
     setStatus('');
     try {
-      const { response, data } = await selectCategory(category, adminSessionId);
+      const { response, data } = await selectCategory(category, accessKey);
       if (response.status === 401) {
-        onExpired();
+        onUnauthorized();
         return;
       }
       if (!response.ok) {
@@ -59,16 +59,16 @@ export function CategorySelector({
   }
 
   async function handleRandomCategory() {
-    if (!adminSessionId) {
-      setStatus('Claim admin before selecting a category.');
+    if (!accessKey) {
+      setStatus('Admin access required.');
       return;
     }
     setStatus('');
     try {
       const count = categoryMode === 'multi' ? (selectedCategories.length || 3) : undefined;
-      const { response, data } = await selectRandomCategory(adminSessionId, count);
+      const { response, data } = await selectRandomCategory(accessKey, count);
       if (response.status === 401) {
-        onExpired();
+        onUnauthorized();
         return;
       }
       if (!response.ok) {
@@ -90,8 +90,8 @@ export function CategorySelector({
    * @param category Category name.
    */
   async function handleToggleCategory(category: string) {
-    if (!adminSessionId) {
-      setStatus('Claim admin before selecting categories.');
+    if (!accessKey) {
+      setStatus('Admin access required.');
       return;
     }
     const next = new Set(selectedCategories);
@@ -102,9 +102,9 @@ export function CategorySelector({
     }
     setStatus('');
     try {
-      const { response, data } = await selectCategories(Array.from(next), adminSessionId);
+      const { response, data } = await selectCategories(Array.from(next), accessKey);
       if (response.status === 401) {
-        onExpired();
+        onUnauthorized();
         return;
       }
       if (!response.ok) {
@@ -129,8 +129,8 @@ export function CategorySelector({
    * Add a custom category via the admin API.
    */
   async function handleAddCustomCategory() {
-    if (!adminSessionId) {
-      setStatus('Claim admin before adding a category.');
+    if (!accessKey) {
+      setStatus('Admin access required.');
       return;
     }
     const trimmed = customCategory.trim();
@@ -140,9 +140,9 @@ export function CategorySelector({
     }
     setStatus('');
     try {
-      const { response, data } = await addCustomCategory(trimmed, adminSessionId);
+      const { response, data } = await addCustomCategory(trimmed, accessKey);
       if (response.status === 401) {
-        onExpired();
+        onUnauthorized();
         return;
       }
       if (!response.ok) {
@@ -170,7 +170,7 @@ export function CategorySelector({
                 type="checkbox"
                 checked={selectedCategories.includes(category)}
                 onChange={() => handleToggleCategory(category)}
-                disabled={!adminSessionId}
+                disabled={!accessKey}
                 className="category-selector-checkbox"
               />
               <span className="category-selector-name">{category}</span>
@@ -182,7 +182,7 @@ export function CategorySelector({
             type="button"
             className="btn btn-secondary"
             onClick={handleRandomCategory}
-            disabled={!adminSessionId}
+            disabled={!accessKey}
           >
             Random
           </button>
@@ -195,14 +195,14 @@ export function CategorySelector({
             value={customCategory}
             onChange={(e) => setCustomCategory(e.target.value)}
             placeholder="New category..."
-            disabled={!adminSessionId}
+            disabled={!accessKey}
             maxLength={50}
           />
           <button
             type="button"
             className="btn btn-secondary"
             onClick={handleAddCustomCategory}
-            disabled={!adminSessionId || !customCategory.trim()}
+            disabled={!accessKey || !customCategory.trim()}
           >
             Add
           </button>
@@ -219,7 +219,7 @@ export function CategorySelector({
           className="input flex-1"
           value={selectedCategory}
           onChange={(e) => handleSelectCategory(e.target.value)}
-          disabled={!adminSessionId}
+          disabled={!accessKey}
         >
           {categories.map((category) => (
             <option key={category} value={category}>
@@ -231,7 +231,7 @@ export function CategorySelector({
           type="button"
           className="btn btn-secondary"
           onClick={handleRandomCategory}
-          disabled={!adminSessionId}
+          disabled={!accessKey}
         >
           Random
         </button>
@@ -243,14 +243,14 @@ export function CategorySelector({
           value={customCategory}
           onChange={(e) => setCustomCategory(e.target.value)}
           placeholder="New category..."
-          disabled={!adminSessionId}
+          disabled={!accessKey}
           maxLength={50}
         />
         <button
           type="button"
           className="btn btn-secondary"
           onClick={handleAddCustomCategory}
-          disabled={!adminSessionId || !customCategory.trim()}
+          disabled={!accessKey || !customCategory.trim()}
         >
           Add
         </button>

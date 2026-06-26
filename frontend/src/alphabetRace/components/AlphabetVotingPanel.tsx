@@ -9,6 +9,7 @@ interface AlphabetVotingPanelProps {
   clockSkewMs: number;
   isSubmitter: boolean;
   isIneligible: boolean;
+  isParticipating?: boolean;
   hasVoted: boolean;
   voteStatus: string;
   votesAccept: number;
@@ -30,6 +31,7 @@ export function AlphabetVotingPanel({
   clockSkewMs,
   isSubmitter,
   isIneligible,
+  isParticipating = true,
   hasVoted,
   voteStatus,
   votesAccept,
@@ -37,7 +39,7 @@ export function AlphabetVotingPanel({
   eligibleVoterCount,
   onVote,
 }: AlphabetVotingPanelProps) {
-  if (isIneligible) {
+  if (isParticipating && isIneligible) {
     return (
       <Panel title="Vote on the Word">
         <p className="alphabet-vote-sitting-out">You are sitting out this letter.</p>
@@ -53,11 +55,13 @@ export function AlphabetVotingPanel({
         <p className="alphabet-vote-submitter">{submittedByName || 'Unknown'} submitted:</p>
         <div className="alphabet-vote-word">{submittedWord || '-'}</div>
         {voteEndsAt && <VoteCountdown voteEndsAt={voteEndsAt} clockSkewMs={clockSkewMs} />}
-        <VoteActions
-          isSubmitter={isSubmitter}
-          hasVoted={hasVoted}
-          onVote={onVote}
-        />
+        {isParticipating && (
+          <VoteActions
+            isSubmitter={isSubmitter}
+            hasVoted={hasVoted}
+            onVote={onVote}
+          />
+        )}
         <p className="alphabet-vote-counts">
           Votes: {totalVotes} / {eligibleVoterCount}
         </p>

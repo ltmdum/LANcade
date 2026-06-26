@@ -12,6 +12,7 @@ interface VotingPanelProps {
   showCategory?: boolean;
   title?: string;
   description?: string;
+  isParticipating?: boolean;
 }
 
 /**
@@ -31,6 +32,7 @@ export function VotingPanel({
   showCategory = false,
   title = 'Vote on Words',
   description = 'Reject words you disagree with.',
+  isParticipating = true,
 }: VotingPanelProps) {
   return (
     <Panel title={title}>
@@ -41,26 +43,28 @@ export function VotingPanel({
             const isDownvoted = voteSet.has(word.id);
             return (
               <div key={word.id} className="voting-panel-row">
-                <div className="voting-panel-toggles">
-                  <button
-                    type="button"
-                    className={`voting-panel-thumb ${!isDownvoted ? 'voting-panel-thumb--up-active' : ''}`}
-                    onClick={() => { if (isDownvoted) onToggleVote(word.id); }}
-                    disabled={hasVoted}
-                    aria-label="Accept"
-                  >
-                    👍
-                  </button>
-                  <button
-                    type="button"
-                    className={`voting-panel-thumb ${isDownvoted ? 'voting-panel-thumb--down-active' : ''}`}
-                    onClick={() => { if (!isDownvoted) onToggleVote(word.id); }}
-                    disabled={hasVoted}
-                    aria-label="Reject"
-                  >
-                    👎
-                  </button>
-                </div>
+                {isParticipating && (
+                  <div className="voting-panel-toggles">
+                    <button
+                      type="button"
+                      className={`voting-panel-thumb ${!isDownvoted ? 'voting-panel-thumb--up-active' : ''}`}
+                      onClick={() => { if (isDownvoted) onToggleVote(word.id); }}
+                      disabled={hasVoted}
+                      aria-label="Accept"
+                    >
+                      👍
+                    </button>
+                    <button
+                      type="button"
+                      className={`voting-panel-thumb ${isDownvoted ? 'voting-panel-thumb--down-active' : ''}`}
+                      onClick={() => { if (!isDownvoted) onToggleVote(word.id); }}
+                      disabled={hasVoted}
+                      aria-label="Reject"
+                    >
+                      👎
+                    </button>
+                  </div>
+                )}
                 <span className="voting-panel-word-text">
                   {word.word}
                   {showCategory && word.category && ` (${word.category})`}
@@ -72,14 +76,16 @@ export function VotingPanel({
           <p className="voting-panel-no-submissions">No words to vote on.</p>
         )}
       </div>
-      <button
-        type="button"
-        className="voting-panel-submit"
-        onClick={onSubmitVotes}
-        disabled={hasVoted}
-      >
-        {hasVoted ? 'Votes Submitted' : 'Submit Votes'}
-      </button>
+      {isParticipating && (
+        <button
+          type="button"
+          className="voting-panel-submit"
+          onClick={onSubmitVotes}
+          disabled={hasVoted}
+        >
+          {hasVoted ? 'Votes Submitted' : 'Submit Votes'}
+        </button>
+      )}
       {voteStatus && <p className="voting-panel-status">{voteStatus}</p>}
     </Panel>
   );

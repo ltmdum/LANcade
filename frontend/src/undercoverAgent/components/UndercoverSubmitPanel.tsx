@@ -4,7 +4,7 @@ import { submitWord } from '../../shared/utils/api';
 
 interface UndercoverSubmitPanelProps {
   playerId: string;
-  playerPassword: string;
+  accessKey: string;
   isMyTurn: boolean;
   currentTurnPlayerName: string;
   currentRound: number;
@@ -20,7 +20,7 @@ interface UndercoverSubmitPanelProps {
  */
 export function UndercoverSubmitPanel({
   playerId,
-  playerPassword,
+  accessKey,
   isMyTurn,
   currentTurnPlayerName,
   currentRound,
@@ -43,7 +43,7 @@ export function UndercoverSubmitPanel({
     }
 
     try {
-      const { response, data } = await submitWord(playerId, wordInput.trim(), playerPassword);
+      const { response, data } = await submitWord(playerId, wordInput.trim(), accessKey);
       if (!response.ok) {
         setStatus(data.reason === 'empty' ? 'Please enter a word.' : 'Could not submit word.');
         return;

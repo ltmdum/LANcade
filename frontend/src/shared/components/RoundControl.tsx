@@ -11,8 +11,8 @@ interface CustomDurationConfig {
 }
 
 interface RoundControlProps {
-  adminSessionId: string;
-  onExpired: () => void;
+  accessKey: string;
+  onUnauthorized: () => void;
   onRoundStarted?: () => void;
   title?: string;
   defaultMinutes?: string;
@@ -21,6 +21,8 @@ interface RoundControlProps {
   minPlayers?: number;
   hideTimer?: boolean;
   customDuration?: CustomDurationConfig;
+  /** Admin has opted to play but hasn't joined the player list yet. */
+  needsToJoinAsPlayer?: boolean;
 }
 
 /**
@@ -29,8 +31,8 @@ interface RoundControlProps {
  * @returns Round control element.
  */
 export function RoundControl({
-  adminSessionId,
-  onExpired,
+  accessKey,
+  onUnauthorized,
   onRoundStarted,
   title = 'Round Control',
   defaultMinutes = '01',
@@ -39,6 +41,7 @@ export function RoundControl({
   minPlayers,
   hideTimer = false,
   customDuration,
+  needsToJoinAsPlayer = false,
 }: RoundControlProps) {
   const [minutes, setMinutes] = useState(defaultMinutes);
   const [seconds, setSeconds] = useState(defaultSeconds);
@@ -46,7 +49,13 @@ export function RoundControl({
   const [status, setStatus] = useState('');
   const baseId = useId();
 
-  const { canStart, waitingMessage } = checkPlayerRequirements(playerCount, minPlayers);
+  const playerCheck = checkPlayerRequirements(playerCount, minPlayers);
+  const needsJoin = needsToJoinAsPlayer;
+
+  const canStart = !needsJoin && playerCheck.canStart;
+  const waitingMessage = needsJoin
+    ? 'Join as a player before starting the game.'
+    : playerCheck.waitingMessage;
 
   useEffect(() => {
     setMinutes(defaultMinutes);
@@ -54,8 +63,12 @@ export function RoundControl({
   }, [defaultMinutes, defaultSeconds]);
 
   async function handleStart() {
-    if (!adminSessionId) {
-      setStatus('Claim admin before starting.');
+    if (needsJoin) {
+      setStatus('Join as a player before starting the game.');
+      return;
+    }
+    if (!accessKey) {
+      setStatus('Admin access required.');
       return;
     }
     // For games without timer, use a dummy duration
@@ -68,9 +81,9 @@ export function RoundControl({
     }
     setStatus('');
     try {
-      const { response } = await startRound(durationMs, adminSessionId);
+      const { response } = await startRound(durationMs, accessKey);
       if (response.status === 401) {
-        onExpired();
+        onUnauthorized();
         return;
       }
       if (!response.ok) {
@@ -142,7 +155,7 @@ export function RoundControl({
           type="button"
           className="btn btn-primary"
           onClick={handleStart}
-          disabled={!adminSessionId || !canStart}
+          disabled={!accessKey || !canStart}
         >
           Start
         </button>

@@ -26,10 +26,10 @@ Lightweight LAN-only party game server with a React + TypeScript frontend and Ex
    ```bash
    npm start
    ```
-6. Check the console output for the admin and player passwords.
-7. Open on your LAN IP:
-   - Players: `http(s)://<host-ip>:3000/`
-   - Admin: `http(s)://<host-ip>:3000/admin`
+6. Check the console output for the player and admin invite URLs.
+7. Open on your LAN device using the printed invite link:
+   - Players: `http(s)://<host-ip>:3000/p/<player-key>`
+   - Admin: `http(s)://<host-ip>:3000/admin/<admin-key>`
 
 ## Development
 
@@ -77,6 +77,7 @@ Games are configured via `games.config.json` in the project root. This file cont
 | `alphabetrace` | Alphabet Race  | A race through all 26 letters                     |
 | `undercoveragent` | Undercover Agent | Find the imposter among you                    |
 | `tradingexchange` | Trading Exchange | Trade around the hidden sum of all cards        |
+| `gridlock` | Gridlock | Build words from a 3x3 grid of jumbled letters          |
 
 ### Enabling/Disabling Games
 
@@ -109,7 +110,8 @@ Available games: quickfire, multicat, lastwordstanding, fiveletterword, mindmatc
 lancade/
 ├── games.config.json   # Game configuration (which games are enabled)
 ├── scripts/
-│   └── validate-games-config.js    # Build-time config validation
+│   ├── validate-games-config.js    # Build-time config validation
+│   └── generate-nine-letter-words.js  # Generates Gridlock's seed word list from `word-list`
 ├── frontend/           # React + Vite + TailwindCSS
 │   └── src/
 |       ├── shared/
@@ -169,6 +171,12 @@ lancade/
 │       │   ├── utils/              # Trading Exchange specific utility functions
 │       │   ├── TradingExchangeGame.tsx
 │       │   └── plugin.tsx          # Trading Exchange frontend plugin registration
+|       ├── gridlock/
+│       │   ├── components/         # Gridlock specific components (LetterGrid, active panel)
+│       │   ├── tests/              # Gridlock specific tests
+│       │   ├── utils/              # Gridlock specific utility functions (tile validation)
+│       │   ├── GridlockGame.tsx
+│       │   └── plugin.tsx          # Gridlock frontend plugin registration
 │       └── plugins/            # Frontend plugin system
 ├── backend/            # Express + TypeScript
 │   └── src/
@@ -223,6 +231,13 @@ lancade/
 │       │   ├── tests/          # Trading Exchange specific Vitest tests
 │       │   ├── tradingexchange.ts
 │       │   ├── matching.ts     # Order matching algorithms
+│       │   └── plugin.ts
+|       ├── gridlock/
+│       │   ├── tests/          # Gridlock specific Vitest tests
+│       │   ├── grid.ts         # Grid generation and letter jumbling
+│       │   ├── word-source.ts  # Loads the bundled nine-letter word list
+│       │   ├── nine-letter-words.json  # Generated seed word list
+│       │   ├── gridlock.ts
 │       │   └── plugin.ts
 │       └── plugins/        # Backend plugin system
 │           └── tests/          # Vitest tests (mirrors src structure)
@@ -374,12 +389,13 @@ Create tests in `backend/src/tests/yourgame/` to test your game logic.
 
 ## Admin + Player Access
 
-- Admin access is claimed with the admin password. Only one admin session is active at a time.
-- Player actions require the player password. Names must be unique.
-- Both passwords are randomly generated on each server start and printed to the console.
-- The admin can select which game to run from the configuration page.
-- The admin can eject players from the server on the configuration screen.
-- Players stay registered across game switches (local storage preserves their player ID).
+- Each server start generates a random admin key and a random player key, and prints both as invite URLs to the console.
+- Visiting `/admin/<admin-key>` grants admin access. Visiting `/p/<player-key>` grants player access. Both are LAN-only.
+- Players pick a unique display name when they join.
+- The admin panel has a "Play this game" toggle (default on). With it on, the admin joins as a player and participates in the round. With it off, the admin spectates: the round UI is visible (current letter, voting, results) but submit and vote controls are hidden.
+- The admin selects which game to run, changes game settings, and ejects players from the admin panel.
+- Player identity persists across game switches via localStorage (`playerId`, `playerName`).
+- Rate limiting: 10 failed access attempts from the same IP within 60 seconds block that IP for 60 seconds. A failed attempt is a visit to an invalid invite URL (`/p/<wrong>`, `/admin/<wrong>`, or any unknown path) or an API request with a missing or wrong key.
 
 ## Games
 
@@ -486,6 +502,17 @@ Create tests in `backend/src/tests/yourgame/` to test your game logic.
 - **Scoring**: Highest total P&L (realized + settlement) wins.
 - Card-related utilities are shared in `shared/src/cards.ts`, `backend/src/shared/cards/`, and `frontend/src/shared/cards/` for reuse by future card games.
 
+### Gridlock
+- A timed word game played on a 3x3 grid of nine jumbled letter tiles.
+- Each round draws a hidden nine-letter word from an open-source word list and shuffles its letters into the grid, so the tiles never spell the source word.
+- Players submit as many words as they can using only the available tiles. Each tile may be used once per word; a letter that appears on multiple tiles may be reused that many times.
+- The frontend rejects words that use letters not on the grid before they reach the server, and the server enforces the same rule.
+- A word that has already been submitted (by anyone) is rejected and scores nothing.
+- Every accepted word scores one point per letter, so longer words are worth more.
+- When the timer ends, voting and scoring mirror Category Clash: words are shown anonymously, only players who submitted words can vote, and a word downvoted by at least half of the voters is removed. Highest score wins.
+- Gridlock reuses the shared Category Clash engine via injectable hooks for grid generation, letter-tile validation, and length-based scoring (`backend/src/categoryclashshared/categoryclash-engine.ts`).
+- The seed word list is generated from the open-source [`word-list`](https://www.npmjs.com/package/word-list) package by `scripts/generate-nine-letter-words.js` into `backend/src/gridlock/nine-letter-words.json`. Re-run that script to refresh the list.
+
 ## Custom Categories
 
 Games that use categories (Category Clash: Quick Fire, Category Clash: Multicat, Last Word Standing, Alphabet Race) support admin-added custom categories. In the admin panel, use the "Add" input below the category selector to add a custom category to the list. Custom categories persist for the duration of the game session.
@@ -496,9 +523,8 @@ Environment variables:
 - `HOST` (optional): bind address. When not set and `LAN_ONLY` is true, the server auto-discovers private network interfaces and binds to each one. Set this explicitly to override (e.g., `HOST=192.168.1.5`).
 - `PORT` (default `3000`)
 - `LAN_ONLY` (default `true`): set to `false` to allow non-LAN clients.
-- `ADMIN_SESSION_TTL_MS` (default `900000`): admin session expiration.
 - `CLIENT_GRACE_MS` (default `5000`): wait time after the timer ends if a client never reports completion.
-- `PASSWORD_LENGTH` (default `8`, minimum `6`): length of the generated admin and player passwords.
+- `KEY_LENGTH` (default `8`, minimum `6`): length of the generated admin and player access keys (the random part of the invite URLs).
 - `HTTPS_REQUIRED` (default `false`): set to `true` to require HTTPS.
 - `HTTPS_KEY_PATH` (default `certs/lan-key.pem`): TLS key path.
 - `HTTPS_CERT_PATH` (default `certs/lan-cert.pem`): TLS cert path.
@@ -524,7 +550,7 @@ When `LAN_ONLY=true` (the default), the server binds only to private network int
 
 ### Rate Limiting
 
-All password-authenticated routes are rate limited per IP address. After 10 failed authentication attempts from the same IP, that IP is blocked for 60 seconds (HTTP 429 with `Retry-After` header). Failed attempts are logged to the console.
+The server tracks failed access attempts per IP address — both visits to invalid invite URLs (e.g. `/p/WRONGKEY`, `/admin/WRONGKEY`, or unknown paths) and API requests with missing or wrong keys. After 10 failed attempts from the same IP, that IP is blocked for 60 seconds (HTTP 429 with `Retry-After` header). Failed attempts are logged to the console.
 
 ### Connection Limits
 

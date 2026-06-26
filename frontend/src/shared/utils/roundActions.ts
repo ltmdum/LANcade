@@ -13,15 +13,15 @@ export interface PlayAgainResult {
 /**
  * Handle starting a new round with the same duration.
  * @param durationMs Round duration in milliseconds.
- * @param adminSessionId Admin session ID for authentication.
+ * @param accessKey Admin access key for authentication.
  * @returns Result with success status and message.
  */
 export async function handlePlayAgain(
   durationMs: number,
-  adminSessionId: string
+  accessKey: string
 ): Promise<PlayAgainResult> {
   try {
-    const { response } = await startRound(durationMs, adminSessionId);
+    const { response } = await startRound(durationMs, accessKey);
     if (!response.ok) {
       return {
         success: false,

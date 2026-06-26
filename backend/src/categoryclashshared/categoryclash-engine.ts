@@ -25,6 +25,33 @@ export interface CategoryClashEngineOptions {
     onChange?: () => void;
     canChange?: () => boolean;
   }) => AnyCategoryManager;
+  /**
+   * Produce the per-round prompt data. Defaults to a single random letter.
+   * Games such as Gridlock override this to generate a tray of letter tiles.
+   */
+  generateRoundData?: () => RoundData;
+  /**
+   * Validate a submitted word against the active round's prompt. Returns an
+   * error result to reject the word, or null to accept. Defaults to the
+   * Category Clash rule that the word must start with the round's letter.
+   */
+  validateActiveWord?: (round: Round, key: string, rawWord: string) => SubmitWordResult | null;
+  /**
+   * Score a single accepted word. Defaults to one point per word; Gridlock
+   * overrides this to award points equal to the word length.
+   */
+  scoreWord?: (word: WordEntry) => number;
+  /**
+   * When true the game has no categories: rounds carry no category and words
+   * are stored without one. Defaults to false (category-based games).
+   */
+  categoryless?: boolean;
+}
+
+/** Per-round prompt data produced by {@link CategoryClashEngineOptions.generateRoundData}. */
+export interface RoundData {
+  letter: string | null;
+  letters?: string[] | null;
 }
 
 export interface WordEntry {
@@ -50,6 +77,7 @@ export interface Round {
   id: number;
   state: 'idle' | 'active' | 'voting' | 'results';
   letter: string | null;
+  letters: string[] | null;
   category: string | null;
   categories: string[];
   durationMs: number | null;
@@ -153,6 +181,7 @@ export function createEmptyRound(): Round {
     id: 0,
     state: 'idle',
     letter: null,
+    letters: null,
     category: null,
     categories: [],
     durationMs: null,
@@ -179,6 +208,20 @@ export function createEmptyRound(): Round {
  */
 function normalizeWord(word: string): string {
   return word.trim();
+}
+
+/**
+ * Default active-word rule: the word must start with the round's letter.
+ * @param round Active round.
+ * @param key Uppercased word.
+ * @returns Rejection result when the letter does not match, otherwise null.
+ */
+function defaultValidateActiveWord(round: Round, key: string): SubmitWordResult | null {
+  const letter = round.letter || '';
+  if (key[0] !== letter.toUpperCase()) {
+    return { ok: false, reason: 'invalid_letter' };
+  }
+  return null;
 }
 
 /**
@@ -209,6 +252,10 @@ export function createCategoryClashEngine(
 ): CategoryClashEngine {
   const onStateChange = options.onStateChange || (() => {});
   const clientGraceMs = Number.isFinite(options.clientGraceMs) ? options.clientGraceMs! : 5000;
+  const generateRoundData = options.generateRoundData || (() => ({ letter: randomLetter(), letters: null }));
+  const validateActiveWord = options.validateActiveWord || defaultValidateActiveWord;
+  const scoreWord = options.scoreWord || (() => 1);
+  const categoryless = options.categoryless === true;
 
   let round = createEmptyRound();
   let roundEndTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -274,7 +321,7 @@ export function createCategoryClashEngine(
   function buildScoresByPlayer(): Record<string, number> {
     const scores: Record<string, number> = {};
     for (const word of round.acceptedWords) {
-      scores[word.playerId] = (scores[word.playerId] || 0) + 1;
+      scores[word.playerId] = (scores[word.playerId] || 0) + scoreWord(word);
     }
     return scores;
   }
@@ -357,6 +404,7 @@ export function createCategoryClashEngine(
         id: round.id,
         state: round.state,
         letter: round.letter,
+        letters: round.letters,
         category: round.category,
         categories: round.categories,
         durationMs: round.durationMs,
@@ -390,11 +438,15 @@ export function createCategoryClashEngine(
     const now = Date.now();
     const nextId = round.id + 1;
     const selectedCategories = getRoundCategories();
-    const roundCategories = selectedCategories.length ? selectedCategories : ['General'];
+    const roundCategories = categoryless
+      ? []
+      : (selectedCategories.length ? selectedCategories : ['General']);
+    const roundData = generateRoundData();
     round = {
       id: nextId,
       state: 'active',
-      letter: randomLetter(),
+      letter: roundData.letter,
+      letters: roundData.letters ?? null,
       category: roundCategories[0] || null,
       categories: roundCategories,
       durationMs,
@@ -467,10 +519,16 @@ export function createCategoryClashEngine(
       return { ok: false, reason: 'round_not_active' };
     }
 
-    const availableCategories = round.categories || [];
-    const category = normalizeCategory(categoryInput, availableCategories);
-    if (!category) {
-      return { ok: false, reason: 'invalid_category' };
+    let category: string;
+    if (categoryless) {
+      category = '';
+    } else {
+      const availableCategories = round.categories || [];
+      const resolved = normalizeCategory(categoryInput, availableCategories);
+      if (!resolved) {
+        return { ok: false, reason: 'invalid_category' };
+      }
+      category = resolved;
     }
 
     const rawWord = normalizeWord(wordInput || '');
@@ -478,12 +536,12 @@ export function createCategoryClashEngine(
       return { ok: false, reason: 'empty' };
     }
 
-    const letter = round.letter || '';
     const key = rawWord.toUpperCase();
-    if (key[0] !== letter.toUpperCase()) {
+    const wordRule = validateActiveWord(round, key, rawWord);
+    if (wordRule) {
       storeSubmission(playerId, rawWord, { status: 'invalid', category });
       notifyChange();
-      return { ok: false, reason: 'invalid_letter' };
+      return wordRule;
     }
 
     const existingWord = round.acceptedWordByKey.get(key);
@@ -649,7 +707,7 @@ export function createCategoryClashEngine(
             if (votedOut) {
               votedOutCount += 1;
             } else {
-              finalScore += 1;
+              finalScore += word ? scoreWord(word) : 0;
             }
             return {
               word: submission.word,

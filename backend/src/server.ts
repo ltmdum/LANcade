@@ -11,8 +11,8 @@ import { createPlayerStore, PlayerStore } from './shared/stores/player-store.js'
 import { createRateLimiter } from './shared/utils/rate-limiter.js';
 import { resolveBindAddress } from './shared/utils/resolve-bind-addresses.js';
 import { validatePlayerName, validateWord, validateCategory } from './shared/utils/input-validation.js';
-import { safeCompare } from './shared/utils/safe-compare.js';
 import { createConnectionTracker } from './shared/utils/connection-tracker.js';
+import { classifyAccessKey, AccessLevel } from './shared/utils/access-key.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -22,35 +22,33 @@ initializeGames();
 
 const EXPLICIT_HOST = process.env.HOST || null;
 const PORT = parseInt(process.env.PORT || '3000', 10);
-const ADMIN_SESSION_TTL_MS = parseInt(process.env.ADMIN_SESSION_TTL_MS || '900000', 10);
 const HTTPS_REQUIRED = process.env.HTTPS_REQUIRED === 'true';
 const HTTPS_KEY_PATH = process.env.HTTPS_KEY_PATH || path.join(__dirname, '..', '..', 'certs', 'lan-key.pem');
 const HTTPS_CERT_PATH = process.env.HTTPS_CERT_PATH || path.join(__dirname, '..', '..', 'certs', 'lan-cert.pem');
 const CLIENT_GRACE_MS = parseInt(process.env.CLIENT_GRACE_MS || '5000', 10);
-const PASSWORD_LENGTH = Math.max(6, parseInt(process.env.PASSWORD_LENGTH || '8', 10));
+const KEY_LENGTH = Math.max(6, parseInt(process.env.KEY_LENGTH || '8', 10));
 
-const PASSWORD_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+const KEY_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 
 /**
- * Generate a random admin/player password.
- * @param length Length of the password to generate.
- * @returns Random password string.
+ * Generate a random access key for embedding in invite URLs.
+ * @param length Length of the key to generate.
+ * @returns Random key string.
  */
-function randomPassword(length = PASSWORD_LENGTH): string {
+function randomKey(length = KEY_LENGTH): string {
   const bytes = crypto.randomBytes(length);
   let value = '';
   for (let i = 0; i < length; i += 1) {
-    value += PASSWORD_CHARS[bytes[i] % PASSWORD_CHARS.length];
+    value += KEY_CHARS[bytes[i] % KEY_CHARS.length];
   }
   return value;
 }
 
-const ADMIN_PASSWORD = randomPassword(PASSWORD_LENGTH);
-const PLAYER_PASSWORD = randomPassword(PASSWORD_LENGTH);
+const ADMIN_KEY = randomKey(KEY_LENGTH);
+const PLAYER_KEY = randomKey(KEY_LENGTH);
 
 let selectedGameId = gameRegistry.getDefaultGameId() || '';
 let gameInstance: BaseGame | null = null;
-let adminSession: { id: string; lastSeen: number } | null = null;
 const sseClients = new Set<Response>();
 const sseTracker = createConnectionTracker(5, 50);
 const authRateLimiter = createRateLimiter(10, 60_000);
@@ -232,59 +230,19 @@ function warnIfUntrustedNetwork(): void {
 }
 
 /**
- * Check if the admin session is active and refresh last seen.
- * @returns True when the session is active.
- */
-function isAdminSessionActive(): boolean {
-  if (!adminSession) {
-    return false;
-  }
-  if (Date.now() - adminSession.lastSeen > ADMIN_SESSION_TTL_MS) {
-    adminSession = null;
-    return false;
-  }
-  return true;
-}
-
-/**
- * Validate a request as admin based on bearer token.
+ * Classify the access key carried on a request (query string first, body second).
  * @param req Express request.
- * @returns True if admin token is valid.
+ * @returns Access level the key grants, or null when missing or unknown.
  */
-function requireAdmin(req: Request): boolean {
-  const authHeader = req.headers.authorization || '';
-  const match = authHeader.match(/^Bearer (.+)$/);
-  if (!match) {
-    return false;
-  }
-  if (!isAdminSessionActive()) {
-    return false;
-  }
-  if (!safeCompare(match[1], adminSession!.id)) {
-    return false;
-  }
-  adminSession!.lastSeen = Date.now();
-  return true;
-}
-
-/**
- * Validate the player password from a request payload.
- * @param pass Raw password value.
- * @returns True if the password matches.
- */
-function verifyPlayerPassword(pass: unknown): boolean {
-  if (typeof pass !== 'string') return false;
-  return safeCompare(pass, PLAYER_PASSWORD);
-}
-
-/**
- * Validate an admin session id from a request payload.
- * @param sessionId Raw session id value.
- * @returns True if the session id matches and is active.
- */
-function adminSessionMatches(sessionId: unknown): boolean {
-  if (typeof sessionId !== 'string') return false;
-  return isAdminSessionActive() && adminSession !== null && safeCompare(adminSession.id, sessionId);
+function classifyRequest(req: Request): AccessLevel | null {
+  const fromQuery = req.query.key;
+  const candidate =
+    typeof fromQuery === 'string'
+      ? fromQuery
+      : (req.body && typeof (req.body as { key?: unknown }).key === 'string'
+          ? (req.body as { key: string }).key
+          : null);
+  return classifyAccessKey(candidate, ADMIN_KEY, PLAYER_KEY);
 }
 
 interface PublicState {
@@ -420,6 +378,29 @@ function getGameInstance(res: Response): BaseGame | null {
   return gameInstance;
 }
 
+/**
+ * Reject a request whose key is missing or invalid for the required level.
+ * Records an auth failure for rate-limiting and sends an Unauthorized response.
+ * @param req Express request.
+ * @param res Express response.
+ * @param required Required access level ('player' allows admin too).
+ * @returns True if the request was rejected (response already sent).
+ */
+function rejectIfUnauthorized(
+  req: Request,
+  res: Response,
+  required: AccessLevel,
+): boolean {
+  if (isRateLimited(req, res)) return true;
+  const level = classifyRequest(req);
+  if (!level || (required === 'admin' && level !== 'admin')) {
+    recordAuthFailure(req);
+    res.status(401).json({ error: 'unauthorized' });
+    return true;
+  }
+  return false;
+}
+
 // Health check
 app.get('/health', (req: Request, res: Response) => {
   res.json({ ok: true });
@@ -427,26 +408,12 @@ app.get('/health', (req: Request, res: Response) => {
 
 // API routes
 app.get('/api/state', (req: Request, res: Response) => {
-  if (isRateLimited(req, res)) return;
-  const passwordOk = verifyPlayerPassword(req.query.password);
-  const adminOk = adminSessionMatches(req.query.adminSessionId);
-  if (!passwordOk && !adminOk) {
-    recordAuthFailure(req);
-    res.status(401).json({ error: 'unauthorized' });
-    return;
-  }
+  if (rejectIfUnauthorized(req, res, 'player')) return;
   res.json(buildPublicState());
 });
 
 app.get('/api/games', (req: Request, res: Response) => {
-  if (isRateLimited(req, res)) return;
-  const passwordOk = verifyPlayerPassword(req.query.password);
-  const adminOk = adminSessionMatches(req.query.adminSessionId);
-  if (!passwordOk && !adminOk) {
-    recordAuthFailure(req);
-    res.status(401).json({ error: 'unauthorized' });
-    return;
-  }
+  if (rejectIfUnauthorized(req, res, 'player')) return;
   res.json({
     selectedGameId,
     games: gameRegistry.listEnabledGames(),
@@ -455,9 +422,7 @@ app.get('/api/games', (req: Request, res: Response) => {
 
 app.get('/api/events', (req: Request, res: Response) => {
   if (isRateLimited(req, res)) return;
-  const passwordOk = verifyPlayerPassword(req.query.password);
-  const adminOk = adminSessionMatches(req.query.adminSessionId);
-  if (!passwordOk && !adminOk) {
+  if (!classifyRequest(req)) {
     recordAuthFailure(req);
     res.status(401).send('Unauthorized');
     return;
@@ -500,13 +465,8 @@ app.get('/api/events', (req: Request, res: Response) => {
 });
 
 app.post('/api/players/join', (req: Request, res: Response) => {
-  if (isRateLimited(req, res)) return;
+  if (rejectIfUnauthorized(req, res, 'player')) return;
   const payload = req.body;
-  if (!verifyPlayerPassword(payload.password)) {
-    recordAuthFailure(req);
-    res.status(401).json({ error: 'unauthorized' });
-    return;
-  }
 
   const game = getGameInstance(res);
   if (!game) return;
@@ -532,13 +492,8 @@ app.post('/api/players/join', (req: Request, res: Response) => {
 });
 
 app.post('/api/round/submit', (req: Request, res: Response) => {
-  if (isRateLimited(req, res)) return;
+  if (rejectIfUnauthorized(req, res, 'player')) return;
   const payload = req.body;
-  if (!verifyPlayerPassword(payload.password)) {
-    recordAuthFailure(req);
-    res.status(401).json({ error: 'unauthorized' });
-    return;
-  }
 
   const game = getGameInstance(res);
   if (!game) return;
@@ -563,13 +518,8 @@ app.post('/api/round/submit', (req: Request, res: Response) => {
 });
 
 app.post('/api/round/finish', (req: Request, res: Response) => {
-  if (isRateLimited(req, res)) return;
+  if (rejectIfUnauthorized(req, res, 'player')) return;
   const payload = req.body;
-  if (!verifyPlayerPassword(payload.password)) {
-    recordAuthFailure(req);
-    res.status(401).json({ error: 'unauthorized' });
-    return;
-  }
 
   const game = getGameInstance(res);
   if (!game) return;
@@ -595,13 +545,8 @@ app.post('/api/round/finish', (req: Request, res: Response) => {
 });
 
 app.post('/api/round/votes', (req: Request, res: Response) => {
-  if (isRateLimited(req, res)) return;
+  if (rejectIfUnauthorized(req, res, 'player')) return;
   const payload = req.body;
-  if (!verifyPlayerPassword(payload.password)) {
-    recordAuthFailure(req);
-    res.status(401).json({ error: 'unauthorized' });
-    return;
-  }
 
   const game = getGameInstance(res);
   if (!game) return;
@@ -622,13 +567,8 @@ app.post('/api/round/votes', (req: Request, res: Response) => {
 });
 
 app.post('/api/round/action', (req: Request, res: Response) => {
-  if (isRateLimited(req, res)) return;
+  if (rejectIfUnauthorized(req, res, 'player')) return;
   const payload = req.body;
-  if (!verifyPlayerPassword(payload.password)) {
-    recordAuthFailure(req);
-    res.status(401).json({ error: 'unauthorized' });
-    return;
-  }
 
   const game = getGameInstance(res);
   if (!game) return;
@@ -647,50 +587,8 @@ app.post('/api/round/action', (req: Request, res: Response) => {
   res.json(result);
 });
 
-app.post('/api/admin/claim', (req: Request, res: Response) => {
-  if (isRateLimited(req, res)) return;
-  const payload = req.body;
-  if (!payload || typeof payload.password !== 'string' || !safeCompare(payload.password, ADMIN_PASSWORD)) {
-    recordAuthFailure(req);
-    res.status(401).json({ error: 'invalid_password' });
-    return;
-  }
-
-  if (isAdminSessionActive()) {
-    res.status(409).json({
-      error: 'admin_active',
-      expiresAt: adminSession!.lastSeen + ADMIN_SESSION_TTL_MS,
-    });
-    return;
-  }
-
-  adminSession = {
-    id: crypto.randomBytes(16).toString('hex'),
-    lastSeen: Date.now(),
-  };
-
-  res.json({
-    sessionId: adminSession.id,
-    expiresAt: adminSession.lastSeen + ADMIN_SESSION_TTL_MS,
-  });
-});
-
-app.get('/api/admin/status', (req: Request, res: Response) => {
-  if (!requireAdmin(req)) {
-    res.status(401).json({ error: 'unauthorized' });
-    return;
-  }
-  res.json({
-    active: true,
-    expiresAt: adminSession!.lastSeen + ADMIN_SESSION_TTL_MS,
-  });
-});
-
 app.post('/api/admin/start', (req: Request, res: Response) => {
-  if (!requireAdmin(req)) {
-    res.status(401).json({ error: 'unauthorized' });
-    return;
-  }
+  if (rejectIfUnauthorized(req, res, 'admin')) return;
 
   const game = getGameInstance(res);
   if (!game) return;
@@ -707,10 +605,7 @@ app.post('/api/admin/start', (req: Request, res: Response) => {
 });
 
 app.post('/api/admin/category', (req: Request, res: Response) => {
-  if (!requireAdmin(req)) {
-    res.status(401).json({ error: 'unauthorized' });
-    return;
-  }
+  if (rejectIfUnauthorized(req, res, 'admin')) return;
 
   const game = getGameInstance(res);
   if (!game) return;
@@ -751,10 +646,7 @@ app.post('/api/admin/category', (req: Request, res: Response) => {
 });
 
 app.post('/api/admin/game', (req: Request, res: Response) => {
-  if (!requireAdmin(req)) {
-    res.status(401).json({ error: 'unauthorized' });
-    return;
-  }
+  if (rejectIfUnauthorized(req, res, 'admin')) return;
 
   const payload = req.body;
   const gameId = payload.gameId;
@@ -774,10 +666,7 @@ app.post('/api/admin/game', (req: Request, res: Response) => {
 });
 
 app.post('/api/admin/eject', (req: Request, res: Response) => {
-  if (!requireAdmin(req)) {
-    res.status(401).json({ error: 'unauthorized' });
-    return;
-  }
+  if (rejectIfUnauthorized(req, res, 'admin')) return;
 
   const payload = req.body;
   const playerId = payload.playerId;
@@ -797,10 +686,7 @@ app.post('/api/admin/eject', (req: Request, res: Response) => {
 });
 
 app.post('/api/admin/end', (req: Request, res: Response) => {
-  if (!requireAdmin(req)) {
-    res.status(401).json({ error: 'unauthorized' });
-    return;
-  }
+  if (rejectIfUnauthorized(req, res, 'admin')) return;
 
   const game = getGameInstance(res);
   if (!game) return;
@@ -820,10 +706,7 @@ app.post('/api/admin/end', (req: Request, res: Response) => {
 });
 
 app.post('/api/admin/settings', (req: Request, res: Response) => {
-  if (!requireAdmin(req)) {
-    res.status(401).json({ error: 'unauthorized' });
-    return;
-  }
+  if (rejectIfUnauthorized(req, res, 'admin')) return;
 
   const game = getGameInstance(res);
   if (!game) return;
@@ -852,12 +735,60 @@ app.post('/api/admin/settings', (req: Request, res: Response) => {
 const frontendDistPath =
   process.env.STATIC_DIR ||              // ← mobile bridge sets this
   path.join(__dirname, '..', '..', 'frontend', 'dist');
+
+/**
+ * Send the SPA entry HTML so the React app can render based on the URL.
+ * @param _req Express request.
+ * @param res Express response.
+ */
+function serveSpa(_req: Request, res: Response): void {
+  res.sendFile(path.join(frontendDistPath, 'index.html'));
+}
+
 if (fs.existsSync(frontendDistPath)) {
-  app.use(express.static(frontendDistPath));
-  app.get('*', (req: Request, res: Response) => {
-    res.sendFile(path.join(frontendDistPath, 'index.html'));
+  // Built JS/CSS/images live under /assets/
+  app.use('/assets', express.static(path.join(frontendDistPath, 'assets')));
+
+  // Common root-level static files
+  const rootStatics = ['/favicon.ico', '/favicon.svg', '/robots.txt', '/manifest.json'];
+  app.get(rootStatics, (req: Request, res: Response, next: NextFunction) => {
+    res.sendFile(path.join(frontendDistPath, req.path.slice(1)), (err) => {
+      if (err) next();
+    });
+  });
+
+  // Landing pages: the SPA renders an "Use your invite link" message
+  app.get(['/', '/admin'], serveSpa);
+
+  // Player invite link
+  app.get('/p/:key', (req: Request, res: Response) => {
+    if (isRateLimited(req, res)) return;
+    if (!classifyAccessKey(req.params.key, ADMIN_KEY, PLAYER_KEY)) {
+      recordAuthFailure(req);
+    }
+    serveSpa(req, res);
+  });
+
+  // Admin invite link
+  app.get('/admin/:key', (req: Request, res: Response) => {
+    if (isRateLimited(req, res)) return;
+    if (classifyAccessKey(req.params.key, ADMIN_KEY, PLAYER_KEY) !== 'admin') {
+      recordAuthFailure(req);
+    }
+    serveSpa(req, res);
   });
 }
+
+// Anything else is treated as a probe / bad URL: rate-limited and 404.
+app.use((req: Request, res: Response) => {
+  if (req.path.startsWith('/api/')) {
+    res.status(404).json({ error: 'not_found' });
+    return;
+  }
+  if (isRateLimited(req, res)) return;
+  recordAuthFailure(req);
+  res.status(404).send('Not found');
+});
 
 // Global error handler — catches unhandled route errors and returns
 // a generic JSON response without leaking stack traces or file paths.
@@ -900,9 +831,8 @@ try {
 const scheme = tlsConfig ? 'https' : 'http';
 const server = createServer();
 server.listen(PORT, bindAddress, () => {
-  console.log(`Listening on ${scheme}://${bindAddress}:${PORT}`);
-  console.log(`Players: ${scheme}://${bindAddress}:${PORT}/`);
-  console.log(`Admin: ${scheme}://${bindAddress}:${PORT}/admin`);
-  console.log(`Admin password: ${ADMIN_PASSWORD}`);
-  console.log(`Player password: ${PLAYER_PASSWORD}`);
+  const base = `${scheme}://${bindAddress}:${PORT}`;
+  console.log(`Listening on ${base}`);
+  console.log(`Player URL: ${base}/p/${PLAYER_KEY}`);
+  console.log(`Admin URL: ${base}/admin/${ADMIN_KEY}`);
 });

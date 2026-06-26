@@ -1,0 +1,20 @@
+.gridlock-active-panel {
+  text-align: center;
+}
+
+.gridlock-countdown {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.gridlock-status-message {
+  min-height: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.gridlock-connection {
+  font-size: 0.8rem;
+  opacity: 0.7;
+  margin-bottom: 0.75rem;
+}

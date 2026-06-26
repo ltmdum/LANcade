@@ -8,20 +8,23 @@ export const plugin: GamePlugin = {
     name: 'Trading Exchange',
     slogan: 'Buy low, sell high, read the market',
     description:
-      'Everyone gets secret cards and tries to guess the total value of ALL cards in play. ' +
+      'Everyone is dealt cards and tries to guess the total value of ALL cards in play. ' +
       'Buy low and sell high to make profit! Cards are revealed one by one ' +
       'so you can refine your estimate as you learn more. Biggest profit wins!',
     instructions: [
-      'Everyone is dealt hidden cards (A=1, 2-10, J=11, Q=12, K=13). You can see your own cards but nobody else\'s.',
-      'Think of it like this: you\'re making agreements to buy or sell a nugget of gold at a certain price. None of the agreements are settled until the end, when the bank reveals its price — the sum of ALL cards in play.',
-      'A BUY agreement means you\'ve agreed to pay someone a fixed price for a nugget. If the bank\'s price turns out higher, you profit (you got it cheap). If lower, you lose.',
-      'A SELL agreement means someone has agreed to pay you a fixed price for a nugget. If the bank\'s price turns out lower, you profit (you sold it dear). If higher, you lose.',
-      'First, the Auction: enter a bid (the most you\'d pay) and an offer (the least you\'d sell for). Your bid must be lower than your offer. If your bid is higher than someone else\'s offer, an agreement is made automatically.',
+      'Everyone is dealt a set of cards (Ace=1, 2-10, Jack=11, Queen=12, King=13). You can only see your own cards to start with.',
+      'The goal of the game is to estimate the total value of everyone\'s cards and trade based on your expectation of the final total value.',
+      'Assume that every player starts with a pot of gold',
+      'Think of the trading as though you\'re agreeing a contracted price to buy or sell a nugget of gold at the end of the game. The value of a nugget of gold is the sum of all cards in play.',
+      'A BUY agreement means you\'ve agreed to pay someone a fixed price for a nugget. If the final value is higher than your price, you profit (you got it cheap). If lower, you lose money.',
+      'A SELL agreement means someone has agreed to pay you a fixed price for a nugget. If the final value is lower than your price, you profit (you sold it over value). If higher, you lose money.',
+      'First, the Auction: enter a bid (the most you\'d pay) and an offer (the least you\'d sell for). Your bid must be lower than your offer. If your bid (buy price) is higher than another player\'s offer (sell price), you make an automatic agreement to buy a nugget from them.',
+      'Conversely, if your offer (sell price) is lower than another player\'s bid (buy price), you make an automatic agreement to sell a nugget to them.',
       'Then, Trading begins: update your bid and offer as many times as you like. When your bid matches someone else\'s offer (or vice versa), an agreement is made instantly.',
-      'Each round, one card per player is flipped face-up for everyone to see. As more cards are revealed, you get a better idea of the bank\'s final price. Race to update your numbers before others react!',
-      'If nobody trades for a while, the round ends and more cards are revealed. In the final round, all cards are shown — so the bank\'s price is known!',
-      'If auto-submit is enabled and one of your orders gets filled, you have a limited time to adjust before your current values are automatically resubmitted. The countdown shows on the Submit button.',
-      'At the end, all agreements are settled and the bank buys or sells any remaining nuggets at the final price. The player who made the most profit wins!',
+      'Each round, one card per player is flipped face-up for everyone to see. As more cards are revealed, you get a better idea of the final value of a nugget of gold. Race to update your numbers before others react!',
+      'If nobody trades for a while, the round ends and more cards are revealed. In the final round, all cards are shown — so the final value can be calculated by everyone!',
+      'If auto-submit is enabled and one of your orders gets fillled (traded with), you have a limited time to adjust before your current values are automatically resubmitted.',
+      'At the end, all agreements are settled and the bank buys all remaining nuggets at the final price. The player who made the most profit wins!',
     ],
     defaultTimer: { minutes: '00', seconds: '30' },
     gameSettings: [

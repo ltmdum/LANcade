@@ -51,12 +51,18 @@ export interface WordSubmissionResult {
 export interface WordSubmissionConfig {
   /** Player ID */
   playerId: string;
-  /** Player password for authentication */
-  playerPassword: string;
-  /** The expected starting letter */
-  letter: string;
+  /** Access key from the invite URL */
+  accessKey: string;
+  /** The expected starting letter (used by the default validator). */
+  letter?: string;
   /** Optional category for multi-category games */
   category?: string;
+  /**
+   * Optional custom pre-submit validator. When provided it replaces the
+   * default "starts with letter" check (e.g. Gridlock validates against its
+   * available letter tiles).
+   */
+  validate?: (word: string) => PreSubmitValidationResult;
 }
 
 /**
@@ -69,7 +75,9 @@ export async function handleWordSubmission(
   word: string,
   config: WordSubmissionConfig
 ): Promise<WordSubmissionResult> {
-  const validation = validateWordForSubmit(word, config.letter);
+  const validation = config.validate
+    ? config.validate(word)
+    : validateWordForSubmit(word, config.letter || '');
   if (!validation.valid) {
     return {
       success: false,
@@ -81,7 +89,7 @@ export async function handleWordSubmission(
     const { response, data } = await apiSubmitWord(
       config.playerId,
       validation.trimmedWord!,
-      config.playerPassword,
+      config.accessKey,
       config.category
     );
 
@@ -92,9 +100,11 @@ export async function handleWordSubmission(
           ? `Already used by ${data.blockedByName || 'another player'}.`
           : data.reason === 'invalid_letter'
             ? `Word must start with ${config.letter}.`
-            : data.reason === 'time_up'
-              ? 'Time is up.'
-              : 'Word rejected.';
+            : data.reason === 'invalid_letters'
+              ? 'Word uses letters that are not on the grid.'
+              : data.reason === 'time_up'
+                ? 'Time is up.'
+                : 'Word rejected.';
       return {
         success: false,
         statusMessage: msg,

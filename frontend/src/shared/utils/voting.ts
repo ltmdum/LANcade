@@ -31,8 +31,8 @@ export type VotePayload = string[] | { decision: string };
 export interface VoteSubmitConfig {
   /** Player ID */
   playerId: string;
-  /** Player password for authentication */
-  playerPassword: string;
+  /** Access key from the invite URL */
+  accessKey: string;
   /** Vote payload (array of word IDs or decision object) */
   payload: VotePayload;
   /** Error messages for different failure reasons */
@@ -53,7 +53,7 @@ export async function handleVoteSubmit(
     const { response, data } = await apiSubmitVotes(
       config.playerId,
       config.payload,
-      config.playerPassword
+      config.accessKey
     );
 
     if (!response.ok) {

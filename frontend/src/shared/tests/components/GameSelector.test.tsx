@@ -14,8 +14,8 @@ describe('GameSelector component', () => {
       { id: 'lastwordstanding', name: 'Last Word Standing' },
     ],
     selectedGameId: 'quickfire',
-    adminSessionId: 'admin-123',
-    onExpired: vi.fn(),
+    accessKey: 'admin-123',
+    onUnauthorized: vi.fn(),
   };
 
   beforeEach(() => {
@@ -42,8 +42,8 @@ describe('GameSelector component', () => {
     expect(categoryclash1Radio).toBeChecked();
   });
 
-  it('disables radio buttons when no admin session', () => {
-    render(<GameSelector {...defaultProps} adminSessionId="" />);
+  it('disables radio buttons when no access key', () => {
+    render(<GameSelector {...defaultProps} accessKey="" />);
 
     const radios = screen.getAllByRole('radio');
     radios.forEach((radio) => {
@@ -51,7 +51,7 @@ describe('GameSelector component', () => {
     });
   });
 
-  it('enables radio buttons when admin session exists', () => {
+  it('enables radio buttons when access key exists', () => {
     render(<GameSelector {...defaultProps} />);
 
     const radios = screen.getAllByRole('radio');
@@ -75,26 +75,26 @@ describe('GameSelector component', () => {
     await waitFor(() => {
       expect(mockFetch).toHaveBeenCalledWith('/api/admin/game', expect.objectContaining({
         method: 'POST',
-        body: JSON.stringify({ gameId: 'lastwordstanding' }),
+        body: JSON.stringify({ gameId: 'lastwordstanding', key: 'admin-123' }),
       }));
     });
   });
 
-  it('calls onExpired when API returns 401', async () => {
+  it('calls onUnauthorized when API returns 401', async () => {
     mockFetch.mockResolvedValueOnce({
       ok: false,
       status: 401,
       json: () => Promise.resolve({ error: 'unauthorized' }),
     });
 
-    const onExpired = vi.fn();
-    render(<GameSelector {...defaultProps} onExpired={onExpired} />);
+    const onUnauthorized = vi.fn();
+    render(<GameSelector {...defaultProps} onUnauthorized={onUnauthorized} />);
 
     const wordrushRadio = screen.getAllByRole('radio')[2];
     fireEvent.click(wordrushRadio);
 
     await waitFor(() => {
-      expect(onExpired).toHaveBeenCalled();
+      expect(onUnauthorized).toHaveBeenCalled();
     });
   });
 

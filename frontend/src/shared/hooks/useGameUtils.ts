@@ -60,23 +60,23 @@ export function useClearCountdown(
 /**
  * Create a finish notification function for Category Clash games.
  * @param playerId Player ID.
- * @param playerPassword Player password.
+ * @param accessKey Access key from the invite URL.
  * @param finishSentRef Ref tracking which rounds have been notified.
  * @returns Function to notify the server of round finish.
  */
 export function useNotifyFinish(
   playerId: string,
-  playerPassword: string,
+  accessKey: string,
   finishSentRef: React.MutableRefObject<Set<number>>
 ): (roundId: number) => Promise<void> {
   return useCallback(async (roundId: number) => {
-    if (!playerId || !playerPassword) return;
+    if (!playerId || !accessKey) return;
     if (finishSentRef.current.has(roundId)) return;
     finishSentRef.current.add(roundId);
     try {
-      await finishRound(playerId, roundId, playerPassword);
+      await finishRound(playerId, roundId, accessKey);
     } catch {
       // Ignore finish errors
     }
-  }, [playerId, playerPassword, finishSentRef]);
+  }, [playerId, accessKey, finishSentRef]);
 }

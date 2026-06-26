@@ -6,6 +6,7 @@ import { PlayerResultsTable } from '../categoryclashshared/components/PlayerResu
 import { VotingPanel } from '../categoryclashshared/components/VotingPanel';
 import { MulticatActivePanel } from './components/MulticatActivePanel';
 import { toggleVoteSelection } from '../categoryclashshared/utils/voting';
+import { buildScoreboard } from '../categoryclashshared/utils/scoreboard';
 import { formatMs } from '../shared/utils/time';
 import { handleWordSubmission } from '../shared/utils/wordSubmission';
 import { handleVoteSubmit } from '../shared/utils/voting';
@@ -33,9 +34,9 @@ export function MulticatGame({
   serverState,
   connection,
   playerId,
-  playerPassword,
-  adminSessionId,
+  accessKey,
   isAdmin,
+  isParticipating,
   setShowConfig,
 }: MulticatGameProps) {
   const [wordInputs, setWordInputs] = useState<Record<string, string>>({});
@@ -53,7 +54,7 @@ export function MulticatGame({
 
   const triggerFlash = useFlashTrigger(flashTimerRef, setFlash);
   const clearCountdown = useClearCountdown(countdownTimerRef, setCountdown);
-  const notifyFinish = useNotifyFinish(playerId, playerPassword, finishSentRef);
+  const notifyFinish = useNotifyFinish(playerId, accessKey, finishSentRef);
 
   const round = serverState.round;
   const scoresByPlayer = round.scoresByPlayer || {};
@@ -61,20 +62,7 @@ export function MulticatGame({
   const hasVoted = round.votesSubmittedIds?.includes(playerId) || false;
   const results = round.resultsByPlayer?.[playerId] || null;
 
-  const scoreboard = useMemo(() => {
-    if (!round.resultsByPlayer) return [];
-    const entries = Object.entries(round.resultsByPlayer).map(([id, data]) => ({
-      playerId: id,
-      ...data,
-    }));
-    entries.sort((a, b) => {
-      if (b.finalScore !== a.finalScore) return b.finalScore - a.finalScore;
-      if (a.votedOut !== b.votedOut) return a.votedOut - b.votedOut;
-      if (a.rejected !== b.rejected) return b.rejected - a.rejected;
-      return a.name.localeCompare(b.name);
-    });
-    return entries;
-  }, [round.resultsByPlayer]);
+  const scoreboard = useMemo(() => buildScoreboard(round.resultsByPlayer), [round.resultsByPlayer]);
 
   /** IDs of words that belong to the current player, used to exclude them from the voting list. */
   const myWordIds = useMemo(() => {
@@ -153,7 +141,7 @@ export function MulticatGame({
 
   async function onPlayAgain() {
     setActionStatus('');
-    const result = await handlePlayAgain(round.durationMs!, adminSessionId);
+    const result = await handlePlayAgain(round.durationMs!, accessKey);
     setActionStatus(result.statusMessage);
     if (result.success) {
       setShowConfig(false);
@@ -186,7 +174,7 @@ export function MulticatGame({
 
     const result = await handleWordSubmission(currentValue, {
       playerId,
-      playerPassword,
+      accessKey,
       letter: round.letter,
       category,
     });
@@ -206,7 +194,7 @@ export function MulticatGame({
     setVoteStatus('');
     const result = await handleVoteSubmit({
       playerId,
-      playerPassword,
+      accessKey,
       payload: Array.from(voteSet),
       errorMessages: {
         notEligible: 'You must submit words to vote.',
@@ -231,19 +219,6 @@ export function MulticatGame({
   const showView = round.letter && ['active', 'voting', 'results'].includes(round.state);
   if (!showView) return null;
 
-  if (isAdmin && !serverState.players?.some(p => p.id === playerId)) {
-    if (round.state === 'results') {
-      return (
-        <PlayAgainPanel
-          onPlayAgain={onPlayAgain}
-          onBackToConfig={() => setShowConfig(true)}
-          status={actionStatus}
-        />
-      );
-    }
-    return null;
-  }
-
   const statusMessage = status || (timeUp ? 'Time is up.' : '');
 
   return (
@@ -256,6 +231,7 @@ export function MulticatGame({
           connection={connection}
           myScore={myScore}
           isAdmin={isAdmin}
+          isParticipating={isParticipating}
           categories={round.categories || []}
           timeUp={timeUp}
           acceptedByCategory={acceptedByCategory}
@@ -277,6 +253,7 @@ export function MulticatGame({
           showCategory
           title="Downvote Words You Disagree With"
           description=""
+          isParticipating={isParticipating}
         />
       )}
 

@@ -20,11 +20,11 @@ import './TradingExchangeGame.css';
  * @returns Trading exchange game element.
  */
 export function TradingExchangeGame(props: GameComponentProps) {
-  const { playerId, playerPassword, adminSessionId, isAdmin, setShowConfig } = props;
+  const { playerId, accessKey, isAdmin, isParticipating, setShowConfig } = props;
   const state = props.serverState as TradingExchangeState;
   const ex = state.exchange;
 
-  const isParticipant = ex.participants.includes(playerId);
+  const isParticipant = isParticipating && ex.participants.includes(playerId);
   const clockSkewMs = Date.now() - state.serverTime;
   const [orderStatus, setOrderStatus] = useState('');
 
@@ -79,18 +79,18 @@ export function TradingExchangeGame(props: GameComponentProps) {
       const { response, data } = await gameAction(
         playerId,
         { type: 'submit_orders', bid, offer },
-        playerPassword,
+        accessKey,
       );
       if (!response.ok) setOrderStatus(data.reason || 'Order rejected');
     } catch {
       setOrderStatus('Failed to submit order');
     }
-  }, [playerId, playerPassword]);
+  }, [playerId, accessKey]);
 
   const handlePlayAgain = useCallback(async () => {
-    if (!adminSessionId) return;
-    await startRound(ex.inactivityTimeoutMs, adminSessionId);
-  }, [adminSessionId, ex.inactivityTimeoutMs]);
+    if (!accessKey) return;
+    await startRound(ex.inactivityTimeoutMs, accessKey);
+  }, [accessKey, ex.inactivityTimeoutMs]);
 
   const handleBackToConfig = useCallback(() => {
     setShowConfig(true);
@@ -110,7 +110,7 @@ export function TradingExchangeGame(props: GameComponentProps) {
           clockSkewMs={clockSkewMs}
         />
       )}
-      {isParticipant && ex.revealedCardCount > 0 && (
+      {ex.revealedCardCount > 0 && (
         <OtherPlayersCards
           playerCards={ex.playerCards}
           playerColours={ex.playerColours}
@@ -150,6 +150,9 @@ export function TradingExchangeGame(props: GameComponentProps) {
           orderStatus={orderStatus}
         />
       )}
+      {ex.state === 'trading' && !isParticipant && (
+        <SpectatorTradingSection ex={ex} liveTrades={liveTrades} />
+      )}
       {ex.state === 'finished' && (
         <FinishedSection
           ex={ex}
@@ -159,6 +162,28 @@ export function TradingExchangeGame(props: GameComponentProps) {
           onBackToConfig={handleBackToConfig}
         />
       )}
+    </div>
+  );
+}
+
+interface SpectatorTradingSectionProps {
+  ex: TradingExchangeState['exchange'];
+  liveTrades: import('@lancade/shared').TradingExchangeTrade[];
+}
+
+/**
+ * View for non-participating admin watching a trading round.
+ * Shows market trades and the orderbook ladder but no controls.
+ * @param props Spectator section props.
+ * @returns Spectator trading section element.
+ */
+function SpectatorTradingSection({ ex, liveTrades }: SpectatorTradingSectionProps) {
+  return (
+    <div className="te-trading-area">
+      <div className="te-trading-area__lists">
+        <TradesList trades={liveTrades} playerColours={ex.playerColours} title="Market Trades" maxRows={0} />
+      </div>
+      <OrderbookLadder orders={ex.orders} playerColours={ex.playerColours} />
     </div>
   );
 }

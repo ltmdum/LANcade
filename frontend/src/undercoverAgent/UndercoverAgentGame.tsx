@@ -24,9 +24,9 @@ interface UndercoverAgentGameProps extends GameProps {
 export function UndercoverAgentGame({
   serverState,
   playerId,
-  playerPassword,
-  adminSessionId,
+  accessKey,
   isAdmin,
+  isParticipating,
   setShowConfig,
 }: UndercoverAgentGameProps) {
   const [myRole, setMyRole] = useState<string | null>(null);
@@ -58,7 +58,7 @@ export function UndercoverAgentGame({
   async function onRestart() {
     setAdminStatus('');
     const durationMs = match.totalRounds * 1000;
-    const result = await handlePlayAgain(durationMs, adminSessionId);
+    const result = await handlePlayAgain(durationMs, accessKey);
     setAdminStatus(result.statusMessage);
     if (result.success) {
       setShowConfig(false);
@@ -69,31 +69,16 @@ export function UndercoverAgentGame({
     return null;
   }
 
-  // Non-playing admin only sees play-again controls
-  if (isAdmin && !serverState.players?.some((p) => p.id === playerId)) {
-    if (match.state === 'finished') {
-      return (
-        <PlayAgainPanel
-          onPlayAgain={onRestart}
-          onBackToConfig={() => setShowConfig(true)}
-          status={adminStatus}
-          playAgainText="New Game"
-          title="Game Over"
-        />
-      );
-    }
-    return null;
-  }
-
   return (
     <div className="undercover-container">
       <MatchPhaseContent
         match={match}
         playerId={playerId}
-        playerPassword={playerPassword}
+        accessKey={accessKey}
         myRole={myRole}
         onReveal={setMyRole}
         playerLookup={playerLookup}
+        isParticipating={isParticipating}
       />
 
       {isAdmin && match.state === 'finished' && (
@@ -112,10 +97,11 @@ export function UndercoverAgentGame({
 interface MatchPhaseContentProps {
   match: UndercoverAgentState['match'];
   playerId: string;
-  playerPassword: string;
+  accessKey: string;
   myRole: string | null;
   onReveal: (role: string) => void;
   playerLookup: Record<string, string>;
+  isParticipating: boolean;
 }
 
 /**
@@ -126,10 +112,11 @@ interface MatchPhaseContentProps {
 function MatchPhaseContent({
   match,
   playerId,
-  playerPassword,
+  accessKey,
   myRole,
   onReveal,
   playerLookup,
+  isParticipating,
 }: MatchPhaseContentProps) {
   const hasRevealed = match.revealedPlayerIds.includes(playerId);
   const hasReadied = match.readyPlayerIds.includes(playerId);
@@ -138,10 +125,11 @@ function MatchPhaseContent({
     : 'Unknown';
 
   if (match.state === 'reveal') {
+    if (!isParticipating) return null;
     return (
       <RevealPanel
         playerId={playerId}
-        playerPassword={playerPassword}
+        accessKey={accessKey}
         hasRevealed={hasRevealed}
         myRole={myRole}
         word={match.word}
@@ -154,25 +142,30 @@ function MatchPhaseContent({
   if (match.state === 'submitting') {
     return (
       <>
-        <UndercoverSubmitPanel
-          playerId={playerId}
-          playerPassword={playerPassword}
-          isMyTurn={match.currentTurnPlayerId === playerId}
-          currentTurnPlayerName={currentTurnPlayerName}
-          currentRound={match.currentRound}
-          totalRounds={match.totalRounds}
-          hasSubmittedThisRound={match.roundSubmittedPlayerIds.includes(playerId)}
-        />
+        {isParticipating && (
+          <UndercoverSubmitPanel
+            playerId={playerId}
+            accessKey={accessKey}
+            isMyTurn={match.currentTurnPlayerId === playerId}
+            currentTurnPlayerName={currentTurnPlayerName}
+            currentRound={match.currentRound}
+            totalRounds={match.totalRounds}
+            hasSubmittedThisRound={match.roundSubmittedPlayerIds.includes(playerId)}
+          />
+        )}
         <UndercoverWordList submissions={match.submissions} />
       </>
     );
   }
 
   if (match.state === 'voting') {
+    if (!isParticipating) {
+      return <UndercoverWordList submissions={match.submissions} />;
+    }
     return (
       <UndercoverVotePanel
         playerId={playerId}
-        playerPassword={playerPassword}
+        accessKey={accessKey}
         participants={match.participants}
         submissions={match.submissions}
         voteRounds={match.voteRounds}
@@ -186,12 +179,14 @@ function MatchPhaseContent({
   if (match.state === 'guessing' && match.undercoverPlayerId) {
     return (
       <>
-        <UndercoverGuessPanel
-          playerId={playerId}
-          playerPassword={playerPassword}
-          isUndercover={playerId === match.undercoverPlayerId}
-          undercoverPlayerName={playerLookup[match.undercoverPlayerId] || 'Unknown'}
-        />
+        {isParticipating && (
+          <UndercoverGuessPanel
+            playerId={playerId}
+            accessKey={accessKey}
+            isUndercover={playerId === match.undercoverPlayerId}
+            undercoverPlayerName={playerLookup[match.undercoverPlayerId] || 'Unknown'}
+          />
+        )}
         <UndercoverWordList submissions={match.submissions} />
       </>
     );

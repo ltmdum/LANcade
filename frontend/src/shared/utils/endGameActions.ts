@@ -25,11 +25,12 @@ export function createEndGameState(): EndGameState {
  * Options for the handleEndGame function.
  */
 export interface HandleEndGameOptions {
-  adminSessionId: string;
+  /** Admin access key. */
+  accessKey: string;
   setShowConfirmation: (show: boolean) => void;
   setStatus: (status: string) => void;
   setIsEnding: (ending: boolean) => void;
-  onExpired: () => void;
+  onUnauthorized: () => void;
   onEnded?: () => void;
 }
 
@@ -48,26 +49,26 @@ export interface HandleEndGameResult {
  */
 export async function handleEndGame(options: HandleEndGameOptions): Promise<HandleEndGameResult> {
   const {
-    adminSessionId,
+    accessKey,
     setShowConfirmation,
     setStatus,
     setIsEnding,
-    onExpired,
+    onUnauthorized,
     onEnded,
   } = options;
 
-  if (!adminSessionId) {
-    return { success: false, statusMessage: 'Admin session required.' };
+  if (!accessKey) {
+    return { success: false, statusMessage: 'Admin access required.' };
   }
 
   setIsEnding(true);
   setStatus('');
 
   try {
-    const { response, data } = await endGame(adminSessionId);
+    const { response, data } = await endGame(accessKey);
 
     if (response.status === 401) {
-      onExpired();
+      onUnauthorized();
       setIsEnding(false);
       return { success: false, statusMessage: '' };
     }

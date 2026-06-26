@@ -54,9 +54,9 @@ function createDefaultProps(serverState: LastWordStandingState) {
     connection: 'connected' as const,
     playerId: 'player-1',
     playerName: 'Alice',
-    playerPassword: 'password123',
-    adminSessionId: '',
+    accessKey: 'KEY123',
     isAdmin: false,
+    isParticipating: true,
     setShowConfig: vi.fn(),
   };
 }
@@ -142,7 +142,7 @@ describe('LastWordStandingGame', () => {
 
       const props = createDefaultProps(state);
       props.isAdmin = true;
-      props.adminSessionId = 'admin-123';
+      props.accessKey = 'admin-123';
 
       render(<LastWordStandingGame {...props} />);
 
@@ -207,7 +207,7 @@ describe('LastWordStandingGame', () => {
 
       const props = createDefaultProps(state);
       props.isAdmin = true;
-      props.adminSessionId = 'admin-123';
+      props.accessKey = 'admin-123';
 
       render(<LastWordStandingGame {...props} />);
 
@@ -252,7 +252,7 @@ describe('LastWordStandingGame', () => {
 
       const props = createDefaultProps(state);
       props.isAdmin = true;
-      props.adminSessionId = 'admin-123';
+      props.accessKey = 'admin-123';
 
       render(<LastWordStandingGame {...props} />);
 
@@ -365,16 +365,15 @@ describe('LastWordStandingGame', () => {
       props.playerId = '';
       props.playerName = '';
       props.isAdmin = true;
-      props.adminSessionId = 'admin-123';
+      props.isParticipating = false;
+      props.accessKey = 'admin-123';
 
       render(<LastWordStandingGame {...props} />);
 
       expect(screen.getByRole('button', { name: /play again/i })).toBeInTheDocument();
-      // Non-playing admin should NOT see winner display
-      expect(screen.queryByText(/winner/i)).not.toBeInTheDocument();
     });
 
-    it('admin non-player renders nothing during active state', () => {
+    it('non-participating admin sees active panel but no submit form', () => {
       const state = createBaseState();
       state.match.state = 'active';
       state.match.currentLetter = 'A';
@@ -387,14 +386,18 @@ describe('LastWordStandingGame', () => {
       props.playerId = '';
       props.playerName = '';
       props.isAdmin = true;
-      props.adminSessionId = 'admin-123';
+      props.isParticipating = false;
+      props.accessKey = 'admin-123';
 
-      const { container } = render(<LastWordStandingGame {...props} />);
+      render(<LastWordStandingGame {...props} />);
 
-      expect(container.firstChild).toBeNull();
+      // Non-participating admin sees the letter but no submit form, no "waiting" message
+      expect(screen.getByText('A')).toBeInTheDocument();
+      expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+      expect(screen.queryByText(/waiting for next game/i)).not.toBeInTheDocument();
     });
 
-    it('admin with stale playerId renders nothing during active state', () => {
+    it('admin with stale playerId sees active panel but no submit form', () => {
       const state = createBaseState();
       state.match.state = 'active';
       state.match.currentLetter = 'A';
@@ -407,11 +410,13 @@ describe('LastWordStandingGame', () => {
       props.playerId = 'stale-id';
       props.playerName = 'Stale';
       props.isAdmin = true;
-      props.adminSessionId = 'admin-123';
+      props.isParticipating = false;
+      props.accessKey = 'admin-123';
 
-      const { container } = render(<LastWordStandingGame {...props} />);
+      render(<LastWordStandingGame {...props} />);
 
-      expect(container.firstChild).toBeNull();
+      expect(screen.getByText('A')).toBeInTheDocument();
+      expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
     });
 
     it('admin with stale playerId sees PlayAgainPanel in finished state', () => {
@@ -426,12 +431,12 @@ describe('LastWordStandingGame', () => {
       props.playerId = 'stale-id';
       props.playerName = 'Stale';
       props.isAdmin = true;
-      props.adminSessionId = 'admin-123';
+      props.isParticipating = false;
+      props.accessKey = 'admin-123';
 
       render(<LastWordStandingGame {...props} />);
 
       expect(screen.getByRole('button', { name: /play again/i })).toBeInTheDocument();
-      expect(screen.queryByText(/winner/i)).not.toBeInTheDocument();
       expect(screen.queryByText(/waiting for next game/i)).not.toBeInTheDocument();
     });
   });

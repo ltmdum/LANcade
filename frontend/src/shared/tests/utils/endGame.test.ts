@@ -16,22 +16,21 @@ describe('endGame', () => {
     vi.restoreAllMocks();
   });
 
-  it('calls the end game API with correct headers', async () => {
+  it('calls the end game API with key in body', async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: () => Promise.resolve({ ok: true }),
     });
 
-    const sessionId = 'test-session-123';
-    await endGame(sessionId);
+    const accessKey = 'test-session-123';
+    await endGame(accessKey);
 
     expect(mockFetch).toHaveBeenCalledWith('/api/admin/end', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: 'Bearer test-session-123',
       },
-      body: JSON.stringify({}),
+      body: JSON.stringify({ key: 'test-session-123' }),
     });
   });
 

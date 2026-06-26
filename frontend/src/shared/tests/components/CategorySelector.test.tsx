@@ -10,8 +10,8 @@ describe('CategorySelector component', () => {
   const defaultProps = {
     categories: ['Animals', 'Food', 'Countries', 'Movies'],
     selectedCategory: 'Animals',
-    adminSessionId: 'admin-123',
-    onExpired: vi.fn(),
+    accessKey: 'admin-123',
+    onUnauthorized: vi.fn(),
   };
 
   beforeEach(() => {
@@ -51,8 +51,8 @@ describe('CategorySelector component', () => {
       expect(screen.getByRole('button', { name: /random/i })).toBeInTheDocument();
     });
 
-    it('disables dropdown when no admin session', () => {
-      render(<CategorySelector {...defaultProps} adminSessionId="" />);
+    it('disables dropdown when no access key', () => {
+      render(<CategorySelector {...defaultProps} accessKey="" />);
 
       expect(screen.getByRole('combobox')).toBeDisabled();
     });
@@ -71,7 +71,7 @@ describe('CategorySelector component', () => {
       await waitFor(() => {
         expect(mockFetch).toHaveBeenCalledWith('/api/admin/category', expect.objectContaining({
           method: 'POST',
-          body: JSON.stringify({ category: 'Food' }),
+          body: JSON.stringify({ category: 'Food', key: 'admin-123' }),
         }));
       });
     });
@@ -90,25 +90,25 @@ describe('CategorySelector component', () => {
       await waitFor(() => {
         expect(mockFetch).toHaveBeenCalledWith('/api/admin/category', expect.objectContaining({
           method: 'POST',
-          body: JSON.stringify({ random: true, count: undefined }),
+          body: JSON.stringify({ random: true, key: 'admin-123' }),
         }));
       });
     });
 
-    it('calls onExpired when API returns 401', async () => {
+    it('calls onUnauthorized when API returns 401', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 401,
         json: () => Promise.resolve({ error: 'unauthorized' }),
       });
 
-      const onExpired = vi.fn();
-      render(<CategorySelector {...defaultProps} onExpired={onExpired} />);
+      const onUnauthorized = vi.fn();
+      render(<CategorySelector {...defaultProps} onUnauthorized={onUnauthorized} />);
 
       fireEvent.change(screen.getByRole('combobox'), { target: { value: 'Food' } });
 
       await waitFor(() => {
-        expect(onExpired).toHaveBeenCalled();
+        expect(onUnauthorized).toHaveBeenCalled();
       });
     });
 
@@ -174,7 +174,7 @@ describe('CategorySelector component', () => {
       await waitFor(() => {
         expect(mockFetch).toHaveBeenCalledWith('/api/admin/category', expect.objectContaining({
           method: 'POST',
-          body: JSON.stringify({ categories: ['Animals', 'Food', 'Countries'] }),
+          body: JSON.stringify({ categories: ['Animals', 'Food', 'Countries'], key: 'admin-123' }),
         }));
       });
     });
@@ -218,7 +218,7 @@ describe('CategorySelector component', () => {
       await waitFor(() => {
         expect(mockFetch).toHaveBeenCalledWith('/api/admin/category', expect.objectContaining({
           method: 'POST',
-          body: JSON.stringify({ addCustom: 'Custom' }),
+          body: JSON.stringify({ addCustom: 'Custom', key: 'admin-123' }),
         }));
       });
     });
@@ -237,7 +237,7 @@ describe('CategorySelector component', () => {
       await waitFor(() => {
         expect(mockFetch).toHaveBeenCalledWith('/api/admin/category', expect.objectContaining({
           method: 'POST',
-          body: JSON.stringify({ random: true, count: 2 }), // 2 selected categories
+          body: JSON.stringify({ random: true, count: 2, key: 'admin-123' }), // 2 selected categories
         }));
       });
     });

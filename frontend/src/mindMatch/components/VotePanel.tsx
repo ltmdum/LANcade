@@ -6,7 +6,7 @@ import './VotePanel.css';
 
 interface VotePanelProps {
   playerId: string;
-  playerPassword: string;
+  accessKey: string;
   claims: MindMatchClaim[];
   currentClaimIndex: number;
   playerLookup: Record<string, string>;
@@ -19,7 +19,7 @@ interface VotePanelProps {
  */
 export function VotePanel({
   playerId,
-  playerPassword,
+  accessKey,
   claims,
   currentClaimIndex,
   playerLookup,
@@ -47,7 +47,7 @@ export function VotePanel({
     setStatus('');
     const result = await handleVoteSubmit({
       playerId,
-      playerPassword,
+      accessKey,
       payload: { decision },
       errorMessages: {
         notEligible: 'You cannot vote on your own claim.',
