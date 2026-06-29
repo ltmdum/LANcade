@@ -27,7 +27,7 @@ export interface CategoryClashEngineOptions {
   }) => AnyCategoryManager;
   /**
    * Produce the per-round prompt data. Defaults to a single random letter.
-   * Games such as Gridlock override this to generate a tray of letter tiles.
+   * Games such as Nine Dash override this to generate a tray of letter tiles.
    */
   generateRoundData?: () => RoundData;
   /**
@@ -37,7 +37,7 @@ export interface CategoryClashEngineOptions {
    */
   validateActiveWord?: (round: Round, key: string, rawWord: string) => SubmitWordResult | null;
   /**
-   * Score a single accepted word. Defaults to one point per word; Gridlock
+   * Score a single accepted word. Defaults to one point per word; Nine Dash
    * overrides this to award points equal to the word length.
    */
   scoreWord?: (word: WordEntry) => number;
@@ -252,7 +252,7 @@ export function createCategoryClashEngine(
 ): CategoryClashEngine {
   const onStateChange = options.onStateChange || (() => {});
   const clientGraceMs = Number.isFinite(options.clientGraceMs) ? options.clientGraceMs! : 5000;
-  const generateRoundData = options.generateRoundData || (() => ({ letter: randomLetter(), letters: null }));
+  const generateRoundData = options.generateRoundData || ((): RoundData => ({ letter: randomLetter(), letters: null }));
   const validateActiveWord = options.validateActiveWord || defaultValidateActiveWord;
   const scoreWord = options.scoreWord || (() => 1);
   const categoryless = options.categoryless === true;

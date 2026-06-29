@@ -1,16 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { GridlockGame } from '../GridlockGame';
+import { NineDashGame } from '../NineDashGame';
 import type { CategoryClashState } from '@lancade/shared';
 
-// Mock fetch globally to prevent API calls
 vi.stubGlobal('fetch', vi.fn());
 
 const TILES = ['T', 'R', 'I', 'A', 'N', 'G', 'L', 'E', 'S'];
 
-/**
- * Create a base server state for testing.
- */
 function createBaseState(): CategoryClashState {
   return {
     serverTime: Date.now(),
@@ -35,14 +31,11 @@ function createBaseState(): CategoryClashState {
       votesSubmittedIds: [],
       resultsByPlayer: null,
     },
-    game: { id: 'gridlock', name: 'Gridlock' },
-    games: [{ id: 'gridlock', name: 'Gridlock' }],
+    game: { id: 'ninedash', name: 'Nine Dash' },
+    games: [{ id: 'ninedash', name: 'Nine Dash' }],
   };
 }
 
-/**
- * Default props for the game component.
- */
 function createDefaultProps(serverState: CategoryClashState) {
   return {
     serverState,
@@ -56,14 +49,14 @@ function createDefaultProps(serverState: CategoryClashState) {
   };
 }
 
-describe('GridlockGame', () => {
+describe('NineDashGame', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it('renders nothing when round is idle', () => {
     const state = createBaseState();
-    const { container } = render(<GridlockGame {...createDefaultProps(state)} />);
+    const { container } = render(<NineDashGame {...createDefaultProps(state)} />);
     expect(container.firstChild).toBeNull();
   });
 
@@ -74,7 +67,7 @@ describe('GridlockGame', () => {
       state.round.letters = TILES;
       state.round.durationMs = 120000;
 
-      render(<GridlockGame {...createDefaultProps(state)} />);
+      render(<NineDashGame {...createDefaultProps(state)} />);
 
       for (const tile of TILES) {
         expect(screen.getByText(tile)).toBeInTheDocument();
@@ -89,7 +82,7 @@ describe('GridlockGame', () => {
       state.round.durationMs = 120000;
       state.round.scoresByPlayer = { 'player-1': 7 };
 
-      render(<GridlockGame {...createDefaultProps(state)} />);
+      render(<NineDashGame {...createDefaultProps(state)} />);
 
       expect(screen.getByText(/Score: 7/)).toBeInTheDocument();
     });
@@ -105,7 +98,7 @@ describe('GridlockGame', () => {
       props.isAdmin = true;
       props.isParticipating = false;
 
-      render(<GridlockGame {...props} />);
+      render(<NineDashGame {...props} />);
 
       expect(screen.queryByPlaceholderText(/make a word/i)).not.toBeInTheDocument();
     });
@@ -121,7 +114,7 @@ describe('GridlockGame', () => {
       ];
       state.round.anonymousWords = [{ id: 'w1', word: 'TRIANGLE', category: '' }];
 
-      render(<GridlockGame {...createDefaultProps(state)} />);
+      render(<NineDashGame {...createDefaultProps(state)} />);
 
       expect(screen.getByText('TRIANGLE')).toBeInTheDocument();
       expect(screen.queryByText('Bob')).not.toBeInTheDocument();
@@ -147,7 +140,7 @@ describe('GridlockGame', () => {
         },
       };
 
-      render(<GridlockGame {...createDefaultProps(state)} />);
+      render(<NineDashGame {...createDefaultProps(state)} />);
 
       expect(screen.getByText('Leaderboard')).toBeInTheDocument();
       expect(screen.getByText('Your Results')).toBeInTheDocument();
@@ -160,7 +153,7 @@ describe('GridlockGame', () => {
       state.round.letters = TILES;
       state.round.resultsByPlayer = {};
 
-      render(<GridlockGame {...createDefaultProps(state)} />);
+      render(<NineDashGame {...createDefaultProps(state)} />);
 
       expect(screen.getByText(/nobody submitted any words/i)).toBeInTheDocument();
     });

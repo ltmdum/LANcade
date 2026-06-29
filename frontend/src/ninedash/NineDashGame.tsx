@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { GridlockActivePanel } from './components/GridlockActivePanel';
-import { GridlockResults } from './components/GridlockResults';
+import { NineDashActivePanel } from './components/NineDashActivePanel';
+import { NineDashResults } from './components/NineDashResults';
 import { VotingPanel } from '../categoryclashshared/components/VotingPanel';
 import { toggleVoteSelection } from '../categoryclashshared/utils/voting';
 import { validateGridWord } from './utils/letters';
@@ -17,19 +17,13 @@ import {
 import { buildScoreboard } from '../categoryclashshared/utils/scoreboard';
 import type { GameProps } from '../shared/types/GameProps';
 import type { CategoryClashState } from '@lancade/shared';
-import './GridlockGame.css';
+import './NineDashGame.css';
 
-interface GridlockGameProps extends GameProps {
+interface NineDashGameProps extends GameProps {
   serverState: CategoryClashState;
 }
 
-/**
- * Gridlock gameplay surface: build as many words as possible from a 3x3 grid
- * of jumbled letters, then vote on other players' words.
- * @param props Game props from the plugin.
- * @returns Gridlock game element.
- */
-export function GridlockGame({
+export function NineDashGame({
   serverState,
   connection,
   playerId,
@@ -38,7 +32,7 @@ export function GridlockGame({
   isAdmin,
   isParticipating,
   setShowConfig,
-}: GridlockGameProps) {
+}: NineDashGameProps) {
   const [wordInput, setWordInput] = useState('');
   const [flash, setFlash] = useState('');
   const [countdown, setCountdown] = useState('');
@@ -58,6 +52,7 @@ export function GridlockGame({
 
   const round = serverState.round;
   const letters = round.letters || [];
+  const sourceWord = round.sourceWord || '';
   const scoresByPlayer = round.scoresByPlayer || {};
   const myScore = playerId ? scoresByPlayer[playerId] || 0 : 0;
   const hasVoted = round.votesSubmittedIds?.includes(playerId) || false;
@@ -65,7 +60,6 @@ export function GridlockGame({
 
   const scoreboard = useMemo(() => buildScoreboard(round.resultsByPlayer), [round.resultsByPlayer]);
 
-  /** The current player's accepted words this round. */
   const myWords = useMemo(() => {
     const myGroup = (round.wordsByPlayer || []).find((group) => group.playerId === playerId);
     return (myGroup?.words || []).map((entry) => ({ id: entry.id, word: entry.word }));
@@ -73,7 +67,6 @@ export function GridlockGame({
 
   const myWordIds = useMemo(() => new Set(myWords.map((entry) => entry.id)), [myWords]);
 
-  /** Anonymous words the current player is allowed to vote on. */
   const voteWords = useMemo(
     () => (round.anonymousWords || []).filter((word) => !myWordIds.has(word.id)),
     [round.anonymousWords, myWordIds]
@@ -185,7 +178,7 @@ export function GridlockGame({
   return (
     <div className={flash ? `flash-${flash}` : ''}>
       {round.state === 'active' && (
-        <GridlockActivePanel
+        <NineDashActivePanel
           letters={letters}
           countdown={countdown}
           statusMessage={statusMessage}
@@ -218,10 +211,11 @@ export function GridlockGame({
       )}
 
       {round.state === 'results' && (
-        <GridlockResults
+        <NineDashResults
           scoreboard={scoreboard}
           results={results}
           playerId={playerId}
+          sourceWord={sourceWord}
           isAdmin={isAdmin}
           actionStatus={actionStatus}
           onPlayAgain={onPlayAgain}

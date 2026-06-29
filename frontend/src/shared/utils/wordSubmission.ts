@@ -59,7 +59,7 @@ export interface WordSubmissionConfig {
   category?: string;
   /**
    * Optional custom pre-submit validator. When provided it replaces the
-   * default "starts with letter" check (e.g. Gridlock validates against its
+   * default "starts with letter" check (e.g. Nine Dash validates against its
    * available letter tiles).
    */
   validate?: (word: string) => PreSubmitValidationResult;

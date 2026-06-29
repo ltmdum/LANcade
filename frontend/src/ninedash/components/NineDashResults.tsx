@@ -5,33 +5,34 @@ import { PlayerResultsTable } from '../../categoryclashshared/components/PlayerR
 import type { ScoreboardEntry } from '../../categoryclashshared/utils/scoreboard';
 import type { PlayerResult } from '@lancade/shared';
 
-interface GridlockResultsProps {
+interface NineDashResultsProps {
   scoreboard: ScoreboardEntry[];
   results: PlayerResult | null;
   playerId: string;
+  sourceWord: string;
   isAdmin: boolean;
   actionStatus: string;
   onPlayAgain: () => void;
   onBackToConfig: () => void;
 }
 
-/**
- * Results view for Gridlock: the leaderboard, the player's own word results,
- * and admin play-again controls.
- * @param props Results props.
- * @returns Gridlock results element.
- */
-export function GridlockResults({
+export function NineDashResults({
   scoreboard,
   results,
   playerId,
+  sourceWord,
   isAdmin,
   actionStatus,
   onPlayAgain,
   onBackToConfig,
-}: GridlockResultsProps) {
+}: NineDashResultsProps) {
   return (
     <>
+      {sourceWord && (
+        <Panel title="Hidden Word">
+          <p className="ninedash-source-word">{sourceWord}</p>
+        </Panel>
+      )}
       {scoreboard.length === 0 ? (
         <Panel title="Results">
           <p>No results — nobody submitted any words this round.</p>

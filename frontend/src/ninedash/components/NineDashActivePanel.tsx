@@ -4,14 +4,14 @@ import { WordSubmitForm } from '../../shared/components/WordSubmitForm';
 import { PlayerScoreTags } from '../../shared/components/PlayerScoreTags';
 import { LetterGrid } from './LetterGrid';
 import { AcceptedWordsList } from './AcceptedWordsList';
-import './GridlockActivePanel.css';
+import './NineDashActivePanel.css';
 
 interface AcceptedWord {
   id: string;
   word: string;
 }
 
-interface GridlockActivePanelProps {
+interface NineDashActivePanelProps {
   letters: string[];
   countdown: string;
   statusMessage: string;
@@ -28,12 +28,7 @@ interface GridlockActivePanelProps {
   onNewGrid: () => void;
 }
 
-/**
- * Active round panel for Gridlock gameplay.
- * @param props Active panel props.
- * @returns Active panel element.
- */
-export function GridlockActivePanel({
+export function NineDashActivePanel({
   letters,
   countdown,
   statusMessage,
@@ -48,19 +43,19 @@ export function GridlockActivePanel({
   onWordInputChange,
   onWordSubmit,
   onNewGrid,
-}: GridlockActivePanelProps) {
+}: NineDashActivePanelProps) {
   return (
-    <Panel className="gridlock-active-panel">
+    <Panel className="ninedash-active-panel">
       {isParticipating && <PlayerScoreTags playerName={playerName} score={myScore} />}
       <LetterGrid letters={letters} />
-      <div className="gridlock-countdown">{countdown}</div>
-      <div className="gridlock-status-message">{statusMessage}</div>
+      <div className="ninedash-countdown">{countdown}</div>
+      <div className="ninedash-status-message">{statusMessage}</div>
       {isAdmin && (
         <button type="button" className="btn btn-secondary" onClick={onNewGrid}>
           New Grid
         </button>
       )}
-      <div className="gridlock-connection">{connection}</div>
+      <div className="ninedash-connection">{connection}</div>
       {isParticipating && !timeUp && (
         <WordSubmitForm
           value={wordInput}

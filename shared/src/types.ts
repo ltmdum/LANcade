@@ -59,9 +59,12 @@ export interface CategoryClashRoundState {
   id: number;
   state: 'idle' | 'active' | 'voting' | 'results';
   letter: string | null;
-  /** Available letter tiles for grid-style games (e.g. Gridlock). Null for
+  /** Available letter tiles for grid-style games (e.g. Nine Dash). Null for
    *  games that do not use a letter tray. */
   letters?: string[] | null;
+  /** The hidden nine-letter source word for a Nine Dash round. Null or absent
+   *  for non-grid games. Revealed once the round enters voting/results. */
+  sourceWord?: string | null;
   category: string | null;
   categories: string[];
   durationMs: number | null;
@@ -391,8 +394,39 @@ export interface TradingExchangeState {
   games: GameInfo[];
 }
 
+// Telepathy types
+export interface TelepathyLossDetails {
+  placedByPlayerId: string;
+  placedCard: number;
+  blockedByPlayerId: string;
+  blockedCard: number;
+  round: number;
+}
+
+export interface TelepathyGameState {
+  phase: 'idle' | 'playing' | 'round_complete' | 'lost' | 'won';
+  round: number;
+  targetRound: number;
+  lastPlaced: number | null;
+  totalPlaced: number;
+  totalCardsInRound: number;
+  /** Each player's hand. Null when idle. */
+  hands: Record<string, number[]> | null;
+  lossDetails: TelepathyLossDetails | null;
+}
+
+export interface TelepathyState {
+  serverTime: number;
+  players: PlayerInfo[];
+  settings: CategorySettings;
+  gameSettings: Record<string, unknown>;
+  telepathy: TelepathyGameState;
+  game: GameInfo;
+  games: GameInfo[];
+}
+
 // Union type for any game state
-export type GameState = CategoryClashState | LastWordStandingState | FiveLetterWordState | MindMatchState | AlphabetRaceState | UndercoverAgentState | TradingExchangeState;
+export type GameState = CategoryClashState | LastWordStandingState | FiveLetterWordState | MindMatchState | AlphabetRaceState | UndercoverAgentState | TradingExchangeState | TelepathyState;
 
 // API response types
 export interface ApiResult {

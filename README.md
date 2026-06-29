@@ -77,7 +77,8 @@ Games are configured via `games.config.json` in the project root. This file cont
 | `alphabetrace` | Alphabet Race  | A race through all 26 letters                     |
 | `undercoveragent` | Undercover Agent | Find the imposter among you                    |
 | `tradingexchange` | Trading Exchange | Trade around the hidden sum of all cards        |
-| `gridlock` | Gridlock | Build words from a 3x3 grid of jumbled letters          |
+| `ninedash` | Nine Dash | Build words from a 3x3 grid of jumbled letters          |
+| `telepathy` | Telepathy | Place cards in ascending order without skipping others    |
 
 ### Enabling/Disabling Games
 
@@ -110,8 +111,7 @@ Available games: quickfire, multicat, lastwordstanding, fiveletterword, mindmatc
 lancade/
 ├── games.config.json   # Game configuration (which games are enabled)
 ├── scripts/
-│   ├── validate-games-config.js    # Build-time config validation
-│   └── generate-nine-letter-words.js  # Generates Gridlock's seed word list from `word-list`
+│   └── validate-games-config.js    # Build-time config validation
 ├── frontend/           # React + Vite + TailwindCSS
 │   └── src/
 |       ├── shared/
@@ -171,12 +171,12 @@ lancade/
 │       │   ├── utils/              # Trading Exchange specific utility functions
 │       │   ├── TradingExchangeGame.tsx
 │       │   └── plugin.tsx          # Trading Exchange frontend plugin registration
-|       ├── gridlock/
-│       │   ├── components/         # Gridlock specific components (LetterGrid, active panel)
-│       │   ├── tests/              # Gridlock specific tests
-│       │   ├── utils/              # Gridlock specific utility functions (tile validation)
-│       │   ├── GridlockGame.tsx
-│       │   └── plugin.tsx          # Gridlock frontend plugin registration
+|       ├── ninedash/
+│       │   ├── components/         # Nine Dash specific components (LetterGrid, active panel)
+│       │   ├── tests/              # Nine Dash specific tests
+│       │   ├── utils/              # Nine Dash specific utility functions (tile validation)
+│       │   ├── NineDashGame.tsx
+│       │   └── plugin.tsx          # Nine Dash frontend plugin registration
 │       └── plugins/            # Frontend plugin system
 ├── backend/            # Express + TypeScript
 │   └── src/
@@ -211,8 +211,7 @@ lancade/
 │       │   ├── tests/          # 5 Letter Word specific Vitest tests
 │       │   ├── fiveletterword.ts
 │       │   ├── scoring.ts      # Guess-style letter evaluation
-│       │   ├── word-list.ts    # Word list loading utilities
-│       │   ├── guess-words.json  # Bundled Guess word lists
+│       │   ├── word-list.ts    # Word list loading utilities (reads from word-list package)
 │       │   └── plugin.ts
 |       ├── mindMatch/
 │       │   ├── tests/          # Mind Match specific Vitest tests
@@ -232,12 +231,11 @@ lancade/
 │       │   ├── tradingexchange.ts
 │       │   ├── matching.ts     # Order matching algorithms
 │       │   └── plugin.ts
-|       ├── gridlock/
-│       │   ├── tests/          # Gridlock specific Vitest tests
+|       ├── ninedash/
+│       │   ├── tests/          # Nine Dash specific Vitest tests
 │       │   ├── grid.ts         # Grid generation and letter jumbling
-│       │   ├── word-source.ts  # Loads the bundled nine-letter word list
-│       │   ├── nine-letter-words.json  # Generated seed word list
-│       │   ├── gridlock.ts
+│       │   ├── word-source.ts  # Loads nine-letter words from the word-list package
+│       │   ├── ninedash.ts
 │       │   └── plugin.ts
 │       └── plugins/        # Backend plugin system
 │           └── tests/          # Vitest tests (mirrors src structure)
@@ -502,7 +500,7 @@ Create tests in `backend/src/tests/yourgame/` to test your game logic.
 - **Scoring**: Highest total P&L (realized + settlement) wins.
 - Card-related utilities are shared in `shared/src/cards.ts`, `backend/src/shared/cards/`, and `frontend/src/shared/cards/` for reuse by future card games.
 
-### Gridlock
+### Nine Dash
 - A timed word game played on a 3x3 grid of nine jumbled letter tiles.
 - Each round draws a hidden nine-letter word from an open-source word list and shuffles its letters into the grid, so the tiles never spell the source word.
 - Players submit as many words as they can using only the available tiles. Each tile may be used once per word; a letter that appears on multiple tiles may be reused that many times.
@@ -510,8 +508,8 @@ Create tests in `backend/src/tests/yourgame/` to test your game logic.
 - A word that has already been submitted (by anyone) is rejected and scores nothing.
 - Every accepted word scores one point per letter, so longer words are worth more.
 - When the timer ends, voting and scoring mirror Category Clash: words are shown anonymously, only players who submitted words can vote, and a word downvoted by at least half of the voters is removed. Highest score wins.
-- Gridlock reuses the shared Category Clash engine via injectable hooks for grid generation, letter-tile validation, and length-based scoring (`backend/src/categoryclashshared/categoryclash-engine.ts`).
-- The seed word list is generated from the open-source [`word-list`](https://www.npmjs.com/package/word-list) package by `scripts/generate-nine-letter-words.js` into `backend/src/gridlock/nine-letter-words.json`. Re-run that script to refresh the list.
+- Nine Dash reuses the shared Category Clash engine via injectable hooks for grid generation, letter-tile validation, and length-based scoring (`backend/src/categoryclashshared/categoryclash-engine.ts`).
+- Nine-letter seed words are loaded at runtime from the open-source [`word-list`](https://www.npmjs.com/package/word-list) package by filtering for words that are exactly nine letters long.
 
 ## Custom Categories
 

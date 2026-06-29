@@ -11,27 +11,20 @@ import {
 import { PlayerStore } from '../shared/stores/player-store.js';
 import { generateGrid, type GenerateGridOptions } from './grid.js';
 
-export interface GridlockGameOptions {
+export interface NineDashGameOptions {
   onStateChange?: () => void;
   clientGraceMs?: number;
   playerStore?: PlayerStore;
-  /** Grid generation overrides (for testing). */
   gridOptions?: GenerateGridOptions;
 }
 
-export interface GridlockGame extends CategoryClashEngine {
+export interface NineDashGame extends CategoryClashEngine {
   id: string;
   name: string;
   categories: string[];
 }
 
-/**
- * Gridlock submission strategy.
- * Each distinct word may only be accepted once. Because the engine already
- * rejects words taken by other players, an existing word here always belongs
- * to the submitting player and is rejected as a duplicate.
- */
-const gridlockStrategy: WordSubmissionStrategy = {
+const wordStrategy: WordSubmissionStrategy = {
   validateSubmission(
     _round: Round,
     _playerId: string,
@@ -55,12 +48,6 @@ const gridlockStrategy: WordSubmissionStrategy = {
   },
 };
 
-/**
- * Reject a word that cannot be spelled from the round's letter tiles.
- * @param round Active round carrying the available letter tiles.
- * @param key Uppercased candidate word.
- * @returns Rejection result when the word uses unavailable letters, else null.
- */
 function validateGridWord(round: Round, key: string): SubmitWordResult | null {
   if (!canFormWordFromTiles(key, round.letters || [])) {
     return { ok: false, reason: 'invalid_letters' };
@@ -68,39 +55,48 @@ function validateGridWord(round: Round, key: string): SubmitWordResult | null {
   return null;
 }
 
-/**
- * Award points equal to the number of letters in the word.
- * @param word Accepted word entry.
- * @returns The word's letter count.
- */
-function scoreByLength(word: WordEntry): number {
-  return word.word.length;
-}
+export function createGame(options: NineDashGameOptions = {}): NineDashGame {
+  let currentSourceWord: string | null = null;
 
-/**
- * Create a Gridlock game instance.
- * @param options Optional configuration overrides.
- * @returns Gridlock game instance.
- */
-export function createGame(options: GridlockGameOptions = {}): GridlockGame {
+  function scoreByLength(word: WordEntry): number {
+    const base = word.word.length;
+    if (currentSourceWord && word.word === currentSourceWord) {
+      return base * 2;
+    }
+    return base;
+  }
+
   const engine = createCategoryClashEngine(
     {
       categories: [],
       categoryless: true,
       createCategoryManager: (config) => createCategoryManager({ ...config, categories: [] }),
-      generateRoundData: () => ({ letter: null, letters: generateGrid(options.gridOptions).letters }),
+      generateRoundData: () => {
+        const grid = generateGrid(options.gridOptions);
+        currentSourceWord = grid.word;
+        return { letter: null, letters: grid.letters };
+      },
       validateActiveWord: (round, key) => validateGridWord(round, key),
       scoreWord: scoreByLength,
       onStateChange: options.onStateChange,
       clientGraceMs: options.clientGraceMs,
       playerStore: options.playerStore,
     },
-    gridlockStrategy
+    wordStrategy
   );
 
+  const originalGetState = engine.getState.bind(engine);
+  engine.getState = () => {
+    const state = originalGetState();
+    return {
+      ...state,
+      round: { ...state.round, sourceWord: currentSourceWord },
+    };
+  };
+
   return {
-    id: 'gridlock',
-    name: 'Gridlock',
+    id: 'ninedash',
+    name: 'Nine Dash',
     categories: [],
     ...engine,
   };

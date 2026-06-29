@@ -1,0 +1,190 @@
+.telepathy-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+}
+
+.telepathy-idle {
+  text-align: center;
+  color: var(--text-secondary);
+  padding: 16px 0;
+}
+
+.telepathy-pile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.telepathy-pile-label {
+  font-size: 14px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.telepathy-pile-card {
+  width: 64px;
+  height: 88px;
+  border: 2px solid var(--accent, #00C6F5);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: 700;
+  background: var(--surface, #1e293b);
+  color: var(--accent, #00C6F5);
+}
+
+.telepathy-info {
+  text-align: center;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.telepathy-hand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+
+.telepathy-hand-cards {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  max-width: 100%;
+  padding: 8px 4px;
+  scrollbar-width: thin;
+}
+
+.telepathy-hand-card {
+  flex-shrink: 0;
+  width: 52px;
+  height: 72px;
+  border: 1px solid var(--border, #334155);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 600;
+  background: var(--surface, #1e293b);
+  color: var(--text-primary, #f1f5f9);
+}
+
+.telepathy-hand-empty {
+  text-align: center;
+  color: var(--text-secondary);
+  padding: 16px 0;
+}
+
+.telepathy-hand-place {
+  min-width: 120px;
+}
+
+.telepathy-lost {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 0;
+}
+
+.telepathy-lost-flash {
+  background: rgba(239, 68, 68, 0.15);
+  border: 2px solid rgb(239, 68, 68);
+  border-radius: 8px;
+  padding: 16px;
+  text-align: center;
+  animation: telepathy-flash 0.6s ease-in-out 3;
+}
+
+@keyframes telepathy-flash {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.telepathy-lost-title {
+  color: rgb(239, 68, 68);
+  font-size: 20px;
+  margin: 0 0 8px;
+}
+
+.telepathy-lost-detail {
+  color: var(--text-primary, #f1f5f9);
+  margin: 0 0 4px;
+  font-size: 15px;
+}
+
+.telepathy-lost-back {
+  color: var(--text-secondary);
+  margin: 0;
+  font-size: 14px;
+}
+
+.telepathy-lost-button {
+  min-width: 140px;
+}
+
+.telepathy-won {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 24px 0;
+  text-align: center;
+}
+
+.telepathy-won-title {
+  color: var(--accent, #00C6F5);
+  font-size: 24px;
+  margin: 0;
+}
+
+.telepathy-won-message {
+  color: var(--text-primary, #f1f5f9);
+  margin: 0;
+  font-size: 16px;
+}
+
+.telepathy-won-button {
+  min-width: 140px;
+  margin-top: 8px;
+}
+
+.telepathy-round-complete {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 0;
+}
+
+.telepathy-round-complete-banner {
+  background: rgba(34, 197, 94, 0.15);
+  border: 2px solid rgb(34, 197, 94);
+  border-radius: 8px;
+  padding: 16px;
+  text-align: center;
+}
+
+.telepathy-round-complete-title {
+  color: rgb(34, 197, 94);
+  font-size: 20px;
+  margin: 0 0 8px;
+}
+
+.telepathy-round-complete-waiting {
+  color: var(--text-secondary);
+  margin: 0;
+  font-size: 14px;
+}
+
+.telepathy-round-complete-button {
+  min-width: 180px;
+}

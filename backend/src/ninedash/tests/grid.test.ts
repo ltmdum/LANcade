@@ -11,7 +11,7 @@ function sortLetters(value: string): string {
   return value.split('').sort().join('');
 }
 
-describe('gridlock grid', () => {
+describe('Nine Dash grid', () => {
   it('produces nine tiles that are a permutation of the source word', () => {
     const grid = generateGrid({ word: 'NOTEBOOKS' });
     expect(grid.word).toBe('NOTEBOOKS');

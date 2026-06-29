@@ -1,6 +1,6 @@
 import { pickRandomNineLetterWord } from './word-source.js';
 
-/** A generated Gridlock grid: the seed word and its jumbled letter tiles. */
+/** A generated Nine Dash grid: the seed word and its jumbled letter tiles. */
 export interface Grid {
   /** The nine-letter source word the tiles are drawn from. */
   word: string;
@@ -15,7 +15,7 @@ export interface GenerateGridOptions {
   rng?: () => number;
 }
 
-/** Number of letters/tiles in a Gridlock grid (a 3x3 matrix). */
+/** Number of letters/tiles in a Nine Dash grid (a 3x3 matrix). */
 export const GRID_SIZE = 9;
 
 /**

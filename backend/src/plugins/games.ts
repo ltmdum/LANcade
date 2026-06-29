@@ -17,7 +17,8 @@ import { plugin as mindMatchPlugin } from '../mindMatch/plugin.js';
 import { plugin as alphabetRacePlugin } from '../alphabetRace/plugin.js';
 import { plugin as undercoverAgentPlugin } from '../undercoverAgent/plugin.js';
 import { plugin as tradingExchangePlugin } from '../tradingExchange/plugin.js';
-import { plugin as gridlockPlugin } from '../gridlock/plugin.js';
+import { plugin as ninedashPlugin } from '../ninedash/plugin.js';
+import { plugin as telepathyPlugin } from '../telepathy/plugin.js';
 
 // Register all available games
 gameRegistry.register(quickFirePlugin);
@@ -28,6 +29,7 @@ gameRegistry.register(mindMatchPlugin);
 gameRegistry.register(alphabetRacePlugin);
 gameRegistry.register(undercoverAgentPlugin);
 gameRegistry.register(tradingExchangePlugin);
-gameRegistry.register(gridlockPlugin);
+gameRegistry.register(ninedashPlugin);
+gameRegistry.register(telepathyPlugin);
 
 export { gameRegistry };
