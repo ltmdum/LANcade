@@ -104,6 +104,16 @@
       above), which is used solely to verify the purchase state of the app.
     </p>
 
+    <h2>WebView and JavaScript</h2>
+    <p>
+      The app contains a WebView that loads the built-in admin panel (served
+      locally from the device's own embedded server). The WebView does
+      <strong>not</strong> add any JavaScript interface bridge
+      (<code>addJavascriptInterface</code>) to native code. JavaScript is
+      enabled only to run the app's own React-based frontend. No third-party
+      or untrusted web content is ever loaded into the WebView.
+    </p>
+
     <h2>Data Retention and Deletion</h2>
     <p>
       All gameplay data exists only in the device's memory while the server is
