@@ -6,8 +6,24 @@ import { gameRegistry } from './games.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+export interface GameEntry {
+  id: string;
+  displayName?: string;
+}
+
 export interface GamesConfig {
-  games: string[];
+  games: GameEntry[];
+}
+
+function normalizeEntry(entry: unknown): GameEntry {
+  if (!entry || typeof entry !== 'object') {
+    throw new Error(`Invalid game entry in config: ${JSON.stringify(entry)} (must be an object with "id" field)`);
+  }
+  const obj = entry as Record<string, unknown>;
+  if (typeof obj.id !== 'string') {
+    throw new Error(`Invalid game entry in config: ${JSON.stringify(entry)} (missing or invalid "id" field)`);
+  }
+  return { id: obj.id, displayName: typeof obj.displayName === 'string' ? obj.displayName : undefined };
 }
 
 /**
@@ -79,14 +95,16 @@ export function loadGamesConfig(): GamesConfig {
     throw new Error('games.config.json must have a "games" array');
   }
 
-  const games = configObj.games;
-  for (const game of games) {
-    if (typeof game !== 'string') {
-      throw new Error(`Invalid game entry in config: ${JSON.stringify(game)} (must be a string)`);
-    }
-  }
+  const games = configObj.games.map(normalizeEntry);
 
-  return { games: games as string[] };
+  return { games };
+}
+
+/**
+ * Extract just the game IDs from the config.
+ */
+export function getEnabledGameIds(config: GamesConfig): string[] {
+  return config.games.map((g) => g.id);
 }
 
 /**
@@ -95,7 +113,8 @@ export function loadGamesConfig(): GamesConfig {
  */
 export function initializeGames(): void {
   const config = loadGamesConfig();
-  const invalidIds = gameRegistry.setEnabledGames(config.games);
+  const ids = getEnabledGameIds(config);
+  const invalidIds = gameRegistry.setEnabledGames(ids);
   
   if (invalidIds.length > 0) {
     const availableGames = gameRegistry.getAllRegisteredIds();
@@ -105,7 +124,7 @@ export function initializeGames(): void {
     );
   }
 
-  if (config.games.length === 0) {
+  if (ids.length === 0) {
     throw new Error('No games enabled in games.config.json. Add at least one game.');
   }
 }

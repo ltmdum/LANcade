@@ -72,15 +72,18 @@ function validateConfig() {
     process.exit(1);
   }
 
-  // Validate game IDs
-  const invalidIds = [];
-  for (const gameId of config.games) {
-    if (typeof gameId !== 'string') {
-      console.error(`Error: Invalid game entry: ${JSON.stringify(gameId)} (must be a string)`);
-      process.exit(1);
+  const entries = config.games.map((entry, i) => {
+    if (entry && typeof entry === 'object' && typeof entry.id === 'string') {
+      return { id: entry.id };
     }
-    if (!KNOWN_GAMES.has(gameId)) {
-      invalidIds.push(gameId);
+    console.error(`Error: Invalid game entry at index ${i}: ${JSON.stringify(entry)} (must be an object with "id" field)`);
+    process.exit(1);
+  });
+
+  const invalidIds = [];
+  for (const { id } of entries) {
+    if (!KNOWN_GAMES.has(id)) {
+      invalidIds.push(id);
     }
   }
 
@@ -91,7 +94,7 @@ function validateConfig() {
   }
 
   // Check at least one game
-  if (config.games.length === 0) {
+  if (entries.length === 0) {
     console.error('Error: No games enabled in games.config.json.');
     console.error('Add at least one game ID to the "games" array.');
     process.exit(1);
@@ -99,16 +102,17 @@ function validateConfig() {
 
   // Check for duplicates
   const seen = new Set();
-  for (const gameId of config.games) {
-    if (seen.has(gameId)) {
-      console.error(`Error: Duplicate game ID in games.config.json: ${gameId}`);
+  for (const { id } of entries) {
+    if (seen.has(id)) {
+      console.error(`Error: Duplicate game ID in games.config.json: ${id}`);
       process.exit(1);
     }
-    seen.add(gameId);
+    seen.add(id);
   }
 
-  console.log(`✓ games.config.json is valid (${config.games.length} game(s) enabled)`);
-  console.log(`  Enabled: ${config.games.join(', ')}`);
+  const enabledIds = entries.map((e) => e.id);
+  console.log(`✓ games.config.json is valid (${entries.length} game(s) enabled)`);
+  console.log(`  Enabled: ${enabledIds.join(', ')}`);
 }
 
 validateConfig();

@@ -1,14 +1,14 @@
 {
   "games": [
-    "quickfire",
-    "multicat",
-    "lastwordstanding",
-    "fiveletterword",
-    "mindmatch",
-    "alphabetrace",
-    "undercoveragent",
-    "tradingexchange",
-    "ninedash",
-    "telepathy"
+    { "id": "quickfire", "displayName": "Category Clash: Quick Fire" },
+    { "id": "multicat", "displayName": "Category Clash: Multicat" },
+    { "id": "lastwordstanding", "displayName": "Last Word Standing" },
+    { "id": "fiveletterword", "displayName": "5 Letter Word" },
+    { "id": "mindmatch", "displayName": "Mind Match" },
+    { "id": "alphabetrace", "displayName": "Alphabet Race" },
+    { "id": "undercoveragent", "displayName": "Undercover Agent" },
+    { "id": "tradingexchange", "displayName": "Trading Exchange" },
+    { "id": "ninedash", "displayName": "Nine Dash" },
+    { "id": "telepathy", "displayName": "Telepathy" }
   ]
 }

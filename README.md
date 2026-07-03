@@ -49,21 +49,26 @@ Run all tests (backend and frontend):
 npm test
 ```
 
+A CI workflow (`.github/workflows/ci.yml`) runs `npm ci` → `npm run build` → `npm test` on every push to `main` and every PR targeting `main`.
+
 ## Game Configuration
 
 Games are configured via `games.config.json` in the project root. This file controls which games are available in the application.
 
 ### Configuration Format
 
+Each entry is an object with an `id` (matching the game plugin ID) and a `displayName` (shown in app UI):
+
 ```json
 {
   "games": [
-    "quickfire",
-    "multicat",
-    "lastwordstanding"
+    { "id": "quickfire", "displayName": "Category Clash: Quick Fire" },
+    { "id": "multicat", "displayName": "Category Clash: Multicat" }
   ]
 }
 ```
+
+
 
 ### Available Games
 
@@ -86,7 +91,10 @@ To enable or disable games, edit `games.config.json`:
 
 ```json
 {
-  "games": ["quickfire", "lastwordstanding"]
+  "games": [
+    { "id": "quickfire", "displayName": "Category Clash: Quick Fire" },
+    { "id": "lastwordstanding", "displayName": "Last Word Standing" }
+  ]
 }
 ```
 
@@ -109,8 +117,12 @@ Available games: quickfire, multicat, lastwordstanding, fiveletterword, mindmatc
 
 ```
 lancade/
-├── games.config.json   # Game configuration (which games are enabled)
+├── games.config.json   # Game configuration (which games are enabled, with display names)
+├── .github/
+│   └── workflows/
+│       └── ci.yml      # Build + test on push/PR to main
 ├── scripts/
+│   ├── extract-word-lists.js       # Generates per-length word JSON files from word-list
 │   └── validate-games-config.js    # Build-time config validation
 ├── frontend/           # React + Vite + TailwindCSS
 │   └── src/
@@ -373,10 +385,10 @@ Add to `games.config.json`:
 ```json
 {
   "games": [
-    "quickfire",
-    "multicat",
-    "lastwordstanding",
-    "yourgame"
+    { "id": "quickfire", "displayName": "Category Clash: Quick Fire" },
+    { "id": "multicat", "displayName": "Category Clash: Multicat" },
+    { "id": "lastwordstanding", "displayName": "Last Word Standing" },
+    { "id": "yourgame", "displayName": "Your Game Name" }
   ]
 }
 ```
@@ -539,6 +551,12 @@ To avoid browser warnings, generate a trusted LAN certificate and install the lo
      <your-lan-ip> localhost 127.0.0.1
    ```
 3. Copy the mkcert root CA to each device and trust it (see mkcert docs).
+
+## Privacy & Feedback
+
+- **Privacy policy**: Published at `https://ltmdum.github.io/LANcade/privacypolicy.html` — covers no data collection, local-only gameplay, Google Play Billing handled by Google.
+- **Feedback page**: `docs/feedback.html` — embeds a Google Form (categories: Bug, Feature Request, Suggested Improvement, Other) plus a link to GitHub Issues for users with accounts. Published alongside the privacy policy at `https://ltmdum.github.io/LANcade/feedback.html`.
+- **Distribution notice**: `NOTICE.md` clarifies that the MIT license covers server source code only — the mobile app build, branding, and assets may not be redistributed on app stores.
 
 ## Security
 
