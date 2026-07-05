@@ -51,26 +51,11 @@ npm test
 
 A CI workflow (`.github/workflows/ci.yml`) runs `npm ci` → `npm run build` → `npm test` on every push to `main` and every PR targeting `main`.
 
-## Game Configuration
+## Contributing
 
-Games are configured via `games.config.json` in the project root. This file controls which games are available in the application.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for architecture, code standards, testing guidelines, project structure, and step-by-step instructions for adding a new game.
 
-### Configuration Format
-
-Each entry is an object with an `id` (matching the game plugin ID) and a `displayName` (shown in app UI):
-
-```json
-{
-  "games": [
-    { "id": "quickfire", "displayName": "Category Clash: Quick Fire" },
-    { "id": "multicat", "displayName": "Category Clash: Multicat" }
-  ]
-}
-```
-
-
-
-### Available Games
+## Available Games
 
 | Game ID        | Name             | Description                                       |
 |----------------|------------------|---------------------------------------------------|
@@ -85,317 +70,7 @@ Each entry is an object with an `id` (matching the game plugin ID) and a `displa
 | `ninedash` | Nine Dash | Build words from a 3x3 grid of jumbled letters          |
 | `telepathy` | Telepathy | Place cards in ascending order without skipping others    |
 
-### Enabling/Disabling Games
-
-To enable or disable games, edit `games.config.json`:
-
-```json
-{
-  "games": [
-    { "id": "quickfire", "displayName": "Category Clash: Quick Fire" },
-    { "id": "lastwordstanding", "displayName": "Last Word Standing" }
-  ]
-}
-```
-
-This example enables only Category Clash: Quick Fire and Last Word Standing, hiding the other games.
-
-### Validation
-
-The configuration is validated at build time. Invalid game IDs or an empty games list will cause the build to fail with a clear error message:
-
-```bash
-# Validate config without building
-npm run validate-config
-
-# Errors shown during build
-Error: Unknown game ID(s) in games.config.json: invalidgame
-Available games: quickfire, multicat, lastwordstanding, fiveletterword, mindmatch, alphabetrace, undercoveragent, tradingexchange
-```
-
-## Project Structure
-
-```
-lancade/
-├── games.config.json   # Game configuration (which games are enabled, with display names)
-├── .github/
-│   └── workflows/
-│       └── ci.yml      # Build + test on push/PR to main
-├── scripts/
-│   ├── extract-word-lists.js       # Generates per-length word JSON files from word-list
-│   └── validate-games-config.js    # Build-time config validation
-├── frontend/           # React + Vite + TailwindCSS
-│   └── src/
-|       ├── shared/
-│       │   ├── components/         # Shared UI components (each with .tsx and .css)
-│       │   ├── hooks/              # Shared React hooks (useServerState, useGameUtils)
-│       │   ├── tests/              # Shared tests
-│       │   │   └── utils/          # Shared utility tests
-│       │   ├── types/              # Shared TypeScript types (GameProps)
-│       │   └── utils/              # Shared utilities (wordSubmission, voting, roundActions)
-|       ├── categoryclashshared/
-│       │   ├── components/         # Components shared by Category Clash games
-│       │   ├── hooks/              # Hooks shared by Category Clash games
-│       │   ├── tests/              # Category Clash shared tests
-│       │   │   └── utils/          # Category Clash shared utility tests
-│       │   └── utils/              # Utility functions shared by Category Clash games
-|       ├── quickFire/
-│       │   ├── components/         # Quick Fire specific components
-│       │   ├── hooks/              # Quick Fire specific hooks
-│       │   ├── utils/              # Quick Fire specific utility functions
-│       │   ├── QuickFireGame.tsx
-│       │   └── plugin.tsx          # Quick Fire frontend plugin registration
-|       ├── multicat/
-│       │   ├── components/         # Multicat specific components
-│       │   ├── hooks/              # Multicat specific hooks
-│       │   ├── utils/              # Multicat specific utility functions
-│       │   ├── MulticatGame.tsx
-│       │   └── plugin.tsx          # Multicat frontend plugin registration
-|       ├── lastWordStanding/
-│       │   ├── components/         # Last Word Standing specific components
-│       │   ├── hooks/              # Last Word Standing specific hooks
-│       │   ├── utils/              # Last Word Standing specific utility functions
-│       │   ├── LastWordStandingGame.tsx
-│       │   └── plugin.tsx          # Last Word Standing frontend plugin registration
-|       ├── fiveLetterWord/
-│       │   ├── components/         # 5 Letter Word specific components
-│       │   ├── tests/              # 5 Letter Word specific tests
-│       │   ├── FiveLetterWordGame.tsx
-│       │   └── plugin.tsx          # 5 Letter Word frontend plugin registration
-|       ├── mindMatch/
-│       │   ├── components/         # Mind Match specific components
-│       │   ├── tests/              # Mind Match specific tests
-│       │   ├── MindMatchGame.tsx
-│       │   └── plugin.tsx          # Mind Match frontend plugin registration
-|       ├── alphabetRace/
-│       │   ├── components/         # Alphabet Race specific components
-│       │   ├── tests/              # Alphabet Race specific tests
-│       │   ├── AlphabetRaceGame.tsx
-│       │   └── plugin.tsx          # Alphabet Race frontend plugin registration
-|       ├── undercoverAgent/
-│       │   ├── components/         # Undercover Agent specific components
-│       │   ├── tests/              # Undercover Agent specific tests
-│       │   ├── UndercoverAgentGame.tsx
-│       │   └── plugin.tsx          # Undercover Agent frontend plugin registration
-|       ├── tradingExchange/
-│       │   ├── components/         # Trading Exchange specific components
-│       │   ├── tests/              # Trading Exchange specific tests
-│       │   ├── utils/              # Trading Exchange specific utility functions
-│       │   ├── TradingExchangeGame.tsx
-│       │   └── plugin.tsx          # Trading Exchange frontend plugin registration
-|       ├── ninedash/
-│       │   ├── components/         # Nine Dash specific components (LetterGrid, active panel)
-│       │   ├── tests/              # Nine Dash specific tests
-│       │   ├── utils/              # Nine Dash specific utility functions (tile validation)
-│       │   ├── NineDashGame.tsx
-│       │   └── plugin.tsx          # Nine Dash frontend plugin registration
-│       └── plugins/            # Frontend plugin system
-├── backend/            # Express + TypeScript
-│   └── src/
-|       ├── shared/
-│       │   ├── stores/         # Shared state management
-│       │   ├── utils/          # Shared utility functions
-│       │   └── tests/          # Shared Vitest tests
-|       ├── categoryclashshared/
-│       │   ├── stores/         # CategoryClash-specific stores
-│       │   ├── utils/          # CategoryClash-specific utility functions
-│       │   ├── tests/          # CategoryClash-specific Vitest tests
-│       │   └── categoryclash-engine.ts
-|       ├── quickFire/
-│       │   ├── stores/         # Quick Fire specific stores
-│       │   ├── utils/          # Quick Fire specific utility functions
-│       │   ├── tests/          # Quick Fire specific Vitest tests
-│       │   ├── quickfire.ts
-│       │   └── plugin.ts       # Backend plugin registration
-|       ├── multicat/
-│       │   ├── stores/         # Multicat specific stores
-│       │   ├── utils/          # Multicat specific utility functions
-│       │   ├── tests/          # Multicat specific Vitest tests
-│       │   ├── multicat.ts
-│       │   └── plugin.ts
-|       ├── lastWordStanding/
-│       │   ├── stores/         # Last Word Standing specific stores
-│       │   ├── utils/          # Last Word Standing specific utility functions
-│       │   ├── tests/          # Last Word Standing specific Vitest tests
-│       │   ├── lastwordstanding.ts
-│       │   └── plugin.ts
-|       ├── fiveLetterWord/
-│       │   ├── tests/          # 5 Letter Word specific Vitest tests
-│       │   ├── fiveletterword.ts
-│       │   ├── scoring.ts      # Guess-style letter evaluation
-│       │   ├── word-list.ts    # Word list loading utilities (reads from word-list package)
-│       │   └── plugin.ts
-|       ├── mindMatch/
-│       │   ├── tests/          # Mind Match specific Vitest tests
-│       │   ├── mindmatch.ts
-│       │   ├── prompts.json    # Fill-in-the-blank prompts
-│       │   └── plugin.ts
-|       ├── alphabetRace/
-│       │   ├── tests/          # Alphabet Race specific Vitest tests
-│       │   ├── alphabetrace.ts
-│       │   └── plugin.ts
-|       ├── undercoverAgent/
-│       │   ├── tests/          # Undercover Agent specific Vitest tests
-│       │   ├── undercoveragent.ts
-│       │   └── plugin.ts
-|       ├── tradingExchange/
-│       │   ├── tests/          # Trading Exchange specific Vitest tests
-│       │   ├── tradingexchange.ts
-│       │   ├── matching.ts     # Order matching algorithms
-│       │   └── plugin.ts
-|       ├── ninedash/
-│       │   ├── tests/          # Nine Dash specific Vitest tests
-│       │   ├── grid.ts         # Grid generation and letter jumbling
-│       │   ├── word-source.ts  # Loads nine-letter words from the word-list package
-│       │   ├── ninedash.ts
-│       │   └── plugin.ts
-│       └── plugins/        # Backend plugin system
-│           └── tests/          # Vitest tests (mirrors src structure)
-├── shared/         # Shared types between frontend and backend
-└── package.json    # Root workspace configuration
-```
-
-## Adding a New Game
-
-To add a new game to the system:
-
-### 1. Create the Backend Game Engine
-
-Create your game in `backend/src/games/yourgame/`:
-
-```typescript
-// backend/src/games/yourgame/yourgame.ts
-export interface YourGameOptions {
-  onStateChange?: () => void;
-  playerStore?: PlayerStore;
-}
-
-export function createGame(options: YourGameOptions) {
-  // Implement game logic
-  return {
-    getState: () => ({ /* game state */ }),
-    getPhase: () => 'idle',
-    joinPlayer: (payload) => ({ ok: true, playerId: '...', name: '...' }),
-    submitWord: (playerId, word) => ({ ok: true }),
-    submitVotes: (playerId, votes) => ({ ok: true }),
-    startRound: (durationMs) => ({ ok: true }),
-    // Add optional methods as needed:
-    // selectCategory, selectRandomCategory, selectCategories, etc.
-  };
-}
-```
-
-### 2. Create the Backend Plugin
-
-```typescript
-// backend/src/games/yourgame/plugin.ts
-import type { GamePlugin, GameFactoryOptions, BaseGame } from '../../plugins/types.js';
-import { createGame } from './yourgame.js';
-
-function factory(options: GameFactoryOptions): BaseGame {
-  return createGame({
-    onStateChange: options.onStateChange,
-    playerStore: options.playerStore,
-  });
-}
-
-export const plugin: GamePlugin = {
-  definition: {
-    id: 'yourgame',
-    name: 'Your Game Name',
-    factory,
-  },
-};
-```
-
-### 3. Register the Backend Plugin
-
-Add to `backend/src/plugins/games.ts`:
-
-```typescript
-import { plugin as yourgamePlugin } from '../games/yourgame/plugin.js';
-
-// In the registration section:
-gameRegistry.register(yourgamePlugin);
-```
-
-### 4. Create the Frontend Game Component
-
-Create your game UI in `frontend/src/games/yourgame/`:
-
-```tsx
-// frontend/src/games/yourgame/YourGame.tsx
-export function YourGame({ serverState, playerId, ... }) {
-  // Implement game UI
-  return <div>...</div>;
-}
-```
-
-### 5. Create the Frontend Plugin
-
-```tsx
-// frontend/src/games/yourgame/plugin.tsx
-import type { GamePlugin, GameComponentProps } from '../../plugins/types';
-import { YourGame } from './YourGame';
-
-export const plugin: GamePlugin = {
-  config: {
-    id: 'yourgame',
-    name: 'Your Game Name',
-    description: 'A brief description of your game.',
-    defaultTimer: { minutes: '01', seconds: '00' },
-    roundControlTitle: 'Round Control',
-    joinPanelTitle: 'Join the Game',
-  },
-  canRender: (serverState, gameId) => {
-    return gameId === 'yourgame' && /* check state shape */;
-  },
-  render: (props) => <YourGame {...props} />,
-};
-```
-
-### 6. Register the Frontend Plugin
-
-Add to `frontend/src/plugins/games.ts`:
-
-```typescript
-import { plugin as yourgamePlugin } from '../games/yourgame/plugin';
-
-// In the registration section:
-gamePluginRegistry.register(yourgamePlugin);
-```
-
-### 7. Update the Validation Script
-
-Add your game ID to `scripts/validate-games-config.js`:
-
-```javascript
-const KNOWN_GAMES = new Set([
-  'quickfire',
-  'multicat',
-  'lastwordstanding',
-  'yourgame',  // Add your game here
-]);
-```
-
-### 8. Enable Your Game
-
-Add to `games.config.json`:
-
-```json
-{
-  "games": [
-    { "id": "quickfire", "displayName": "Category Clash: Quick Fire" },
-    { "id": "multicat", "displayName": "Category Clash: Multicat" },
-    { "id": "lastwordstanding", "displayName": "Last Word Standing" },
-    { "id": "yourgame", "displayName": "Your Game Name" }
-  ]
-}
-```
-
-### 9. Add Tests
-
-Create tests in `backend/src/tests/yourgame/` to test your game logic.
+Games are configured via `games.config.json` in the project root. See [CONTRIBUTING.md](CONTRIBUTING.md) for the config format and instructions on adding or removing games.
 
 ## Admin + Player Access
 
@@ -523,9 +198,21 @@ Create tests in `backend/src/tests/yourgame/` to test your game logic.
 - Nine Dash reuses the shared Category Clash engine via injectable hooks for grid generation, letter-tile validation, and length-based scoring (`backend/src/categoryclashshared/categoryclash-engine.ts`).
 - Nine-letter seed words are loaded at runtime from the open-source [`word-list`](https://www.npmjs.com/package/word-list) package by filtering for words that are exactly nine letters long.
 
+### Telepathy
+- A pressure game where you must judge whether your lowest card is lower than everyone else's — or risk losing the round.
+- Requires at least 2 players to start.
+- There is a deck of 100 cards numbered 1–100. Each round, every player receives `round` cards (round 1 = 1 card, round 2 = 2 cards, etc.).
+- Your hand is visible only to you. A shared pile shows the last card that was successfully placed.
+- Anyone can place at any time by pressing the Place button, which plays your **lowest** card.
+- When you place, the game checks whether any other player still holds a card lower than yours. If so, **you lose the round** — the player with the lower card blocks you.
+- If no one has a lower card, your placement succeeds and your card moves to the shared pile.
+- The round ends when all cards are placed (round won) or a player is blocked (round lost).
+- After a loss, the next round reduces everyone's card count by 1 (easier). After a complete round, the card count increases by 1 (harder).
+- Win by reaching the target round: `floor(100 / number of players)`.
+
 ## Custom Categories
 
-Games that use categories (Category Clash: Quick Fire, Category Clash: Multicat, Last Word Standing, Alphabet Race) support admin-added custom categories. In the admin panel, use the "Add" input below the category selector to add a custom category to the list. Custom categories persist for the duration of the game session.
+Games that use categories (Category Clash: Quick Fire, Category Clash: Multicat, Last Word Standing, Alphabet Race) support admin-added custom categories. In the admin panel, use the "Add" input below the category selector to add a custom category to the list. Custom categories persist for the duration of the server session.
 
 ## Configuration
 
