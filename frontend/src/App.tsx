@@ -287,6 +287,31 @@ function App() {
             />
           )}
 
+          {/* App Links — shown when connected but no game in progress */}
+          {serverState && (!gameId || phase === 'idle') && (
+            <div className="app-links">
+              <p className="app-links-text">
+                Enjoying the games?{' '}
+                <a className="app-links-link" href="https://play.google.com/store/apps/details?id=com.lancade.app" target="_blank" rel="noopener noreferrer">
+                  Download the app
+                </a>
+                {' '}and become a LANcade party host yourself.
+              </p>
+              <p className="app-links-text">
+                Tech savvy? Host the full games suite for free by{' '}
+                <a className="app-links-link" href="https://github.com/ltmdum/LANcade" target="_blank" rel="noopener noreferrer">
+                  cloning the repo
+                </a>.
+              </p>
+              <p className="app-links-text">
+                Help us improve LANcade by leaving{' '}
+                <a className="app-links-link" href="https://ltmdum.github.io/LANcade/feedback.html" target="_blank" rel="noopener noreferrer">
+                  feedback or suggestions
+                </a>.
+              </p>
+            </div>
+          )}
+
           {/* Connection Status */}
           {!serverState && (
             <div className="app-connection-status">

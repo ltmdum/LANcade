@@ -42,6 +42,23 @@
   color: var(--accent);
 }
 
+.app-links {
+  @apply border-t text-center py-6 mt-8;
+  border-color: var(--border);
+}
+
+.app-links-text {
+  @apply text-sm mb-2;
+  color: var(--text-secondary);
+}
+
+.app-links-link {
+  color: var(--accent);
+}
+.app-links-link:hover {
+  text-decoration: underline;
+}
+
 .app-connection-status {
   @apply text-center py-8;
   color: var(--text-muted);
