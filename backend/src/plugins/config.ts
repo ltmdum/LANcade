@@ -15,7 +15,7 @@ export interface GamesConfig {
   games: GameEntry[];
 }
 
-function normalizeEntry(entry: unknown): GameEntry {
+export function normalizeEntry(entry: unknown): GameEntry {
   if (!entry || typeof entry !== 'object') {
     throw new Error(`Invalid game entry in config: ${JSON.stringify(entry)} (must be an object with "id" field)`);
   }

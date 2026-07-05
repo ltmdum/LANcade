@@ -15,6 +15,52 @@ import { Leaderboard } from './components/Leaderboard';
 import './TradingExchangeGame.css';
 
 /**
+ * Compute an estimate seed based on the first trade price or orderbook midpoint.
+ * Returns null if no price information is available.
+ */
+export function computeEstimateSeed(
+  liveTrades: ReturnType<typeof excludeSettlementTrades>,
+  orders: TradingExchangeState['exchange']['orders'],
+  playerId: string,
+): number | null {
+  const myFirstTrade = liveTrades.find(
+    (t) => t.buyerId === playerId || t.sellerId === playerId,
+  );
+  if (myFirstTrade) return Math.round(myFirstTrade.price);
+  let bestBid = -1;
+  let bestOffer = Infinity;
+  for (const o of orders) {
+    if (o.bid !== null && o.bid > bestBid) bestBid = o.bid;
+    if (o.offer !== null && o.offer < bestOffer) bestOffer = o.offer;
+  }
+  if (bestBid >= 0 && bestOffer < Infinity) return Math.round((bestBid + bestOffer) / 2);
+  if (bestBid >= 0) return bestBid;
+  if (bestOffer < Infinity) return bestOffer;
+  return null;
+}
+
+/**
+ * Determine whether each side of the order has traded and what fallback
+ * prices to use for a player whose order was just executed.
+ */
+function computeOrderTradingState(
+  myOrder: TradingExchangeState['exchange']['orders'][number] | undefined,
+  trades: TradingExchangeState['exchange']['trades'],
+  playerId: string,
+): { bidTraded: boolean; offerTraded: boolean; fallbackBid: number | null; fallbackOffer: number | null } {
+  const hasBid = myOrder?.bid !== null && myOrder?.bid !== undefined;
+  const hasOffer = myOrder?.offer !== null && myOrder?.offer !== undefined;
+  const lastBuy = [...trades].reverse().find((t) => t.buyerId === playerId);
+  const lastSell = [...trades].reverse().find((t) => t.sellerId === playerId);
+  return {
+    bidTraded: !hasBid && lastBuy !== undefined,
+    offerTraded: !hasOffer && lastSell !== undefined,
+    fallbackBid: lastBuy ? Math.floor(lastBuy.price) : null,
+    fallbackOffer: lastSell ? Math.ceil(lastSell.price) : null,
+  };
+}
+
+/**
  * Main Trading Exchange game component.
  * @param props Standard game component props.
  * @returns Trading exchange game element.
@@ -42,36 +88,15 @@ export function TradingExchangeGame(props: GameComponentProps) {
     [ex.trades, playerId],
   );
 
-  const estimateSeed = useMemo(() => {
-    const myFirstTrade = liveTrades.find(
-      (t) => t.buyerId === playerId || t.sellerId === playerId,
-    );
-    if (myFirstTrade) return Math.round(myFirstTrade.price);
-    let bestBid = -1;
-    let bestOffer = Infinity;
-    for (const o of ex.orders) {
-      if (o.bid !== null && o.bid > bestBid) bestBid = o.bid;
-      if (o.offer !== null && o.offer < bestOffer) bestOffer = o.offer;
-    }
-    if (bestBid >= 0 && bestOffer < Infinity) return Math.round((bestBid + bestOffer) / 2);
-    if (bestBid >= 0) return bestBid;
-    if (bestOffer < Infinity) return bestOffer;
-    return null;
-  }, [liveTrades, ex.orders, playerId]);
+  const estimateSeed = useMemo(
+    () => computeEstimateSeed(liveTrades, ex.orders, playerId),
+    [liveTrades, ex.orders, playerId],
+  );
 
-  const { bidTraded, offerTraded, fallbackBid, fallbackOffer } = useMemo(() => {
-    const hasBid = myOrder?.bid !== null && myOrder?.bid !== undefined;
-    const hasOffer = myOrder?.offer !== null && myOrder?.offer !== undefined;
-    const allTrades = ex.trades;
-    const lastBuy = [...allTrades].reverse().find((t) => t.buyerId === playerId);
-    const lastSell = [...allTrades].reverse().find((t) => t.sellerId === playerId);
-    return {
-      bidTraded: !hasBid && lastBuy !== undefined,
-      offerTraded: !hasOffer && lastSell !== undefined,
-      fallbackBid: lastBuy ? Math.floor(lastBuy.price) : null,
-      fallbackOffer: lastSell ? Math.ceil(lastSell.price) : null,
-    };
-  }, [myOrder, ex.trades, playerId]);
+  const orderTradingState = useMemo(
+    () => computeOrderTradingState(myOrder, ex.trades, playerId),
+    [myOrder, ex.trades, playerId],
+  );
 
   const handleOrderSubmit = useCallback(async (bid: number, offer: number) => {
     setOrderStatus('');
@@ -126,10 +151,10 @@ export function TradingExchangeGame(props: GameComponentProps) {
           totalPlayers={ex.participants.length}
           submittedCount={ex.auctionSubmittedIds.length}
           onSubmit={handleOrderSubmit}
-          fallbackBid={fallbackBid}
-          fallbackOffer={fallbackOffer}
-          bidTraded={bidTraded}
-          offerTraded={offerTraded}
+          fallbackBid={orderTradingState.fallbackBid}
+          fallbackOffer={orderTradingState.fallbackOffer}
+          bidTraded={orderTradingState.bidTraded}
+          offerTraded={orderTradingState.offerTraded}
           status={orderStatus}
         />
       )}
@@ -141,10 +166,10 @@ export function TradingExchangeGame(props: GameComponentProps) {
           liveTrades={liveTrades}
           myTrades={myTrades}
           myOrder={myOrder}
-          bidTraded={bidTraded}
-          offerTraded={offerTraded}
-          fallbackBid={fallbackBid}
-          fallbackOffer={fallbackOffer}
+          bidTraded={orderTradingState.bidTraded}
+          offerTraded={orderTradingState.offerTraded}
+          fallbackBid={orderTradingState.fallbackBid}
+          fallbackOffer={orderTradingState.fallbackOffer}
           estimateSeed={estimateSeed}
           onSubmit={handleOrderSubmit}
           orderStatus={orderStatus}

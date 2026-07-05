@@ -16,6 +16,7 @@ interface NineDashResultsProps {
   onBackToConfig: () => void;
 }
 
+/** Results view for Nine Dash — leaderboard, source word, play-again controls. */
 export function NineDashResults({
   scoreboard,
   results,

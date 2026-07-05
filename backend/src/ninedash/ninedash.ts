@@ -11,6 +11,7 @@ import {
 import { PlayerStore } from '../shared/stores/player-store.js';
 import { generateGrid, type GenerateGridOptions } from './grid.js';
 
+/** Options for creating a Nine Dash game instance. */
 export interface NineDashGameOptions {
   onStateChange?: () => void;
   clientGraceMs?: number;
@@ -18,6 +19,7 @@ export interface NineDashGameOptions {
   gridOptions?: GenerateGridOptions;
 }
 
+/** A Nine Dash game instance built on the category-clash engine. */
 export interface NineDashGame extends CategoryClashEngine {
   id: string;
   name: string;
@@ -55,6 +57,11 @@ function validateGridWord(round: Round, key: string): SubmitWordResult | null {
   return null;
 }
 
+/**
+ * Create a Nine Dash game instance.
+ * @param options Grid generation and engine options.
+ * @returns A Nine Dash game conforming to the category-clash engine interface.
+ */
 export function createGame(options: NineDashGameOptions = {}): NineDashGame {
   let currentSourceWord: string | null = null;
 

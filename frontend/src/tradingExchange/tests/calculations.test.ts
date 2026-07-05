@@ -7,6 +7,7 @@ import {
   getPlayerTrades,
   excludeSettlementTrades,
 } from '../utils/calculations';
+import { computeEstimateSeed } from '../TradingExchangeGame';
 import type { TradingExchangeTrade } from '@lancade/shared';
 
 function trade(buyer: string, seller: string, price: number): TradingExchangeTrade {
@@ -163,5 +164,43 @@ describe('excludeSettlementTrades', () => {
     const result = excludeSettlementTrades(trades);
     expect(result).toHaveLength(1);
     expect(result[0].price).toBe(10);
+  });
+});
+
+describe('computeEstimateSeed', () => {
+  it('returns null with no trades and no orders', () => {
+    expect(computeEstimateSeed([], [], 'A')).toBeNull();
+  });
+
+  it('returns first trade price (rounded) when player has a trade', () => {
+    const trades = [
+      { buyerId: 'A', sellerId: 'B', price: 42.3, buyerName: '', sellerName: '', timestamp: 0 },
+    ];
+    expect(computeEstimateSeed(trades, [], 'A')).toBe(42);
+  });
+
+  it('returns midpoint of best bid and offer from orders', () => {
+    const orders = [
+      { playerId: 'B', playerName: 'B', bid: 10, offer: 30 },
+      { playerId: 'C', playerName: 'C', bid: 20, offer: 40 },
+    ];
+    // bestBid=20, bestOffer=30 → midpoint=25
+    expect(computeEstimateSeed([], orders, 'A')).toBe(25);
+  });
+
+  it('returns best bid when no offers exist', () => {
+    const orders = [
+      { playerId: 'B', playerName: 'B', bid: 15, offer: null },
+      { playerId: 'C', playerName: 'C', bid: 25, offer: null },
+    ];
+    expect(computeEstimateSeed([], orders, 'A')).toBe(25);
+  });
+
+  it('returns best offer when no bids exist', () => {
+    const orders = [
+      { playerId: 'B', playerName: 'B', bid: null, offer: 30 },
+      { playerId: 'C', playerName: 'C', bid: null, offer: 20 },
+    ];
+    expect(computeEstimateSeed([], orders, 'A')).toBe(20);
   });
 });

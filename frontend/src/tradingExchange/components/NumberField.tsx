@@ -13,6 +13,39 @@ interface NumberFieldProps {
 const GHOST_OPACITIES = [0.6, 0.25];
 const TOUCH_THRESHOLD_PX = 30;
 
+/** Ghost-value overlays for the number field (above and below the current value). */
+function NumberFieldGhosts({
+  current,
+  onTouchStart,
+  onTouchMove,
+}: {
+  current: number;
+  onTouchStart: (e: React.TouchEvent) => void;
+  onTouchMove: (e: React.TouchEvent) => void;
+}) {
+  const above = [current + 1, current + 2].filter((v) => v >= 0);
+  const below = [current - 1, current - 2].filter((v) => v >= 0);
+
+  return (
+    <>
+      {above.length > 0 && (
+        <div className="te-number-field__ghosts te-number-field__ghosts--above" onTouchStart={onTouchStart} onTouchMove={onTouchMove}>
+          {above.map((val, i) => (
+            <span key={val} className="te-number-field__ghost" style={{ opacity: GHOST_OPACITIES[i] }}>{val}</span>
+          ))}
+        </div>
+      )}
+      {below.length > 0 && (
+        <div className="te-number-field__ghosts te-number-field__ghosts--below" onTouchStart={onTouchStart} onTouchMove={onTouchMove}>
+          {below.map((val, i) => (
+            <span key={val} className="te-number-field__ghost" style={{ opacity: GHOST_OPACITIES[i] }}>{val}</span>
+          ))}
+        </div>
+      )}
+    </>
+  );
+}
+
 /**
  * Numeric input with +/- buttons and scrollable ghost values.
  * Tapping/clicking the input activates the field: ghost values appear as
@@ -62,12 +95,10 @@ export function NumberField({ label, value, onChange, disabled, className = '', 
     touchYRef.current = e.touches[0].clientY;
   }, []);
 
-  /** Swipe up = lower number (scroll the drum up), swipe down = higher number. */
   const onTouchMove = useCallback((e: React.TouchEvent) => {
     if (disabled) return;
     const delta = touchYRef.current - e.touches[0].clientY;
     if (Math.abs(delta) >= TOUCH_THRESHOLD_PX) {
-      // delta > 0 means finger moved up → decrease value (like scrolling a drum)
       onChange(String(Math.max(0, delta > 0 ? current - 1 : current + 1)));
       touchYRef.current = e.touches[0].clientY;
       e.preventDefault();
@@ -81,7 +112,6 @@ export function NumberField({ label, value, onChange, disabled, className = '', 
   return (
     <div className={`te-number-field ${className}`} ref={containerRef}>
       <label className="te-number-field__label">{label}</label>
-      {/* Wrapper for positioning ghosts relative to the controls */}
       <div className="te-number-field__wrapper">
         <div
           className={controlsClass}
@@ -103,33 +133,7 @@ export function NumberField({ label, value, onChange, disabled, className = '', 
           <button type="button" className="te-number-field__btn" onClick={increment} disabled={disabled}>+</button>
         </div>
         {active && (
-          <>
-            <div
-              className="te-number-field__ghosts te-number-field__ghosts--above"
-              onTouchStart={onTouchStart}
-              onTouchMove={onTouchMove}
-            >
-              {/* Closest to input first (current+1), furthest last (current+2) */}
-              {current + 1 >= 0 && (
-                <span className="te-number-field__ghost" style={{ opacity: GHOST_OPACITIES[0] }}>{current + 1}</span>
-              )}
-              {current + 2 >= 0 && (
-                <span className="te-number-field__ghost" style={{ opacity: GHOST_OPACITIES[1] }}>{current + 2}</span>
-              )}
-            </div>
-            <div
-              className="te-number-field__ghosts te-number-field__ghosts--below"
-              onTouchStart={onTouchStart}
-              onTouchMove={onTouchMove}
-            >
-              {current - 1 >= 0 && (
-                <span className="te-number-field__ghost" style={{ opacity: GHOST_OPACITIES[0] }}>{current - 1}</span>
-              )}
-              {current - 2 >= 0 && (
-                <span className="te-number-field__ghost" style={{ opacity: GHOST_OPACITIES[1] }}>{current - 2}</span>
-              )}
-            </div>
-          </>
+          <NumberFieldGhosts current={current} onTouchStart={onTouchStart} onTouchMove={onTouchMove} />
         )}
       </div>
     </div>

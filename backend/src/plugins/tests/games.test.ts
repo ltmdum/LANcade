@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { gameRegistry } from '../games.js';
+import { normalizeEntry, getEnabledGameIds } from '../config.js';
 
 describe('Game Plugins', () => {
   it('should have all games registered', () => {
@@ -74,5 +75,44 @@ describe('Game Plugins', () => {
     
     expect(categoryclashInstance.getState).toBeDefined();
     expect(wordrushInstance.getState).toBeDefined();
+  });
+
+  describe('normalizeEntry', () => {
+    it('accepts valid object with id only', () => {
+      expect(normalizeEntry({ id: 'quickfire' })).toEqual({ id: 'quickfire' });
+    });
+
+    it('accepts valid object with id and displayName', () => {
+      expect(normalizeEntry({ id: 'quickfire', displayName: 'Quick Fire' }))
+        .toEqual({ id: 'quickfire', displayName: 'Quick Fire' });
+    });
+
+    it('rejects plain string', () => {
+      expect(() => normalizeEntry('quickfire')).toThrow('must be an object');
+    });
+
+    it('rejects null', () => {
+      expect(() => normalizeEntry(null)).toThrow('must be an object');
+    });
+
+    it('rejects missing id field', () => {
+      expect(() => normalizeEntry({ displayName: 'Quick Fire' })).toThrow('missing or invalid "id"');
+    });
+
+    it('rejects non-string id field', () => {
+      expect(() => normalizeEntry({ id: 123 })).toThrow('missing or invalid "id"');
+    });
+  });
+
+  describe('getEnabledGameIds', () => {
+    it('returns IDs from config', () => {
+      const config = { games: [{ id: 'a' }, { id: 'b' }] };
+      expect(getEnabledGameIds(config)).toEqual(['a', 'b']);
+    });
+
+    it('returns empty array for empty config', () => {
+      const config = { games: [] };
+      expect(getEnabledGameIds(config)).toEqual([]);
+    });
   });
 });

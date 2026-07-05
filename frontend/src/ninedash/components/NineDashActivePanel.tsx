@@ -28,6 +28,7 @@ interface NineDashActivePanelProps {
   onNewGrid: () => void;
 }
 
+/** Active play panel for Nine Dash — letter grid, word input, score. */
 export function NineDashActivePanel({
   letters,
   countdown,

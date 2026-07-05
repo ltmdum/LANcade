@@ -8,6 +8,121 @@ interface TelepathyGameProps extends GameProps {
   serverState: TelepathyState;
 }
 
+/** Idle phase — waiting for game to start. */
+function IdlePhase() {
+  return (
+    <Panel title="Telepathy">
+      <p className="telepathy-idle">Waiting for the game to start...</p>
+    </Panel>
+  );
+}
+
+/** Won phase — congratulations with back-to-config button for admin. */
+function WonPhase({ targetRound, isAdmin, onBack }: {
+  targetRound: number;
+  isAdmin: boolean;
+  onBack: () => void;
+}) {
+  return (
+    <div className="telepathy-won">
+      <h2 className="telepathy-won-title">Congratulations!</h2>
+      <p className="telepathy-won-message">
+        All cards placed in round {targetRound} — you win!
+      </p>
+      {isAdmin && (
+        <button type="button" className="btn btn-primary telepathy-won-button" onClick={onBack}>
+          Back to Config
+        </button>
+      )}
+    </div>
+  );
+}
+
+/** Lost phase — shows who blocked whom and allows admin to continue. */
+function LostPhase({ tp, players, isAdmin, onProgress }: {
+  tp: TelepathyState['telepathy'];
+  players: TelepathyState['players'];
+  isAdmin: boolean;
+  onProgress: () => void;
+}) {
+  const details = tp.lossDetails;
+  const playerName = players.find((p) => p.id === details?.placedByPlayerId)?.name || 'Unknown';
+  const blockedName = players.find((p) => p.id === details?.blockedByPlayerId)?.name || 'Unknown';
+
+  return (
+    <div className="telepathy-lost">
+      <div className="telepathy-lost-flash">
+        <h2 className="telepathy-lost-title">Round Lost!</h2>
+        <p className="telepathy-lost-detail">
+          {playerName} placed {details?.placedCard} but {blockedName} still has {details?.blockedCard}.
+        </p>
+        <p className="telepathy-lost-back">
+          {tp.round === 1
+            ? 'Round 1 — staying at 1 card per player.'
+            : `Going back to ${tp.round - 1} card${tp.round - 1 !== 1 ? 's' : ''} per player.`}
+        </p>
+      </div>
+      {isAdmin && (
+        <button type="button" className="btn btn-primary telepathy-lost-button" onClick={onProgress}>
+          Continue
+        </button>
+      )}
+    </div>
+  );
+}
+
+/** Round complete phase — shared pile, round info, continue button for admin. */
+function RoundCompletePhase({ tp, isAdmin, onProgress }: {
+  tp: TelepathyState['telepathy'];
+  isAdmin: boolean;
+  onProgress: () => void;
+}) {
+  return (
+    <div className="telepathy-round-complete">
+      <SharedPile lastPlaced={tp.lastPlaced} />
+      <div className="telepathy-round-complete-banner">
+        <h2 className="telepathy-round-complete-title">Round {tp.round} Complete!</h2>
+      </div>
+      {isAdmin ? (
+        <button type="button" className="btn btn-primary telepathy-round-complete-button" onClick={onProgress}>
+          Continue to Round {tp.round + 1}
+        </button>
+      ) : (
+        <p className="telepathy-round-complete-waiting">Waiting for admin to continue...</p>
+      )}
+    </div>
+  );
+}
+
+/** Active game view — shared pile, round info, player hand. */
+function ActiveGame({ tp, playerId, isParticipating, onPlace }: {
+  tp: TelepathyState['telepathy'];
+  playerId: string;
+  isParticipating: boolean;
+  onPlace: () => void;
+}) {
+  const myHand = tp.hands?.[playerId] || [];
+
+  let cardLabel = `${tp.round} card`;
+  if (tp.round !== 1) cardLabel += 's';
+
+  return (
+    <div className="telepathy-container">
+      <SharedPile lastPlaced={tp.lastPlaced} />
+      <div className="telepathy-info">
+        Round {tp.round} &middot; {cardLabel} each &middot; {tp.totalPlaced} of {tp.totalCardsInRound} placed
+      </div>
+      <PlayerHand
+        cards={myHand}
+        onPlace={onPlace}
+        canPlace={isParticipating && myHand.length > 0}
+        isParticipating={isParticipating}
+      />
+    </div>
+  );
+}
+
+/** Main game component for Telepathy — dispatches to phase sub-components. */
 export function TelepathyGame({
   serverState,
   playerId,
@@ -26,106 +141,18 @@ export function TelepathyGame({
     await gameAction(playerId, { type: 'progress' }, accessKey);
   }
 
-  if (tp.phase === 'idle') {
-    return (
-      <Panel title="Telepathy">
-        <p className="telepathy-idle">Waiting for the game to start...</p>
-      </Panel>
-    );
+  switch (tp.phase) {
+    case 'idle':
+      return <IdlePhase />;
+    case 'won':
+      return <WonPhase targetRound={tp.targetRound} isAdmin={isAdmin} onBack={() => setShowConfig(true)} />;
+    case 'lost':
+      return <LostPhase tp={tp} players={serverState.players} isAdmin={isAdmin} onProgress={handleProgress} />;
+    case 'round_complete':
+      return <RoundCompletePhase tp={tp} isAdmin={isAdmin} onProgress={handleProgress} />;
+    default:
+      return <ActiveGame tp={tp} playerId={playerId} isParticipating={isParticipating} onPlace={handlePlace} />;
   }
-
-  if (tp.phase === 'won') {
-    return (
-      <div className="telepathy-won">
-        <h2 className="telepathy-won-title">Congratulations!</h2>
-        <p className="telepathy-won-message">
-          All cards placed in round {tp.targetRound} — you win!
-        </p>
-        {isAdmin && (
-          <button
-            type="button"
-            className="btn btn-primary telepathy-won-button"
-            onClick={() => setShowConfig(true)}
-          >
-            Back to Config
-          </button>
-        )}
-      </div>
-    );
-  }
-
-  if (tp.phase === 'lost') {
-    const details = tp.lossDetails;
-    const playerName = serverState.players.find((p) => p.id === details?.placedByPlayerId)?.name || 'Unknown';
-    const blockedName = serverState.players.find((p) => p.id === details?.blockedByPlayerId)?.name || 'Unknown';
-
-    return (
-      <div className="telepathy-lost">
-        <div className="telepathy-lost-flash">
-          <h2 className="telepathy-lost-title">Round Lost!</h2>
-          <p className="telepathy-lost-detail">
-            {playerName} placed {details?.placedCard} but {blockedName} still has {details?.blockedCard}.
-          </p>
-          <p className="telepathy-lost-back">
-            {tp.round === 1
-              ? 'Round 1 — staying at 1 card per player.'
-              : `Going back to ${tp.round - 1} card${tp.round - 1 !== 1 ? 's' : ''} per player.`}
-          </p>
-        </div>
-        {isAdmin && (
-          <button
-            type="button"
-            className="btn btn-primary telepathy-lost-button"
-            onClick={handleProgress}
-          >
-            Continue
-          </button>
-        )}
-      </div>
-    );
-  }
-
-  if (tp.phase === 'round_complete') {
-    return (
-      <div className="telepathy-round-complete">
-        <SharedPile lastPlaced={tp.lastPlaced} />
-        <div className="telepathy-round-complete-banner">
-          <h2 className="telepathy-round-complete-title">Round {tp.round} Complete!</h2>
-        </div>
-        {isAdmin ? (
-          <button
-            type="button"
-            className="btn btn-primary telepathy-round-complete-button"
-            onClick={handleProgress}
-          >
-            Continue to Round {tp.round + 1}
-          </button>
-        ) : (
-          <p className="telepathy-round-complete-waiting">Waiting for admin to continue...</p>
-        )}
-      </div>
-    );
-  }
-
-  const myHand = tp.hands?.[playerId] || [];
-
-  let cardLabel = `${tp.round} card`;
-  if (tp.round !== 1) cardLabel += 's';
-
-  return (
-    <div className="telepathy-container">
-      <SharedPile lastPlaced={tp.lastPlaced} />
-      <div className="telepathy-info">
-        Round {tp.round} &middot; {cardLabel} each &middot; {tp.totalPlaced} of {tp.totalCardsInRound} placed
-      </div>
-      <PlayerHand
-        cards={myHand}
-        onPlace={handlePlace}
-        canPlace={isParticipating && myHand.length > 0}
-        isParticipating={isParticipating}
-      />
-    </div>
-  );
 }
 
 interface SharedPileProps {

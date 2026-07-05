@@ -24,6 +24,32 @@ interface OrderInputProps {
 }
 
 /**
+ * Validate a bid/offer pair and return an error string or null on success.
+ * Does not mutate state — pure validation.
+ */
+function validateBidOffer(bid: string, offer: string): string | null {
+  const bidNum = parseInt(bid, 10);
+  const offerNum = parseInt(offer, 10);
+  if (!Number.isFinite(bidNum) || !Number.isFinite(offerNum)) return 'Enter both bid and offer';
+  if (bidNum < 0 || offerNum < 0) return 'Values must be positive';
+  if (bidNum >= offerNum) return 'Bid must be less than offer';
+  return null;
+}
+
+/** Submit using current ref values (called from timer callback). */
+function submitFromRefs(
+  bidRef: React.MutableRefObject<string>,
+  offerRef: React.MutableRefObject<string>,
+  onSubmitRef: React.MutableRefObject<(bid: number, offer: number) => void>,
+): void {
+  const bidNum = parseInt(bidRef.current, 10);
+  const offerNum = parseInt(offerRef.current, 10);
+  if (Number.isFinite(bidNum) && Number.isFinite(offerNum) && bidNum < offerNum && bidNum >= 0) {
+    onSubmitRef.current(bidNum, offerNum);
+  }
+}
+
+/**
  * Bid/offer input with +/- arrows and submit button below.
  * When a side trades, shows the last trade price with a visual indicator.
  * Bid and offer are coupled: bid always stays below offer.
@@ -85,7 +111,7 @@ export function OrderInput({
       const seconds = Math.ceil(Math.max(0, remainingMs) / 1000);
       if (remainingMs <= 0) {
         setAutoSubmitSeconds(null);
-        submitFromRefs();
+        submitFromRefs(bidRef, offerRef, onSubmitRef);
         return;
       }
       setAutoSubmitSeconds(seconds);
@@ -94,15 +120,6 @@ export function OrderInput({
     const interval = setInterval(tick, 200);
     return () => clearInterval(interval);
   }, [autoSubmitEndsAt, clockSkewMs]);
-
-  /** Submit using current ref values (called from timer callback). */
-  function submitFromRefs(): void {
-    const bidNum = parseInt(bidRef.current, 10);
-    const offerNum = parseInt(offerRef.current, 10);
-    if (Number.isFinite(bidNum) && Number.isFinite(offerNum) && bidNum < offerNum && bidNum >= 0) {
-      onSubmitRef.current(bidNum, offerNum);
-    }
-  }
 
   const handleBidChange = useCallback((v: string) => {
     setBid(v);
@@ -125,22 +142,13 @@ export function OrderInput({
   }, [bid]);
 
   function handleSubmit() {
-    const bidNum = parseInt(bid, 10);
-    const offerNum = parseInt(offer, 10);
-    if (!Number.isFinite(bidNum) || !Number.isFinite(offerNum)) {
-      setError('Enter both bid and offer');
-      return;
-    }
-    if (bidNum < 0 || offerNum < 0) {
-      setError('Values must be positive');
-      return;
-    }
-    if (bidNum >= offerNum) {
-      setError('Bid must be less than offer');
+    const errorMsg = validateBidOffer(bid, offer);
+    if (errorMsg) {
+      setError(errorMsg);
       return;
     }
     setError('');
-    onSubmit(bidNum, offerNum);
+    onSubmit(parseInt(bid, 10), parseInt(offer, 10));
   }
 
   const buttonText = autoSubmitSeconds !== null

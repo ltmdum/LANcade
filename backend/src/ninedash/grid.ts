@@ -8,6 +8,7 @@ export interface Grid {
   letters: string[];
 }
 
+/** Options for configuring grid generation in Nine Dash. */
 export interface GenerateGridOptions {
   /** Seed word override (must be nine letters). Defaults to a random word. */
   word?: string;

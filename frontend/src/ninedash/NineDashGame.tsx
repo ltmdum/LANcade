@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { NineDashActivePanel } from './components/NineDashActivePanel';
 import { NineDashResults } from './components/NineDashResults';
 import { VotingPanel } from '../categoryclashshared/components/VotingPanel';
@@ -23,6 +23,48 @@ interface NineDashGameProps extends GameProps {
   serverState: CategoryClashState;
 }
 
+/** Round timer effect for Nine Dash. Updates countdown display and timeUp flag. */
+function useRoundTimer(
+  round: CategoryClashState['round'],
+  playerId: string,
+  clearCountdown: () => void,
+  countdownTimerRef: React.MutableRefObject<ReturnType<typeof setInterval> | null>,
+  notifyFinish: (roundId: number) => void,
+  setCountdown: React.Dispatch<React.SetStateAction<string>>,
+) {
+  const [timeUp, setTimeUp] = useState(false);
+  const [roundId, setRoundId] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!playerId || round.state !== 'active' || !round.durationMs) {
+      clearCountdown();
+      setTimeUp(false);
+      return;
+    }
+    if (roundId !== round.id) {
+      setRoundId(round.id);
+      setTimeUp(false);
+      const endsAt = Date.now() + round.durationMs;
+      clearCountdown();
+      setCountdown(formatMs(round.durationMs));
+      countdownTimerRef.current = setInterval(() => {
+        const remaining = endsAt - Date.now();
+        if (remaining <= 0) {
+          setCountdown('00:00');
+          clearCountdown();
+          setTimeUp(true);
+          notifyFinish(round.id);
+          return;
+        }
+        setCountdown(formatMs(remaining));
+      }, 250);
+    }
+  }, [round.id, round.state, round.durationMs, playerId, roundId, clearCountdown, countdownTimerRef, notifyFinish, setCountdown]);
+
+  return { timeUp, setTimeUp };
+}
+
+/** Main game component for Nine Dash. */
 export function NineDashGame({
   serverState,
   connection,
@@ -33,11 +75,9 @@ export function NineDashGame({
   isParticipating,
   setShowConfig,
 }: NineDashGameProps) {
+  const [countdown, setCountdown] = useState('');
   const [wordInput, setWordInput] = useState('');
   const [flash, setFlash] = useState('');
-  const [countdown, setCountdown] = useState('');
-  const [timeUp, setTimeUp] = useState(false);
-  const [roundId, setRoundId] = useState<number | null>(null);
   const [voteSet, setVoteSet] = useState<Set<string>>(new Set());
   const [voteStatus, setVoteStatus] = useState('');
   const [status, setStatus] = useState('');
@@ -49,6 +89,10 @@ export function NineDashGame({
   const triggerFlash = useFlashTrigger(flashTimerRef, setFlash);
   const clearCountdown = useClearCountdown(countdownTimerRef, setCountdown);
   const notifyFinish = useNotifyFinish(playerId, accessKey, finishSentRef);
+
+  const { timeUp } = useRoundTimer(
+    serverState.round, playerId, clearCountdown, countdownTimerRef, notifyFinish, setCountdown,
+  );
 
   const round = serverState.round;
   const letters = round.letters || [];
@@ -73,33 +117,6 @@ export function NineDashGame({
   );
 
   useEffect(() => {
-    if (!playerId || round.state !== 'active' || !round.durationMs) {
-      clearCountdown();
-      setTimeUp(false);
-      return;
-    }
-    if (roundId !== round.id) {
-      setRoundId(round.id);
-      setWordInput('');
-      setTimeUp(false);
-      const endsAt = Date.now() + round.durationMs;
-      clearCountdown();
-      setCountdown(formatMs(round.durationMs));
-      countdownTimerRef.current = setInterval(() => {
-        const remaining = endsAt - Date.now();
-        if (remaining <= 0) {
-          setCountdown('00:00');
-          clearCountdown();
-          setTimeUp(true);
-          notifyFinish(round.id);
-          return;
-        }
-        setCountdown(formatMs(remaining));
-      }, 250);
-    }
-  }, [round.id, round.state, round.durationMs, playerId, roundId, clearCountdown, notifyFinish, countdownTimerRef]);
-
-  useEffect(() => {
     if (round.state !== 'voting') {
       setVoteSet(new Set());
       setVoteStatus('');
@@ -113,16 +130,16 @@ export function NineDashGame({
     };
   }, [flashTimerRef, clearCountdown]);
 
-  async function onPlayAgain() {
+  const onPlayAgain = useCallback(async () => {
     setActionStatus('');
     const result = await handlePlayAgain(round.durationMs!, accessKey);
     setActionStatus(result.statusMessage);
     if (result.success) {
       setShowConfig(false);
     }
-  }
+  }, [round.durationMs, accessKey, setShowConfig]);
 
-  async function onWordSubmit(e: React.FormEvent) {
+  const onWordSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     setStatus('');
 
@@ -144,13 +161,13 @@ export function NineDashGame({
     if (result.success) {
       setWordInput('');
     }
-  }
+  }, [timeUp, triggerFlash, playerId, accessKey, wordInput, letters]);
 
-  function onToggleVote(wordId: string) {
+  const onToggleVote = useCallback((wordId: string) => {
     setVoteSet((prev) => toggleVoteSelection(prev, wordId));
-  }
+  }, []);
 
-  async function onVoteSubmit() {
+  const onVoteSubmit = useCallback(async () => {
     setVoteStatus('');
     const result = await handleVoteSubmit({
       playerId,
@@ -168,7 +185,7 @@ export function NineDashGame({
       triggerFlash('error');
     }
     setVoteStatus(result.success ? 'Votes submitted. Waiting for others...' : result.statusMessage);
-  }
+  }, [playerId, accessKey, voteSet, triggerFlash]);
 
   const showView = letters.length > 0 && ['active', 'voting', 'results'].includes(round.state);
   if (!showView) return null;
