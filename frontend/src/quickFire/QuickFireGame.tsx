@@ -216,14 +216,14 @@ export function QuickFireGame({
 
       {round.state === 'results' && (
         <>
-          {!results ? (
+          {scoreboard.length === 0 ? (
             <Panel title="Results">
               <p>No results — nobody submitted any words this round.</p>
             </Panel>
           ) : (
             <>
               <Leaderboard entries={scoreboard} currentPlayerId={playerId} />
-              <PlayerResultsTable words={results.words} />
+              {results && <PlayerResultsTable words={results.words} />}
             </>
           )}
           {isAdmin && (
