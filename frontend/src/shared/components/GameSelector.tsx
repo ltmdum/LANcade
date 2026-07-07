@@ -117,6 +117,7 @@ export function GameSelector({
             name={info.name}
             description={info.description}
             instructions={info.instructions}
+            gameId={infoGameId}
             onClose={() => setInfoGameId(null)}
           />
         );

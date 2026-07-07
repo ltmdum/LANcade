@@ -56,17 +56,18 @@ function render(props: GameComponentProps) {
 
 export const plugin: GamePlugin = {
   config: {
-    id: 'undercoveragent',
-    name: 'Undercover Agent',
-    slogan: 'Find the imposter among you!',
-    description: 'All players see the same word except the undercover agent. Submit clues, then vote to find the spy. Unanimous vote needed to end the game!',
+    id: "undercoveragent",
+    name: "Undercover Agent",
+    slogan: "Find the imposter among you!",
+    description: "All players see the same word except the undercover agent.",
     instructions: [
-      '1. Everyone is shown the same secret word, except the undercover agent.',
-      '2. Click "Reveal" to learn your role, then click "Ready".',
-      '3. Take turns submitting a clue word related to the secret word. The agent must bluff!',
-      '4. Be careful! If anyone submits the actual secret word, the game ends immediately.',
-      '5. After clue rounds, vote for who you think is the agent. A unanimous vote is required.',
-      '6. If the agent is correctly identified, they get one final guess at the secret word.',
+      "Everyone is shown the same secret word, except the undercover agent.",
+      'Click "Reveal" to learn your role, then click "Ready".',
+      "Take turns submitting a clue word related to the secret word. The agent must bluff!",
+      "Be careful! If anyone submits the actual secret word, the agent wins immediately.",
+      "After the clue rounds, vote who you think the agent is. A unanimous vote is required; if the group can't agree, the agent has a chance to sow doubt.",
+      "If the group votes for the wrong player, the agent wins.",
+      "If the agent is correctly identified, they get one final guess at the secret word.",
     ],
     roundControlTitle: 'Game Control',
     joinPanelTitle: 'Join the Game',

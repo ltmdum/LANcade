@@ -35,18 +35,18 @@ function render(props: GameComponentProps) {
 
 export const plugin: GamePlugin = {
   config: {
-    id: 'ninedash',
-    name: 'Nine Dash',
-    slogan: 'Nine letters, endless words.',
-    description: 'A 3x3 grid of jumbled letters is drawn from a hidden nine-letter word. Make as many words as you can from the available tiles before time runs out — longer words score more. When the timer ends, vote to reject words you do not think are valid.',
+    id: "ninedash",
+    name: "Nine Dash",
+    slogan: "Nine letters, endless words.",
+    description: "Make as many words as you can from the available 3x3 grid of letters before time runs out.",
     instructions: [
-      'A 3x3 grid of nine jumbled letters is revealed.',
-      'Submit as many words as you can using only those letters.',
-      'Each letter tile can be used once per word; repeated tiles can be reused that many times.',
-      'Every accepted word scores one point per letter, so longer words are worth more.',
-      'The hidden nine-letter word scores double (18 points) if you find it!',
-      'Words you have already submitted are rejected.',
-      "When time's up, vote to challenge other players' words. Highest score wins!",
+      "A 3x3 grid of nine letters is revealed.",
+      "Submit as many words as you can using only those letters.",
+      "Each available letter can be used once per word.",
+      "Every accepted word scores one point per letter.",
+      "The hidden nine-letter word scores double (18 points) if you find it!",
+      "When time's up, vote to accept or reject other players' words.",
+      "Words that receive too many downvotes are removed. Highest score wins!",
     ],
     defaultTimer: {
       minutes: '02',

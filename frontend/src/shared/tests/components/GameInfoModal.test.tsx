@@ -6,8 +6,13 @@ const defaultProps = {
   name: 'Test Game',
   description: 'A short description of the game.',
   instructions: ['Step one.', 'Step two.', 'Step three.'],
+  gameId: 'testgame',
   onClose: vi.fn(),
 };
+
+function getToggle() {
+  return screen.getByRole('button', { name: /how to play/i });
+}
 
 describe('GameInfoModal', () => {
   it('renders game name and description', () => {
@@ -16,18 +21,40 @@ describe('GameInfoModal', () => {
     expect(screen.getByText('A short description of the game.')).toBeInTheDocument();
   });
 
-  it('renders all instruction steps', () => {
+  it('starts with instructions collapsed', () => {
     render(<GameInfoModal {...defaultProps} />);
+    expect(screen.queryByRole('list')).not.toBeInTheDocument();
+  });
+
+  it('shows instructions when toggle is clicked', () => {
+    render(<GameInfoModal {...defaultProps} />);
+    fireEvent.click(getToggle());
     expect(screen.getByText('Step one.')).toBeInTheDocument();
     expect(screen.getByText('Step two.')).toBeInTheDocument();
     expect(screen.getByText('Step three.')).toBeInTheDocument();
   });
 
-  it('renders instructions as an unordered list', () => {
+  it('renders expanded instructions as an unordered list', () => {
     render(<GameInfoModal {...defaultProps} />);
+    fireEvent.click(getToggle());
     const list = screen.getByRole('list');
     expect(list.tagName).toBe('UL');
     expect(list.children).toHaveLength(3);
+  });
+
+  it('hides instructions when toggle is clicked twice', () => {
+    render(<GameInfoModal {...defaultProps} />);
+    fireEvent.click(getToggle());
+    expect(screen.getByRole('list')).toBeInTheDocument();
+    fireEvent.click(getToggle());
+    expect(screen.queryByRole('list')).not.toBeInTheDocument();
+  });
+
+  it('renders a link to the online docs', () => {
+    render(<GameInfoModal {...defaultProps} gameId="quickfire" />);
+    const link = screen.getByRole('link');
+    expect(link).toHaveAttribute('href', 'https://ltmdum.github.io/LANcade/games/quickfire.html');
+    expect(link).toHaveAttribute('target', '_blank');
   });
 
   it('calls onClose when close button is clicked', () => {

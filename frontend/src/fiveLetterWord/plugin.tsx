@@ -56,17 +56,17 @@ function render(props: GameComponentProps) {
 
 export const plugin: GamePlugin = {
   config: {
-    id: 'fiveletterword',
-    name: '5 Letter Word',
-    slogan: 'Race to guess the word before anyone else!',
-    description: 'A competitive Guess-style racing game. Everyone plays Guess simultaneously, racing to guess a 5-letter word in 6 tries. Green = correct letter in correct position, yellow = correct letter in wrong position. First to solve wins! A mini display shows how well other players are doing on each row.',
+    id: "fiveletterword",
+    name: "5 Letter Word",
+    slogan: "Race to guess the word before anyone else!",
+    description: "Everyone races to guess a 5-letter word in 6 tries. First to solve wins!",
     instructions: [
-      'Guess the secret 5-letter word in 6 attempts.',
-      'Green = correct letter in the right position.',
-      'Yellow = correct letter in the wrong position.',
-      'Gray = letter is not in the word.',
-      'Everyone plays simultaneously. Race to be the first to solve it!',
-      'A mini display shows how other players are progressing on each row.',
+      "Guess the secret 5-letter word, you have 6 attempts.",
+      "Green = correct letter in the right position.",
+      "Yellow = correct letter in the wrong position.",
+      "Gray = letter is not in the word.",
+      "Everyone plays simultaneously. Race to be the first to solve it!",
+      "Mini display shows the current leader's result on each row.",
     ],
     hideTimer: true,
     roundControlTitle: 'Game Control',

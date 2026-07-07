@@ -47,3 +47,38 @@
   @apply text-sm leading-relaxed;
   color: var(--text-primary);
 }
+
+.game-info-docs-link {
+  margin-top: 1rem;
+  text-align: center;
+}
+
+.game-info-docs-link a {
+  color: #38bdf8;
+  text-decoration: underline;
+  font-size: 0.9rem;
+}
+
+.game-info-docs-link a:hover {
+  color: #7dd3fc;
+}
+
+.game-info-toggle {
+  display: block;
+  width: 100%;
+  padding: 8px 0;
+  margin-bottom: 4px;
+  background: none;
+  border: none;
+  border-top: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+  letter-spacing: 0.5px;
+}
+
+.game-info-toggle:hover {
+  color: var(--text-secondary);
+}

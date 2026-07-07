@@ -327,6 +327,7 @@ function App() {
           name={pluginConfig.name}
           description={pluginConfig.description}
           instructions={pluginConfig.instructions}
+          gameId={gameId}
           onClose={() => setShowGameInfo(false)}
         />
       )}

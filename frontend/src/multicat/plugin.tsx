@@ -64,16 +64,17 @@ function render(props: GameComponentProps) {
 
 export const plugin: GamePlugin = {
   config: {
-    id: 'multicat',
-    name: 'Category Clash: Multicat',
-    slogan: 'Multiple categories, one shared letter.',
-    description: 'Like Quick Fire, but with multiple categories per round. Submit one word per category, all starting with the same letter. You can update your answers until time runs out. Strategic word choice is key!',
+    id: "multicat",
+    name: "Category Clash: Multicat",
+    slogan: "Multiple categories, one shared letter.",
+    description: "Submit one word per category, all starting with the given letter.",
     instructions: [
-      'Multiple categories are chosen, and a shared letter is picked.',
-      'Submit one word per category, all starting with the shared letter.',
-      'You can change your answers at any time before the timer ends.',
-      'Duplicate words across categories are rejected, but you can try again.',
-      "When time's up, vote to challenge other players' words. Most accepted words wins!",
+      "Admin chooses multiple categories, and a random letter is given.",
+      "Submit one word per category, all starting with the given letter.",
+      "You may change your answers before the timer ends.",
+      "You cannot use a word twice or at all if another player has already used it.",
+      "When time's up, vote to accept or reject other players' words.",
+      "Words that receive too many downvotes are removed. The player with the most accepted words wins!",
     ],
     defaultTimer: {
       minutes: '01',

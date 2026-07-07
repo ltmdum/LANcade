@@ -46,21 +46,18 @@ function render(props: GameComponentProps) {
 
 export const plugin: GamePlugin = {
   config: {
-    id: 'telepathy',
-    name: 'Telepathy',
-    slogan: 'Can you read the deck?',
+    id: "telepathy",
+    name: "Telepathy",
+    slogan: "Can you read the deck?",
     description:
-      'A cooperative card game where players must place their numbered cards onto the shared pile in ascending order. ' +
-      'If anyone places a card that skips over a card another player still holds, the round is lost! ' +
-      'Each successful round deals more cards. Can you reach the target?',
+      "A cooperative card game where players must place their numbered cards onto the shared pile in ascending order.",
     instructions: [
-      'Each player is dealt a hand of numbered cards (1–100).',
-      'In round 1, each player gets 1 card. Round 2 gives 2 cards, and so on.',
-      'Players take turns pressing "Place" to put their lowest remaining card onto the shared pile.',
-      'The shared pile shows the last card placed. Cards must go in ascending order.',
-      'If you place a card that skips past a card another player still holds, the round is lost immediately.',
-      'On a loss, the game drops back one round and everyone gets new cards.',
-      'The goal is to reach round (100 / number of players) without a loss.',
+      "Each player is dealt a hand of numbered cards (1–100).",
+      "In round 1, each player gets 1 card. Round 2 gives 2 cards, and so on.",
+      'Players press "Place" to put their lowest card onto the shared pile.',
+      "If you place a card that is higher than a card another player still holds, the round is lost immediately.",
+      "On a loss, the game drops back one round and everyone gets new cards.",
+      "The goal is to reach the highest possible round.",
     ],
     roundControlTitle: 'Game Control',
     joinPanelTitle: 'Join the Game',
