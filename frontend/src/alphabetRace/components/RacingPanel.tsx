@@ -10,6 +10,7 @@ interface RacingPanelProps {
   isParticipating?: boolean;
   wordInput: string;
   statusMessage: string;
+  submitStatus?: 'success' | 'error' | '';
   onWordInputChange: (value: string) => void;
   onWordSubmit: (e: React.FormEvent) => void;
 }
@@ -27,14 +28,17 @@ export function RacingPanel({
   isParticipating = true,
   wordInput,
   statusMessage,
+  submitStatus = '',
   onWordInputChange,
   onWordSubmit,
 }: RacingPanelProps) {
+  const statusClass = submitStatus ? `alphabet-race-status text-${submitStatus}` : 'alphabet-race-status';
+
   return (
     <Panel>
       {category && <p className="alphabet-race-category">Category: {category}</p>}
       <div className="alphabet-race-letter">{currentLetter || '-'}</div>
-      {statusMessage && <p className="alphabet-race-status">{statusMessage}</p>}
+      {statusMessage && <p className={statusClass}>{statusMessage}</p>}
       {isParticipating && (
         isEligible ? (
           <WordSubmitForm
@@ -42,6 +46,7 @@ export function RacingPanel({
             onChange={onWordInputChange}
             onSubmit={onWordSubmit}
             letter={currentLetter}
+            statusType={submitStatus || undefined}
           />
         ) : (
           <p className="alphabet-race-ineligible">

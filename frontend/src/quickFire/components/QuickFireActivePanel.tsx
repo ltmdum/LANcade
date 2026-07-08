@@ -16,6 +16,7 @@ interface QuickFireActivePanelProps {
   isParticipating?: boolean;
   timeUp: boolean;
   wordInput: string;
+  submitStatus?: 'success' | 'error' | '';
   onWordInputChange: (value: string) => void;
   onWordSubmit: (e: React.FormEvent) => void;
   onNewLetter: () => void;
@@ -37,15 +38,18 @@ export function QuickFireActivePanel({
   isParticipating = true,
   timeUp,
   wordInput,
+  submitStatus = '',
   onWordInputChange,
   onWordSubmit,
   onNewLetter,
 }: QuickFireActivePanelProps) {
+  const statusClass = submitStatus ? `categoryclash1-status-message text-${submitStatus}` : 'categoryclash1-status-message';
+
   return (
     <Panel className="categoryclash1-active-panel">
       {isParticipating && <PlayerScoreTags playerName={playerName} score={myScore} />}
       <LetterDisplay letter={letter} countdown={countdown} showCountdown />
-      <div className="categoryclash1-status-message">{statusMessage}</div>
+      <div className={statusClass}>{statusMessage}</div>
       {isAdmin && (
         <button type="button" className="btn btn-secondary" onClick={onNewLetter}>
           New Letter
@@ -58,6 +62,7 @@ export function QuickFireActivePanel({
           onChange={onWordInputChange}
           onSubmit={onWordSubmit}
           letter={letter}
+          statusType={submitStatus || undefined}
         />
       )}
     </Panel>

@@ -160,6 +160,14 @@
     background-color: var(--danger-muted);
   }
 
+  .text-success {
+    color: var(--success);
+  }
+
+  .text-error {
+    color: var(--danger);
+  }
+
   /* Results table with sticky first column */
   .results-table-container {
     @apply overflow-x-auto;

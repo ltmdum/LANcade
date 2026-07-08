@@ -25,7 +25,7 @@ export function WinnerDisplay({ winnerName, scores, playerLookup }: WinnerDispla
           <h4>Final Scores</h4>
           {sortedScores.map(({ id, name, score }, index) => (
             <div key={id} className={`final-score ${index === 0 ? 'winner' : ''}`}>
-              <span className="final-score-rank">{index + 1}.</span>
+              <span className="final-score-rank">{index + 1}. </span>
               <span className="final-score-name">{name}</span>
               <span className="final-score-value">{score}</span>
             </div>

@@ -33,6 +33,10 @@
   @apply pr-8;
 }
 
+.category-word-input-field-error {
+  border-color: var(--danger);
+}
+
 .category-word-input-check {
   @apply absolute right-2 top-1/2 -translate-y-1/2;
   color: var(--success);

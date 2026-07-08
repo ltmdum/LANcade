@@ -16,6 +16,7 @@ interface LastWordStandingActivePanelProps {
   isEliminated: boolean;
   isParticipating?: boolean;
   wordInput: string;
+  submitStatus?: 'success' | 'error' | '';
   onWordInputChange: (value: string) => void;
   onWordSubmit: (e: React.FormEvent) => void;
 }
@@ -37,9 +38,12 @@ export function LastWordStandingActivePanel({
   isEliminated,
   isParticipating = true,
   wordInput,
+  submitStatus = '',
   onWordInputChange,
   onWordSubmit,
 }: LastWordStandingActivePanelProps) {
+  const statusClass = submitStatus ? `wordrush-active-status text-${submitStatus}` : 'wordrush-active-status';
+
   return (
     <Panel className="wordrush-active-panel">
       <div className="wordrush-active-tags">
@@ -48,7 +52,7 @@ export function LastWordStandingActivePanel({
         {lastChance && <span className="tag wordrush-active-last-chance">Last Chance</span>}
       </div>
       <LetterDisplay letter={letter} countdown={countdown} showCountdown />
-      <div className="wordrush-active-status">{statusMessage}</div>
+      <div className={statusClass}>{statusMessage}</div>
       <div className="wordrush-active-connection">{connection}</div>
       {isParticipating && isCurrentPlayer && !isEliminated && (
         <WordSubmitForm
@@ -56,6 +60,7 @@ export function LastWordStandingActivePanel({
           onChange={onWordInputChange}
           onSubmit={onWordSubmit}
           letter={letter}
+          statusType={submitStatus || undefined}
         />
       )}
       {isParticipating && isEliminated && (

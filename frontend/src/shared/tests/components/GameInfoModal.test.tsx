@@ -5,7 +5,7 @@ import { GameInfoModal } from '../../components/GameInfoModal';
 const defaultProps = {
   name: 'Test Game',
   description: 'A short description of the game.',
-  instructions: ['Step one.', 'Step two.', 'Step three.'],
+  instructions: [{ heading: 'Step one', text: 'Do this first.' }, { heading: 'Step two', text: 'Do this second.' }, { heading: 'Step three', text: 'Do this third.' }],
   gameId: 'testgame',
   onClose: vi.fn(),
 };
@@ -29,9 +29,10 @@ describe('GameInfoModal', () => {
   it('shows instructions when toggle is clicked', () => {
     render(<GameInfoModal {...defaultProps} />);
     fireEvent.click(getToggle());
-    expect(screen.getByText('Step one.')).toBeInTheDocument();
-    expect(screen.getByText('Step two.')).toBeInTheDocument();
-    expect(screen.getByText('Step three.')).toBeInTheDocument();
+    const items = screen.getAllByRole('listitem');
+    expect(items[0]).toHaveTextContent('Step one: Do this first.');
+    expect(items[1]).toHaveTextContent('Step two: Do this second.');
+    expect(items[2]).toHaveTextContent('Step three: Do this third.');
   });
 
   it('renders expanded instructions as an unordered list', () => {

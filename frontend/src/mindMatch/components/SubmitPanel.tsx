@@ -25,6 +25,7 @@ export function SubmitPanel({
   const [wordInput, setWordInput] = useState('');
   const [submittedWord, setSubmittedWord] = useState('');
   const [status, setStatus] = useState('');
+  const [submitStatus, setSubmitStatus] = useState<'success' | 'error' | ''>('');
 
   // Use server submission if available, otherwise use locally tracked word
   const displayWord = playerSubmission?.word || submittedWord;
@@ -32,9 +33,11 @@ export function SubmitPanel({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setStatus('');
+    setSubmitStatus('');
 
     if (!wordInput.trim()) {
       setStatus('Please enter a word.');
+      setSubmitStatus('error');
       return;
     }
 
@@ -42,14 +45,22 @@ export function SubmitPanel({
       const { response, data } = await submitWord(playerId, wordInput, accessKey);
       if (!response.ok) {
         setStatus(data.reason === 'empty' ? 'Please enter a word.' : 'Could not submit word.');
+        setSubmitStatus('error');
         return;
       }
       setSubmittedWord(wordInput.trim());
       setStatus('Submitted!');
+      setSubmitStatus('success');
       setWordInput('');
     } catch {
       setStatus('Could not submit word.');
+      setSubmitStatus('error');
     }
+  }
+
+  function handleInputChange(value: string) {
+    setWordInput(value);
+    setSubmitStatus('');
   }
 
   return (
@@ -66,16 +77,16 @@ export function SubmitPanel({
         <input
           type="text"
           value={wordInput}
-          onChange={(e) => setWordInput(e.target.value)}
+          onChange={(e) => handleInputChange(e.target.value)}
           placeholder="Your word..."
-          className="submit-panel-input"
+          className={`submit-panel-input${submitStatus === 'success' ? ' submit-panel-input-success' : ''}${submitStatus === 'error' ? ' submit-panel-input-error' : ''}`}
           maxLength={100}
         />
         <button type="submit" className="btn btn-primary">
           {hasSubmitted ? 'Update' : 'Submit'}
         </button>
       </form>
-      {status && <p className="submit-panel-status">{status}</p>}
+      {status && <p className={`submit-panel-status${submitStatus ? ` text-${submitStatus}` : ''}`}>{status}</p>}
     </Panel>
   );
 }

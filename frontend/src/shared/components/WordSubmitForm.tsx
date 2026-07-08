@@ -10,6 +10,7 @@ interface WordSubmitFormProps {
   buttonText?: string;
   /** Override the input placeholder. Defaults to "Word starting with <letter>". */
   placeholder?: string;
+  statusType?: 'success' | 'error';
 }
 
 /**
@@ -25,14 +26,16 @@ export function WordSubmitForm({
   disabled = false,
   buttonText = 'Submit',
   placeholder,
+  statusType,
 }: WordSubmitFormProps) {
   const isEmpty = value.trim() === '';
+  const inputClass = `word-submit-input${statusType === 'success' ? ' word-submit-input-success' : ''}${statusType === 'error' ? ' word-submit-input-error' : ''}`;
 
   return (
     <form onSubmit={onSubmit} className="word-submit-form">
       <input
         type="text"
-        className="word-submit-input"
+        className={inputClass}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder ?? `Word starting with ${letter || ''}`}

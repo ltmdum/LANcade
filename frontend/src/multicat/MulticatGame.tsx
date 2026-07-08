@@ -47,7 +47,9 @@ export function MulticatGame({
   const [voteSet, setVoteSet] = useState<Set<string>>(new Set());
   const [voteStatus, setVoteStatus] = useState('');
   const [status, setStatus] = useState('');
+  const [submitStatus, setSubmitStatus] = useState<'success' | 'error' | ''>('');
   const [actionStatus, setActionStatus] = useState('');
+  const [failedCategories, setFailedCategories] = useState<Set<string>>(new Set());
 
   const { flashTimerRef, countdownTimerRef } = useTimerRefs();
   const finishSentRef = useRef<Set<number>>(new Set());
@@ -126,6 +128,9 @@ export function MulticatGame({
   }, [round.id, round.state, round.durationMs, playerId, roundId, clearCountdown, notifyFinish, countdownTimerRef]);
 
   useEffect(() => {
+    setStatus('');
+    setSubmitStatus('');
+    setFailedCategories(new Set());
     if (round.state !== 'voting') {
       setVoteSet(new Set());
       setVoteStatus('');
@@ -156,6 +161,7 @@ export function MulticatGame({
   async function onWordSubmit(category: string, e: React.FormEvent) {
     e.preventDefault();
     setStatus('');
+    setSubmitStatus('');
     const hasUserInput = category in wordInputs;
     const acceptedWord = acceptedByCategory.get(category);
     const currentValue = hasUserInput ? wordInputs[category] : (acceptedWord ?? '');
@@ -163,11 +169,11 @@ export function MulticatGame({
     if (timeUp) {
       triggerFlash('error');
       setStatus('Time is up.');
+      setSubmitStatus('error');
       clearInput(category);
       return;
     }
 
-    // Letter must exist during active round
     if (!round.letter) {
       throw new Error('round.letter must exist during active round');
     }
@@ -181,9 +187,18 @@ export function MulticatGame({
 
     triggerFlash(result.success ? 'success' : 'error');
     setStatus(result.success ? 'Word accepted.' : result.statusMessage);
+    setSubmitStatus(result.success ? 'success' : 'error');
     if (result.success) {
       clearInput(category);
+      setFailedCategories((prev) => { const next = new Set(prev); next.delete(category); return next; });
+    } else {
+      setFailedCategories((prev) => new Set(prev).add(category));
     }
+  }
+
+  function handleInputChange(category: string, value: string) {
+    setWordInputs((prev) => ({ ...prev, [category]: value }));
+    setFailedCategories((prev) => { const next = new Set(prev); next.delete(category); return next; });
   }
 
   function onToggleVote(wordId: string) {
@@ -207,14 +222,7 @@ export function MulticatGame({
     setVoteStatus(result.statusMessage);
   }
 
-  /**
-   * Update the local input for a category.
-   * @param category Category name.
-   * @param value Input value.
-   */
-  function handleInputChange(category: string, value: string) {
-    setWordInputs((prev) => ({ ...prev, [category]: value }));
-  }
+
 
   const showView = round.letter && ['active', 'voting', 'results'].includes(round.state);
   if (!showView) return null;
@@ -236,6 +244,8 @@ export function MulticatGame({
           timeUp={timeUp}
           acceptedByCategory={acceptedByCategory}
           wordInputs={wordInputs}
+          submitStatus={submitStatus}
+          failedCategories={failedCategories}
           onInputChange={handleInputChange}
           onWordSubmit={onWordSubmit}
           onNewLetter={onPlayAgain}

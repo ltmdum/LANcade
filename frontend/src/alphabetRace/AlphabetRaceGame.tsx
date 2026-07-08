@@ -49,7 +49,13 @@ export function AlphabetRaceGame({
 }: AlphabetRaceGameProps) {
   const [wordInput, setWordInput] = useState('');
   const [status, setStatus] = useState('');
+  const [submitStatus, setSubmitStatus] = useState<'success' | 'error' | ''>('');
   const [voteStatus, setVoteStatus] = useState('');
+
+  function handleWordInputChange(value: string) {
+    setWordInput(value);
+    setSubmitStatus('');
+  }
   const [flash, setFlash] = useState('');
   const [adminStatus, setAdminStatus] = useState('');
   const [clockSkewMs, setClockSkewMs] = useState(0);
@@ -67,6 +73,8 @@ export function AlphabetRaceGame({
   }, [serverState.serverTime]);
 
   useEffect(() => {
+    setStatus('');
+    setSubmitStatus('');
     if (match.state !== 'voting') setVoteStatus('');
   }, [match.state, match.id]);
 
@@ -85,12 +93,13 @@ export function AlphabetRaceGame({
       flags={flags}
       flash={flash}
       status={status}
+      submitStatus={submitStatus}
       voteStatus={voteStatus}
       adminStatus={adminStatus}
       clockSkewMs={clockSkewMs}
       wordInput={wordInput}
-      onWordInputChange={setWordInput}
-      onWordSubmit={buildWordSubmitHandler({ wordInput, playerId, accessKey, setStatus, setWordInput, triggerFlash })}
+      onWordInputChange={handleWordInputChange}
+      onWordSubmit={buildWordSubmitHandler({ wordInput, playerId, accessKey, setStatus, setWordInput, setSubmitStatus, triggerFlash })}
       onVote={buildVoteHandler({ playerId, accessKey, setVoteStatus, triggerFlash })}
       onRestart={buildRestartHandler({ match, accessKey, setAdminStatus, setShowConfig })}
       setShowConfig={setShowConfig}
@@ -105,6 +114,7 @@ interface WordSubmitHandlerConfig {
   accessKey: string;
   setStatus: (s: string) => void;
   setWordInput: (s: string) => void;
+  setSubmitStatus: (s: 'success' | 'error' | '') => void;
   triggerFlash: (type: string) => void;
 }
 
@@ -117,6 +127,7 @@ function buildWordSubmitHandler(config: WordSubmitHandlerConfig) {
   return async (e: React.FormEvent) => {
     e.preventDefault();
     config.setStatus('');
+    config.setSubmitStatus('');
 
     const trimmedWord = config.wordInput.trim();
     if (!trimmedWord) return;
@@ -126,13 +137,16 @@ function buildWordSubmitHandler(config: WordSubmitHandlerConfig) {
       if (response.ok) {
         config.triggerFlash('success');
         config.setStatus('Submitted. Waiting for votes...');
+        config.setSubmitStatus('success');
       } else {
         config.triggerFlash('error');
         config.setStatus(data.error || 'Could not submit word.');
+        config.setSubmitStatus('error');
       }
     } catch {
       config.triggerFlash('error');
       config.setStatus('Could not submit word.');
+      config.setSubmitStatus('error');
     }
     config.setWordInput('');
   };
@@ -212,6 +226,7 @@ interface AlphabetRaceLayoutProps {
   flags: MatchFlags;
   flash: string;
   status: string;
+  submitStatus: 'success' | 'error' | '';
   voteStatus: string;
   adminStatus: string;
   clockSkewMs: number;
@@ -290,6 +305,7 @@ function PhasePanel({ match, flags, isParticipating, props }: PhasePanelProps) {
         isParticipating={isParticipating}
         wordInput={props.wordInput}
         statusMessage={props.status}
+        submitStatus={props.submitStatus}
         onWordInputChange={props.onWordInputChange}
         onWordSubmit={props.onWordSubmit}
       />

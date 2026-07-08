@@ -573,6 +573,23 @@ export function createCategoryClashEngine(
     // Let the strategy prepare for the new word (e.g., remove old word for category)
     strategy.prepareForNewWord(round, playerId, category);
 
+    // Same-player duplicate check — after prepareForNewWord has had a chance
+    // to remove the old entry (Multicat replacement). If the key is still
+    // registered, the player is resubmitting the same word without replacement.
+    if (existingWord && existingWord.playerId === playerId && round.acceptedWordByKey.get(key)) {
+      storeSubmission(playerId, rawWord, {
+        status: 'duplicate',
+        blockedByPlayerId: existingWord.playerId,
+        category,
+      });
+      notifyChange();
+      return {
+        ok: false,
+        reason: 'duplicate',
+        blockedByName: getPlayerName(existingWord.playerId),
+      };
+    }
+
     const wordId = crypto.randomBytes(8).toString('hex');
     const word: WordEntry = {
       id: wordId,

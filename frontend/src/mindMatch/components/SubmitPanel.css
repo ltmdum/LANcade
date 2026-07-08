@@ -6,6 +6,7 @@
 
 .submit-panel-input {
   flex: 1;
+  min-width: 0;
   padding: 0.5rem;
   font-size: 1rem;
   border: 1px solid var(--border);
@@ -30,4 +31,12 @@
   text-align: center;
   color: var(--text-secondary);
   margin-top: 0.5rem;
+}
+
+.submit-panel-input-success {
+  border-color: var(--success);
+}
+
+.submit-panel-input-error {
+  border-color: var(--danger);
 }

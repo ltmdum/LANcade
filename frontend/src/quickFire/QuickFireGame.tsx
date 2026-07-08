@@ -49,6 +49,7 @@ export function QuickFireGame({
   const [voteStatus, setVoteStatus] = useState('');
   const [status, setStatus] = useState('');
   const [actionStatus, setActionStatus] = useState('');
+  const [submitStatus, setSubmitStatus] = useState<'success' | 'error' | ''>('');
 
   const { flashTimerRef, countdownTimerRef } = useTimerRefs();
   const finishSentRef = useRef<Set<number>>(new Set());
@@ -104,6 +105,8 @@ export function QuickFireGame({
   }, [round.id, round.state, round.durationMs, playerId, roundId, clearCountdown, notifyFinish, countdownTimerRef]);
 
   useEffect(() => {
+    setStatus('');
+    setSubmitStatus('');
     if (round.state !== 'voting') {
       setVoteSet(new Set());
       setVoteStatus('');
@@ -129,15 +132,16 @@ export function QuickFireGame({
   async function onWordSubmit(e: React.FormEvent) {
     e.preventDefault();
     setStatus('');
+    setSubmitStatus('');
 
     if (timeUp) {
       triggerFlash('error');
       setStatus('Time is up.');
+      setSubmitStatus('error');
       setWordInput('');
       return;
     }
 
-    // Letter must exist during active round
     if (!round.letter) {
       throw new Error('round.letter must exist during active round');
     }
@@ -150,7 +154,13 @@ export function QuickFireGame({
 
     triggerFlash(result.success ? 'success' : 'error');
     setStatus(result.statusMessage);
+    setSubmitStatus(result.success ? 'success' : 'error');
     setWordInput('');
+  }
+
+  function handleWordInputChange(value: string) {
+    setWordInput(value);
+    setSubmitStatus('');
   }
 
   function onToggleVote(wordId: string) {
@@ -196,7 +206,8 @@ export function QuickFireGame({
           isParticipating={isParticipating}
           timeUp={timeUp}
           wordInput={wordInput}
-          onWordInputChange={setWordInput}
+          submitStatus={submitStatus}
+          onWordInputChange={handleWordInputChange}
           onWordSubmit={onWordSubmit}
           onNewLetter={onPlayAgain}
         />

@@ -34,6 +34,11 @@ describe('quickfire', () => {
       expect(duplicate.reason).toBe('duplicate');
       expect(duplicate.blockedByName).toBe('Alice');
 
+      const selfDuplicate = game.submitWord(alice, validWord.toLowerCase());
+      expect(selfDuplicate.ok).toBe(false);
+      expect(selfDuplicate.reason).toBe('duplicate');
+      expect(selfDuplicate.blockedByName).toBe('Alice');
+
       const invalid = game.submitWord(bob, invalidWord);
       expect(invalid.ok).toBe(false);
       expect(invalid.reason).toBe('invalid_letter');

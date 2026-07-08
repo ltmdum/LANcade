@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Panel } from '../../shared/components/Panel';
 import { submitWord } from '../../shared/utils/api';
+import '../../mindMatch/components/SubmitPanel.css';
 
 interface UndercoverGuessPanelProps {
   playerId: string;
@@ -24,16 +25,21 @@ export function UndercoverGuessPanel({
 }: UndercoverGuessPanelProps) {
   const [guessInput, setGuessInput] = useState('');
   const [status, setStatus] = useState('');
+  const [submitStatus, setSubmitStatus] = useState<'success' | 'error' | ''>('');
 
-  /**
-   * Handle the guess form submission.
-   */
+  useEffect(() => {
+    setStatus('');
+    setSubmitStatus('');
+  }, [isUndercover]);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setStatus('');
+    setSubmitStatus('');
 
     if (!guessInput.trim()) {
       setStatus('Please enter your guess.');
+      setSubmitStatus('error');
       return;
     }
 
@@ -41,14 +47,25 @@ export function UndercoverGuessPanel({
       const { response } = await submitWord(playerId, guessInput.trim(), accessKey);
       if (!response.ok) {
         setStatus('Could not submit guess.');
+        setSubmitStatus('error');
         return;
       }
       setStatus('Guess submitted!');
+      setSubmitStatus('success');
       setGuessInput('');
     } catch {
       setStatus('Could not submit guess.');
+      setSubmitStatus('error');
     }
   }
+
+  function handleInputChange(value: string) {
+    setGuessInput(value);
+    setSubmitStatus('');
+  }
+
+  const inputClass = `submit-panel-input${submitStatus === 'success' ? ' submit-panel-input-success' : ''}${submitStatus === 'error' ? ' submit-panel-input-error' : ''}`;
+  const statusClass = `undercover-turn-info${submitStatus ? ` text-${submitStatus}` : ''}`;
 
   if (!isUndercover) {
     return (
@@ -70,16 +87,16 @@ export function UndercoverGuessPanel({
         <input
           type="text"
           value={guessInput}
-          onChange={(e) => setGuessInput(e.target.value)}
+          onChange={(e) => handleInputChange(e.target.value)}
           placeholder="Guess the secret word..."
-          className="submit-panel-input"
+          className={inputClass}
           maxLength={100}
         />
         <button type="submit" className="btn btn-primary">
           Submit Guess
         </button>
       </form>
-      {status && <p className="undercover-turn-info">{status}</p>}
+      {status && <p className={statusClass}>{status}</p>}
     </Panel>
   );
 }

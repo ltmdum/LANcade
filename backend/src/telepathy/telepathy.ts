@@ -219,6 +219,7 @@ export function createGame(options: TelepathyOptions) {
   function updateSettings(settings: Record<string, unknown>) {
     if (typeof settings.startingRound === 'number') {
       startingRound = Math.max(1, settings.startingRound);
+      notify();
     }
     return { ok: true as const };
   }

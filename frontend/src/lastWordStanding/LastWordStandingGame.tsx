@@ -35,6 +35,7 @@ export function LastWordStandingGame({
 }: LastWordStandingGameProps) {
   const [wordInput, setWordInput] = useState('');
   const [status, setStatus] = useState('');
+  const [submitStatus, setSubmitStatus] = useState<'success' | 'error' | ''>('');
   const [voteStatus, setVoteStatus] = useState('');
   const [countdown, setCountdown] = useState('');
   const [timeUp, setTimeUp] = useState(false);
@@ -101,6 +102,8 @@ export function LastWordStandingGame({
   }, [match.state, match.turnEndsAt, clockSkewMs, clearCountdown, countdownTimerRef]);
 
   useEffect(() => {
+    setStatus('');
+    setSubmitStatus('');
     if (match.state !== 'voting') {
       setVoteStatus('');
     }
@@ -116,8 +119,8 @@ export function LastWordStandingGame({
   async function onWordSubmit(e: React.FormEvent) {
     e.preventDefault();
     setStatus('');
+    setSubmitStatus('');
 
-    // Letter must exist during active match
     if (!match.currentLetter) {
       throw new Error('match.currentLetter must exist during active match');
     }
@@ -130,7 +133,13 @@ export function LastWordStandingGame({
 
     triggerFlash(result.success ? 'success' : 'error');
     setStatus(result.success ? 'Submitted. Waiting for votes...' : result.statusMessage);
+    setSubmitStatus(result.success ? 'success' : 'error');
     setWordInput('');
+  }
+
+  function handleWordInputChange(value: string) {
+    setWordInput(value);
+    setSubmitStatus('');
   }
 
   async function onVote(decision: 'accept' | 'reject') {
@@ -190,7 +199,8 @@ export function LastWordStandingGame({
           isEliminated={!!isEliminated}
           isParticipating={isParticipating}
           wordInput={wordInput}
-          onWordInputChange={setWordInput}
+          submitStatus={submitStatus}
+          onWordInputChange={handleWordInputChange}
           onWordSubmit={onWordSubmit}
         />
       )}

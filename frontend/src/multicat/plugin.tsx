@@ -69,12 +69,12 @@ export const plugin: GamePlugin = {
     slogan: "Multiple categories, one shared letter.",
     description: "Submit one word per category, all starting with the given letter.",
     instructions: [
-      "Admin chooses multiple categories, and a random letter is given.",
-      "Submit one word per category, all starting with the given letter.",
-      "You may change your answers before the timer ends.",
-      "You cannot use a word twice or at all if another player has already used it.",
-      "When time's up, vote to accept or reject other players' words.",
-      "Words that receive too many downvotes are removed. The player with the most accepted words wins!",
+      { heading: "Setup", text: "Admin chooses multiple categories, and a random letter is given." },
+      { heading: "Submit", text: "Submit one word per category, all starting with the given letter." },
+      { heading: "Update", text: "You may change your answers before the timer ends." },
+      { heading: "Duplicate", text: "You cannot use a word twice or at all if another player has already used it." },
+      { heading: "Voting", text: "When time's up, vote to accept or reject other players' words. Words that receive too many downvotes are removed." },
+      { heading: "Winner", text: "The player with the most accepted words wins!" },
     ],
     defaultTimer: {
       minutes: '01',

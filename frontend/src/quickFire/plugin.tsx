@@ -65,11 +65,11 @@ export const plugin: GamePlugin = {
     slogan: "One letter, one category, most words wins.",
     description: "Race to submit as many words in the chosen category that start with the given letter as you can before time runs out.",
     instructions: [
-      "Admin chooses a category and a random letter is given.",
-      "Submit as many words as you can that start with the letter and fit the category.",
-      "Be quick! You can't submit a word that another player has already submitted.",
-      "When time's up, vote to accept or reject other players' words.",
-      "Words that receive too many downvotes are removed. The player with the most accepted words wins!",
+      { heading: "Setup", text: "Admin chooses a category and a random letter is given." },
+      { heading: "Submit", text: "Submit as many words as you can that start with the letter and fit the category." },
+      { heading: "Be quick", text: "You can't submit a word that another player has already submitted." },
+      { heading: "Voting", text: "When time's up, vote to accept or reject other players' words. Words that receive too many downvotes are removed." },
+      { heading: "Winner", text: "The player with the most accepted words wins!" },
     ],
     defaultTimer: {
       minutes: '01',

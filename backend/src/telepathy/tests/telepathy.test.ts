@@ -365,6 +365,29 @@ describe('Telepathy', () => {
       const state = getState(game);
       expect(state.telepathy.round).toBe(1);
     });
+
+    it('notifies state change when setting changes', () => {
+      let notified = false;
+      const game = createGame({ onStateChange: () => { notified = true; } });
+      const players = ['Alice', 'Bob'];
+      for (const name of players) game.joinPlayer({ name });
+      notified = false; // reset — joinPlayer also calls notify
+
+      game.updateSettings({ startingRound: 5 });
+      expect(notified).toBe(true);
+    });
+
+    it('notifies state change on repeated settings change', () => {
+      let callCount = 0;
+      const game = createGame({ onStateChange: () => { callCount++; } });
+      const players = ['Alice', 'Bob'];
+      for (const name of players) game.joinPlayer({ name });
+      callCount = 0; // reset — joinPlayer also calls notify
+
+      game.updateSettings({ startingRound: 3 });
+      game.updateSettings({ startingRound: 7 });
+      expect(callCount).toBe(2);
+    });
   });
 
   describe('endGame', () => {

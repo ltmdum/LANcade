@@ -1,8 +1,16 @@
-/* WordSubmitForm component styles */
 .word-submit-form {
   @apply flex gap-2;
 }
 
 .word-submit-input {
   @apply input flex-1;
+  min-width: 0;
+}
+
+.word-submit-input-success {
+  border-color: var(--success);
+}
+
+.word-submit-input-error {
+  border-color: var(--danger);
 }

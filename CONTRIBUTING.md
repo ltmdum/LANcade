@@ -176,10 +176,10 @@ Each entry has an `id` (matching the game plugin ID) and a `displayName` (shown 
 
 ### 1. Create the Backend Game Engine
 
-Create your game in `backend/src/games/yourgame/`:
+Create your game in `backend/src/yourgame/`:
 
 ```typescript
-// backend/src/games/yourgame/yourgame.ts
+// backend/src/yourgame/yourgame.ts
 export interface YourGameOptions {
   onStateChange?: () => void;
   playerStore?: PlayerStore;
@@ -201,7 +201,7 @@ export function createGame(options: YourGameOptions) {
 ### 2. Create the Backend Plugin
 
 ```typescript
-// backend/src/games/yourgame/plugin.ts
+// backend/src/yourgame/plugin.ts
 import type { GamePlugin, GameFactoryOptions, BaseGame } from '../../plugins/types.js';
 import { createGame } from './yourgame.js';
 
@@ -226,7 +226,7 @@ export const plugin: GamePlugin = {
 Add to `backend/src/plugins/games.ts`:
 
 ```typescript
-import { plugin as yourgamePlugin } from '../games/yourgame/plugin.js';
+import { plugin as yourgamePlugin } from '../yourgame/plugin.js';
 
 // In the registration section:
 gameRegistry.register(yourgamePlugin);
@@ -234,10 +234,10 @@ gameRegistry.register(yourgamePlugin);
 
 ### 4. Create the Frontend Game Component
 
-Create your game UI in `frontend/src/games/yourgame/`:
+Create your game UI in `frontend/src/yourgame/`:
 
 ```tsx
-// frontend/src/games/yourgame/YourGame.tsx
+// frontend/src/yourgame/YourGame.tsx
 export function YourGame({ serverState, playerId, ... }) {
   return <div>...</div>;
 }
@@ -246,7 +246,7 @@ export function YourGame({ serverState, playerId, ... }) {
 ### 5. Create the Frontend Plugin
 
 ```tsx
-// frontend/src/games/yourgame/plugin.tsx
+// frontend/src/yourgame/plugin.tsx
 import type { GamePlugin, GameComponentProps } from '../../plugins/types';
 import { YourGame } from './YourGame';
 
@@ -254,7 +254,12 @@ export const plugin: GamePlugin = {
   config: {
     id: 'yourgame',
     name: 'Your Game Name',
+    slogan: 'A short tagline for your game.',
     description: 'A brief description of your game.',
+    instructions: [
+      { heading: "Step 1", text: "Description of the first step." },
+      { heading: "Step 2", text: "Description of the second step." },
+    ],
     defaultTimer: { minutes: '01', seconds: '00' },
     roundControlTitle: 'Round Control',
     joinPanelTitle: 'Join the Game',
@@ -271,7 +276,7 @@ export const plugin: GamePlugin = {
 Add to `frontend/src/plugins/games.ts`:
 
 ```typescript
-import { plugin as yourgamePlugin } from '../games/yourgame/plugin';
+import { plugin as yourgamePlugin } from '../yourgame/plugin';
 
 // In the registration section:
 gamePluginRegistry.register(yourgamePlugin);

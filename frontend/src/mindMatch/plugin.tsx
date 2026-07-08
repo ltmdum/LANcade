@@ -75,12 +75,11 @@ export const plugin: GamePlugin = {
     slogan: "Match minds with your fellow players.",
     description: "Everyone fills in the same blank hoping to match with other players.",
     instructions: [
-      "Each round shows a phrase with a blank to fill in.",
-      "Secretly submit your word hoping to match with other players!",
-      "Match with exactly one other player: 3 points each.",
-      "Match with a group of 3+: 1 point each.",
-      "Unique answers score 0 points, but you may be eligible to claim yours matches another. Other players vote to decide.",
-      "First to 25 points wins!",
+      { heading: "Prompt", text: "Each round shows a phrase with a blank to fill in." },
+      { heading: "Submit", text: "Secretly submit your word hoping to match with other players!" },
+      { heading: "Match", text: "Match with exactly one other player: 3 points each. Match with a group of 3+: 1 point each." },
+      { heading: "Unique", text: "Unique answers score 0 points, but you may claim yours matches another. Other players vote to decide." },
+      { heading: "Winner", text: "First to 25 points wins!" },
     ],
     defaultTimer: {
       minutes: '00',

@@ -59,7 +59,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for architecture, code standards, testing
 
 | Game ID        | Name             | Description                                       |
 |----------------|------------------|---------------------------------------------------|
-| `quickfire` | Category Clash: Quick Fire | Fast rounds, shared letter, and friendly disputes |
+| `quickfire` | Category Clash: Quick Fire | One letter, one category, most words wins |
 | `multicat` | Category Clash: Multicat | Multiple categories, one shared letter            |
 | `lastwordstanding` | Last Word Standing | Race the clock and survive the votes              |
 | `fiveletterword` | 5 Letter Word    | Race to guess the 5-letter word                   |

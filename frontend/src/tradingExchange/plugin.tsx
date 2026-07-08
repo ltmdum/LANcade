@@ -10,12 +10,12 @@ export const plugin: GamePlugin = {
     description:
       "Everyone is dealt cards and trades based on the total value of all cards in play.",
     instructions: [
-      "Everyone is dealt cards (Ace=1, 2-10, Jack=11, Queen=12, King=13). Estimate the total value of all cards and trade to profit.",
-      "Each round reveals one card per player. If trades stall, more cards are revealed. All cards are shown in the final round.",
-      "Enter a bid (max you'd pay) and offer (min you'd sell for). If your bid exceeds another's offer you automatically buy; if your offer is below another's bid you automatically sell.",
-      "Update your bid and offer anytime. Trades happen instantly when they cross.",
-      "A BUY trade profits if the final card value is higher than your trade price. A SELL trade profits if the final value is lower.",
-      "All trades settle at the final card value. Most profit wins!",
+      { heading: "Deal", text: "Everyone is dealt cards (Ace=1, 2-10, Jack=11, Queen=12, King=13). Estimate the total value of all cards and trade to profit." },
+      { heading: "Auction", text: "Enter a bid (max you'd pay) and offer (min you'd sell for). If your bid exceeds another's offer you automatically buy; if your offer is below another's bid you automatically sell." },
+      { heading: "Trade", text: "Update your bid and offer anytime. Trades happen instantly when they cross." },
+      { heading: "Reveal", text: "Each round reveals one card per player. If trades stall, more cards are revealed. All cards are shown in the final round." },
+      { heading: "Profit", text: "A BUY trade profits if the final card value is higher than your trade price. A SELL trade profits if the final value is lower." },
+      { heading: "Winner", text: "All trades settle at the total card value. Most profit wins!" },
     ],
     defaultTimer: { minutes: '00', seconds: '30' },
     gameSettings: [

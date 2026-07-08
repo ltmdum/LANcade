@@ -52,12 +52,12 @@ export const plugin: GamePlugin = {
     description:
       "A cooperative card game where players must place their numbered cards onto the shared pile in ascending order.",
     instructions: [
-      "Each player is dealt a hand of numbered cards (1–100).",
-      "In round 1, each player gets 1 card. Round 2 gives 2 cards, and so on.",
-      'Players press "Place" to put their lowest card onto the shared pile.',
-      "If you place a card that is higher than a card another player still holds, the round is lost immediately.",
-      "On a loss, the game drops back one round and everyone gets new cards.",
-      "The goal is to reach the highest possible round.",
+      { heading: "Deal", text: "Each player is dealt a hand of numbered cards (1–100)." },
+      { heading: "Rounds", text: "Round 1 gives each player 1 card, round 2 gives 2 cards, and so on." },
+      { heading: "Play", text: 'Press "Place" to put your lowest card onto the shared pile.' },
+      { heading: "Loss", text: "If you place a card higher than another player's unplayed card, the round is lost immediately." },
+      { heading: "Penalty", text: "On a loss, the game drops back one round and everyone gets new cards." },
+      { heading: "Goal", text: "See how high you can go!" },
     ],
     roundControlTitle: 'Game Control',
     joinPanelTitle: 'Join the Game',

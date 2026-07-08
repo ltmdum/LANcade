@@ -82,6 +82,7 @@ export function NineDashGame({
   const [voteStatus, setVoteStatus] = useState('');
   const [status, setStatus] = useState('');
   const [actionStatus, setActionStatus] = useState('');
+  const [submitStatus, setSubmitStatus] = useState<'success' | 'error' | ''>('');
 
   const { flashTimerRef, countdownTimerRef } = useTimerRefs();
   const finishSentRef = useRef<Set<number>>(new Set());
@@ -117,6 +118,8 @@ export function NineDashGame({
   );
 
   useEffect(() => {
+    setStatus('');
+    setSubmitStatus('');
     if (round.state !== 'voting') {
       setVoteSet(new Set());
       setVoteStatus('');
@@ -142,10 +145,12 @@ export function NineDashGame({
   const onWordSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     setStatus('');
+    setSubmitStatus('');
 
     if (timeUp) {
       triggerFlash('error');
       setStatus('Time is up.');
+      setSubmitStatus('error');
       setWordInput('');
       return;
     }
@@ -158,10 +163,16 @@ export function NineDashGame({
 
     triggerFlash(result.success ? 'success' : 'error');
     setStatus(result.success ? 'Word accepted.' : result.statusMessage);
+    setSubmitStatus(result.success ? 'success' : 'error');
     if (result.success) {
       setWordInput('');
     }
   }, [timeUp, triggerFlash, playerId, accessKey, wordInput, letters]);
+
+  const handleWordInputChange = useCallback((value: string) => {
+    setWordInput(value);
+    setSubmitStatus('');
+  }, []);
 
   const onToggleVote = useCallback((wordId: string) => {
     setVoteSet((prev) => toggleVoteSelection(prev, wordId));
@@ -207,7 +218,8 @@ export function NineDashGame({
           isParticipating={isParticipating}
           timeUp={timeUp}
           wordInput={wordInput}
-          onWordInputChange={setWordInput}
+          submitStatus={submitStatus}
+          onWordInputChange={handleWordInputChange}
           onWordSubmit={onWordSubmit}
           onNewGrid={onPlayAgain}
         />

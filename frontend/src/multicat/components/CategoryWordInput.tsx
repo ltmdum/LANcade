@@ -7,6 +7,7 @@ interface CategoryWordInputProps {
   acceptedWord: string | undefined;
   letter: string | null;
   timeUp: boolean;
+  hasError?: boolean;
   onInputChange: (category: string, value: string) => void;
   onSubmit: (category: string, e: React.FormEvent) => void;
 }
@@ -22,13 +23,15 @@ export function CategoryWordInput({
   acceptedWord,
   letter,
   timeUp,
+  hasError = false,
   onInputChange,
   onSubmit,
 }: CategoryWordInputProps) {
   const isSubmitted = acceptedWord && currentInput === acceptedWord;
   const hasChanged = currentInput.trim() !== '' && currentInput !== acceptedWord;
   const containerClass = `category-word-input ${acceptedWord ? 'category-word-input-accepted' : 'category-word-input-default'}`;
-  const inputClass = `category-word-input-field ${isSubmitted ? 'category-word-input-field-submitted' : ''}`;
+  const inputStatusClass = isSubmitted ? 'category-word-input-field-submitted' : hasError ? 'category-word-input-field-error' : '';
+  const inputClass = `category-word-input-field ${inputStatusClass}`;
 
   return (
     <div className={containerClass}>

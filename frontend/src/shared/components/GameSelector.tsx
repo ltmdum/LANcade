@@ -8,7 +8,7 @@ import './GameSelector.css';
 interface GameInfoData {
   name: string;
   description: string;
-  instructions: string[];
+  instructions: { heading: string; text: string }[];
 }
 
 interface GameSelectorProps {

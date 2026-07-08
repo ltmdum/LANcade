@@ -23,6 +23,7 @@ interface NineDashActivePanelProps {
   isParticipating?: boolean;
   timeUp: boolean;
   wordInput: string;
+  submitStatus?: 'success' | 'error' | '';
   onWordInputChange: (value: string) => void;
   onWordSubmit: (e: React.FormEvent) => void;
   onNewGrid: () => void;
@@ -41,16 +42,19 @@ export function NineDashActivePanel({
   isParticipating = true,
   timeUp,
   wordInput,
+  submitStatus = '',
   onWordInputChange,
   onWordSubmit,
   onNewGrid,
 }: NineDashActivePanelProps) {
+  const statusClass = submitStatus ? `ninedash-status-message text-${submitStatus}` : 'ninedash-status-message';
+
   return (
     <Panel className="ninedash-active-panel">
       {isParticipating && <PlayerScoreTags playerName={playerName} score={myScore} />}
       <LetterGrid letters={letters} />
       <div className="ninedash-countdown">{countdown}</div>
-      <div className="ninedash-status-message">{statusMessage}</div>
+      <div className={statusClass}>{statusMessage}</div>
       {isAdmin && (
         <button type="button" className="btn btn-secondary" onClick={onNewGrid}>
           New Grid
@@ -64,6 +68,7 @@ export function NineDashActivePanel({
           onSubmit={onWordSubmit}
           letter={null}
           placeholder="Make a word from the tiles"
+          statusType={submitStatus || undefined}
         />
       )}
       {isParticipating && <AcceptedWordsList words={myWords} />}

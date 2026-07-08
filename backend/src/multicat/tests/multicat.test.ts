@@ -418,6 +418,33 @@ describe('multicat', () => {
     });
   });
 
+  it('allows reverting to original word after replacing it in same category', async () => {
+    await withFakeTimers((_timers) => {
+      const store = createPlayerStore();
+      const alice = store.joinPlayer({ name: 'Alice' }).playerId!;
+
+      const game = createGame({ playerStore: store, clientGraceMs: 0 });
+      const start = game.startRound(5000);
+      const letter = start.letter!;
+      const state = game.getState();
+      const category = state.round.categories[0];
+
+      game.submitWord(alice, `${letter}lpha`, category);
+      game.submitWord(alice, `${letter}pple`, category);
+      // Revert back to original word — should be allowed (the old one was removed)
+      const revert = game.submitWord(alice, `${letter}lpha`, category);
+      expect(revert.ok).toBe(true);
+
+      // Only the final word should be registered
+      const finalState = game.getState();
+      const aliceWords = finalState.round.wordsByPlayer
+        .find((w: { playerId: string }) => w.playerId === alice)?.words;
+      expect(aliceWords).toBeDefined();
+      expect(aliceWords!.length).toBe(1);
+      expect(aliceWords![0].word).toBe(`${letter}lpha`);
+    });
+  });
+
   it('allows adding a custom category before starting', async () => {
     await withFakeTimers((_timers) => {
       const store = createPlayerStore();

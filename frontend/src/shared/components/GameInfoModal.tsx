@@ -4,7 +4,7 @@ import './GameInfoModal.css';
 interface GameInfoModalProps {
   name: string;
   description: string;
-  instructions: string[];
+  instructions: { heading: string; text: string }[];
   gameId: string;
   onClose: () => void;
 }
@@ -50,13 +50,15 @@ export function GameInfoModal({ name, description, instructions, gameId, onClose
         {showInstructions && (
           <ul className="game-info-instructions">
             {instructions.map((step, i) => (
-              <li key={i} className="game-info-step">{step}</li>
+              <li key={i} className="game-info-step">
+                <strong>{step.heading}:</strong> {step.text}
+              </li>
             ))}
           </ul>
         )}
         <p className="game-info-docs-link">
           <a href={docsUrl} target="_blank" rel="noopener noreferrer">
-            Read full rules online with screenshots &rarr;
+            Detailed run-through &rarr;
           </a>
         </p>
       </div>
