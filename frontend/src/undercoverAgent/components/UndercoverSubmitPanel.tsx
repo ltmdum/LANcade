@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Panel } from '../../shared/components/Panel';
 import { submitWord } from '../../shared/utils/api';
 import '../../mindMatch/components/SubmitPanel.css';
@@ -13,12 +13,6 @@ interface UndercoverSubmitPanelProps {
   hasSubmittedThisRound: boolean;
 }
 
-/**
- * Panel for submitting a clue word during the submission phase.
- * Shows turn information and an input form when it is the player's turn.
- * @param props Submit panel props.
- * @returns Submit panel element.
- */
 export function UndercoverSubmitPanel({
   playerId,
   accessKey,
@@ -30,21 +24,13 @@ export function UndercoverSubmitPanel({
 }: UndercoverSubmitPanelProps) {
   const [wordInput, setWordInput] = useState('');
   const [status, setStatus] = useState('');
-  const [submitStatus, setSubmitStatus] = useState<'success' | 'error' | ''>('');
-
-  useEffect(() => {
-    setStatus('');
-    setSubmitStatus('');
-  }, [currentRound]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setStatus('');
-    setSubmitStatus('');
 
     if (!wordInput.trim()) {
       setStatus('Please enter a word.');
-      setSubmitStatus('error');
       return;
     }
 
@@ -52,25 +38,13 @@ export function UndercoverSubmitPanel({
       const { response, data } = await submitWord(playerId, wordInput.trim(), accessKey);
       if (!response.ok) {
         setStatus(data.reason === 'empty' ? 'Please enter a word.' : 'Could not submit word.');
-        setSubmitStatus('error');
         return;
       }
-      setStatus('Submitted!');
-      setSubmitStatus('success');
       setWordInput('');
     } catch {
       setStatus('Could not submit word.');
-      setSubmitStatus('error');
     }
   }
-
-  function handleInputChange(value: string) {
-    setWordInput(value);
-    setSubmitStatus('');
-  }
-
-  const inputClass = `submit-panel-input${submitStatus === 'success' ? ' submit-panel-input-success' : ''}${submitStatus === 'error' ? ' submit-panel-input-error' : ''}`;
-  const statusClass = `undercover-turn-info${submitStatus ? ` text-${submitStatus}` : ''}`;
 
   return (
     <Panel title="Submit a Clue">
@@ -91,9 +65,9 @@ export function UndercoverSubmitPanel({
             <input
               type="text"
               value={wordInput}
-              onChange={(e) => handleInputChange(e.target.value)}
+              onChange={(e) => setWordInput(e.target.value)}
               placeholder="Your clue word..."
-              className={inputClass}
+              className="submit-panel-input"
               maxLength={100}
             />
             <button type="submit" className="btn btn-primary">
@@ -107,7 +81,7 @@ export function UndercoverSubmitPanel({
         </p>
       )}
 
-      {status && <p className={statusClass}>{status}</p>}
+      {status && <p className="undercover-turn-info">{status}</p>}
     </Panel>
   );
 }

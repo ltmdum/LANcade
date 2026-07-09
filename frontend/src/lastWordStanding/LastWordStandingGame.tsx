@@ -102,12 +102,12 @@ export function LastWordStandingGame({
   }, [match.state, match.turnEndsAt, clockSkewMs, clearCountdown, countdownTimerRef]);
 
   useEffect(() => {
-    setStatus('');
     setSubmitStatus('');
-    if (match.state !== 'voting') {
-      setVoteStatus('');
+    setVoteStatus('');
+    if (match.state === 'active') {
+      setStatus('');
     }
-  }, [match.state, match.id]);
+  }, [match.id, match.state]);
 
   useEffect(() => {
     return () => {

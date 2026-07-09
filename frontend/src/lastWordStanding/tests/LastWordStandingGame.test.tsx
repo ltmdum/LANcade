@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { LastWordStandingGame } from '../LastWordStandingGame';
 import type { LastWordStandingState } from '@lancade/shared';
 
@@ -103,6 +103,61 @@ describe('LastWordStandingGame', () => {
 
       expect(screen.getByRole('textbox')).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /submit/i })).toBeInTheDocument();
+    });
+
+    it('clears submission status when turn passes to next player', async () => {
+      const state = createBaseState();
+      state.match.state = 'active';
+      state.match.currentLetter = 'A';
+      state.match.currentPlayerId = 'player-1';
+      state.match.turnEndsAt = Date.now() + 10000;
+
+      const props = createDefaultProps(state);
+      const { rerender } = render(<LastWordStandingGame {...props} />);
+
+      const input = screen.getByRole('textbox');
+      fireEvent.change(input, { target: { value: 'Apple' } });
+
+      (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({}),
+      });
+
+      fireEvent.click(screen.getByRole('button', { name: /submit/i }));
+
+      await waitFor(() => {
+        expect(screen.getByText('Submitted. Waiting for votes...')).toBeInTheDocument();
+      });
+
+      // Transition to voting (same match.id — Bob's word is being voted on)
+      state.match.state = 'voting';
+      state.match.currentPlayerId = 'player-2';
+      state.match.pendingWord = { word: 'Apple', playerId: 'player-1' };
+      state.match.votes = {
+        submittedIds: [],
+        rejectCount: 0,
+        acceptCount: 0,
+        totalEligible: 2,
+        voteEndsAt: Date.now() + 5000,
+      };
+
+      rerender(<LastWordStandingGame {...props} />);
+
+      // The voting panel shows, so old status is gone
+      expect(screen.queryByText('Submitted. Waiting for votes...')).not.toBeInTheDocument();
+
+      // Transition back to active for next player (same match.id)
+      state.match.state = 'active';
+      state.match.currentPlayerId = 'player-2';
+      state.match.currentLetter = 'B';
+      state.match.pendingWord = null;
+      state.match.votes = null;
+      state.match.turnEndsAt = Date.now() + 10000;
+
+      rerender(<LastWordStandingGame {...props} />);
+
+      // The old submission status must NOT leak into the new turn
+      expect(screen.queryByText('Submitted. Waiting for votes...')).not.toBeInTheDocument();
     });
 
     it('shows current player name', () => {

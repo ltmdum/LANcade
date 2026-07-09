@@ -79,7 +79,7 @@ export function CategorySelector({
         setStatus('Could not set category.');
         return;
       }
-      setStatus('Random category selected.');
+      setStatus(categoryMode === 'multi' ? 'Random categories selected.' : 'Random category selected.');
     } catch {
       setStatus('Could not set category.');
     }

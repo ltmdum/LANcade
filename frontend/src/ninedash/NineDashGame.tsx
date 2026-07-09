@@ -120,9 +120,12 @@ export function NineDashGame({
   useEffect(() => {
     setStatus('');
     setSubmitStatus('');
+    setVoteStatus('');
+  }, [round.id]);
+
+  useEffect(() => {
     if (round.state !== 'voting') {
       setVoteSet(new Set());
-      setVoteStatus('');
     }
   }, [round.id, round.state]);
 

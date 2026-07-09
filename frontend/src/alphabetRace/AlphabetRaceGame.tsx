@@ -75,8 +75,8 @@ export function AlphabetRaceGame({
   useEffect(() => {
     setStatus('');
     setSubmitStatus('');
-    if (match.state !== 'voting') setVoteStatus('');
-  }, [match.state, match.id]);
+    setVoteStatus('');
+  }, [match.id]);
 
   useEffect(() => {
     return () => { if (flashTimerRef.current) clearTimeout(flashTimerRef.current); };

@@ -131,9 +131,12 @@ export function MulticatGame({
     setStatus('');
     setSubmitStatus('');
     setFailedCategories(new Set());
+    setVoteStatus('');
+  }, [round.id]);
+
+  useEffect(() => {
     if (round.state !== 'voting') {
       setVoteSet(new Set());
-      setVoteStatus('');
     }
   }, [round.id, round.state]);
 
