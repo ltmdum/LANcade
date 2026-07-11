@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Console — LANcade</title>
+  <style>
+    body { margin: 0; padding: 24px 16px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #e2e8f0; line-height: 1.6; }
+    .container { max-width: 720px; margin: 0 auto; }
+    h1 { color: #f8fafc; font-size: 1.5rem; margin-bottom: 0.25rem; }
+    h2 { color: #38bdf8; font-size: 1.15rem; margin-top: 2rem; margin-bottom: 0.5rem; }
+    h3 { color: #7dd3fc; font-size: 1rem; margin-top: 1.5rem; margin-bottom: 0.25rem; }
+    p  { margin: 0.5rem 0; }
+    ul, ol { padding-left: 1.25rem; }
+    li { margin: 0.4rem 0; }
+    a  { color: #38bdf8; }
+    a:hover { color: #7dd3fc; }
+    .slogan { color: #94a3b8; font-style: italic; margin-bottom: 1rem; }
+    .back { margin-top: 2rem; display: block; }
+    .screenshot-row { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 4px; margin: 0.75rem 0; }
+    .screenshot-col { width: 32%; flex-shrink: 0; }
+    .screenshot { width: 100%; border-radius: 8px; border: 1px solid #334155; }
+    .screenshot-caption { color: #94a3b8; font-size: 0.85rem; margin: 0.25rem 0 0; }
+    .side-text { width: 64%; flex-shrink: 0; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <p><a href="index.html">&larr; All Games</a></p>
+    <h1>Admin</h1>
+    <p class="slogan">Set up, run, and manage your game session.</p>
+
+    <h2>Mobile App</h2>
+    <div class="screenshot-row">
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/admin/android_app_server_shareable_links.jpg" alt="Android app server shareable links">
+      </div>
+      <div class="side-text">
+	<ul>
+          <li>When you start the server, you send players the link to join or they can scan the QR code off your device.</li>
+          <li>When all players have the link, click "open" to run the game session as the admin.</li>
+          <li>Players must be on the same local network (WiFi) as you to be able to join the game session.</li>
+          <li>If you are on a public WiFi or there is no WiFi available, then players can join the game session if they login to your hotspot network.</li>
+	</ul>
+      </div>
+    </div>
+
+    <h2>Admin Console</h2>
+
+    <p>The admin console is the control centre for the game host. From here you select the game to play and configure it, manage players, and start rounds.</p>
+
+    <h3>Console Overview</h3>
+    <p>The top of the admin console gives you the option of being a player-admin or admin-only.</p>
+    <div class="screenshot-row">
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/admin/admin_console_upper.jpg" alt="Admin console upper section">
+        <p class="screenshot-caption">Player and admin.</p>
+      </div>
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/admin/admin_view_only_config.jpg" alt="Admin view only config">
+        <p class="screenshot-caption">View-only admin.</p>
+      </div>
+    </div>
+
+    <h3>Game Configuration</h3>
+    <p>Each game has its own configuration panel. Choose categories, set timers, and customise game-specific options before starting.</p>
+    <div class="screenshot-row">
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/admin/admin_console_quickfire_config.jpg" alt="Quick Fire admin configuration">
+        <p class="screenshot-caption">Choose the category or add your own for Category Clash: Quick Fire. Then set the round length and start.</p>
+      </div>
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/admin/admin_console_multicat_config.jpg" alt="Multicat admin configuration">
+        <p class="screenshot-caption">Choose the categories and/or add your own for Category Clash: Multcat. Then set the round length and start.</p>
+      </div>
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/admin/admin_console_lastwordstanding_config.jpg" alt="Last Word Standing admin configuration">
+        <p class="screenshot-caption">Choose the category or add your own for Last Word Standing. Then set the elimination timeout and start.</p>
+      </div>
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/admin/admin_console_5letterword_config.jpg" alt="5 Letter Word admin configuration">
+        <p class="screenshot-caption">No configuration required for 5 Letter Word.</p>
+      </div>
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/admin/admin_console_mindmatch_config.jpg" alt="Mind Match admin configuration">
+        <p class="screenshot-caption">No configuration required for Mind Match.</p>
+      </div>
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/admin/admin_console_alphabet_config.jpg" alt="Alphabet Race admin configuration">
+        <p class="screenshot-caption">Choose the category or add your own for Alphabet Race. Then set the vote timeout and start.</p>
+      </div>
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/admin/admin_console_undercoveragent_config.jpg" alt="Undercover Agent admin configuration">
+        <p class="screenshot-caption">Choose the number of rounds for Undercover Agent and start.</p>
+      </div>
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/admin/admin_console_tradingexchange_config.jpg" alt="Trading Exchange admin configuration">
+        <p class="screenshot-caption">For Trading Exchange, choose the number of cards per player, set an auto-submit timer if desired, and choose the amount of time without trades before the next set of cards will be revealed.</p>
+      </div>
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/admin/admin_console_ninedash_config.jpg" alt="Nine Dash admin configuration">
+        <p class="screenshot-caption">Choose the round length for Nine Dash, then start.</p>
+      </div>
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/admin/admin_console_telepathy_config.jpg" alt="Telepathy admin configuration">
+        <p class="screenshot-caption">Choose the starting round (cards-per-player) for Telepathy, then start.</p>
+      </div>
+    </div>
+
+    <h3>In-Game Controls</h3>
+    <p>During a game, the admin can manage the round or end it early.</p>
+    <div class="screenshot-row">
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/admin/admin_ingame_playing.jpg" alt="Admin in-game playing view">
+        <p class="screenshot-caption">Different games give the admin different responsibilities. Category Clash games allows them to regenerate the letter.</p>
+      </div>
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/admin/admin_endgame.jpg" alt="Admin end game screen">
+        <p class="screenshot-caption">Forcing an end to the game will lose all progress in the current game and go back to the Admin Console.</p>
+      </div>
+    </div>
+
+    <h3>View Only</h3>
+    <div class="screenshot-row">
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/admin/admin_ingame_view_only.jpg" alt="Admin in-game view only mode">
+        <p class="screenshot-caption">View-only mode allows the admin to observe without playing.</p>
+      </div>
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/admin/admin_voting_view_only.jpg" alt="Admin voting view only">
+        <p class="screenshot-caption">The admin can monitor progress.</p>
+      </div>
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/admin/admin_tradingexchange_view_only.jpg" alt="Admin Trading Exchange view only">
+        <p class="screenshot-caption">Different games give different view-only views.</p>
+      </div>
+    </div>
+
+    <a href="index.html" class="back">&larr; All Games</a>
+  </div>
+</body>
+</html>

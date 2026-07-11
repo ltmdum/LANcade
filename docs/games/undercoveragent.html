@@ -9,6 +9,7 @@
     .container { max-width: 720px; margin: 0 auto; }
     h1 { color: #f8fafc; font-size: 1.5rem; margin-bottom: 0.25rem; }
     h2 { color: #38bdf8; font-size: 1.15rem; margin-top: 2rem; margin-bottom: 0.5rem; }
+    h3 { color: #7dd3fc; font-size: 1rem; margin-top: 1.5rem; margin-bottom: 0.25rem; }
     p  { margin: 0.5rem 0; }
     ul, ol { padding-left: 1.25rem; }
     li { margin: 0.4rem 0; }
@@ -16,7 +17,10 @@
     a:hover { color: #7dd3fc; }
     .slogan { color: #94a3b8; font-style: italic; margin-bottom: 1rem; }
     .back { margin-top: 2rem; display: block; }
-    .placeholder { border: 2px dashed #334155; border-radius: 8px; padding: 2rem; text-align: center; color: #64748b; margin: 1rem 0; }
+    .screenshot-row { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 4px; margin: 0.75rem 0; }
+    .screenshot-col { width: 32%; flex-shrink: 0; }
+    .screenshot { width: 100%; border-radius: 8px; border: 1px solid #334155; }
+    .screenshot-caption { color: #94a3b8; font-size: 0.85rem; margin: 0.25rem 0 0; }
   </style>
 </head>
 <body>
@@ -37,11 +41,117 @@
       <li><strong>Outcome:</strong> If the group votes for the wrong player, the agent wins. If the agent is correctly identified, they get one final guess at the secret word.</li>
     </ul>
 
-    <h2>Screenshots</h2>
-    <div class="placeholder">[Screenshots coming soon]</div>
+    <h2>Tutorial</h2>
 
-    <h2>Gameplay Video</h2>
-    <div class="placeholder">[Video coming soon]</div>
+    <h3>Role Reveal</h3>
+    <p>Each player clicks "Reveal" to see their role, then clicks "Ready" once they've read it. Civilians see the secret word; the agent learns they are the agent.</p>
+    <div class="screenshot-row">
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/undercoveragent/undercoveragent_pre_reveal.jpg" alt="Undercover Agent — pre-reveal screen">
+        <p class="screenshot-caption">Waiting to reveal your role at the start of the game.</p>
+      </div>
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/undercoveragent/undercoveragent_role_reveal.jpg" alt="Undercover Agent — role reveal">
+        <p class="screenshot-caption">You're a civilian and the secret word is walrus.</p>
+      </div>
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/undercoveragent/undercoveragent_im_agent.jpg" alt="Undercover Agent — I'm the agent view">
+        <p class="screenshot-caption">You're the undercover agent! Avoid discovery and try to guess the secret word.</p>
+      </div>
+    </div>
+
+    <h3>Gameplay</h3>
+    <p>Take turns submitting a clue word related to the secret word. The agent must bluff to avoid detection.</p>
+    <h4>Secret Word — Walrus</h4>
+    <div class="screenshot-row">
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/undercoveragent/undercoveragent_waiting_for_submission.jpg" alt="Undercover Agent — waiting for submission">
+        <p class="screenshot-caption">Waiting for John to make the first submission.</p>
+      </div>
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/undercoveragent/undercoveragent_waiting_for_2nd_submission.jpg" alt="Undercover Agent — waiting for 2nd submission">
+        <p class="screenshot-caption">Waiting for Jane to submit the second clue.</p>
+      </div>
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/undercoveragent/undercoveragent_my_turn.jpg" alt="Undercover Agent — my turn to submit a clue">
+        <p class="screenshot-caption">It's your turn! Submit a clue related to the secret word.</p>
+      </div>
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/undercoveragent/undercoveragent_round2.jpg" alt="Undercover Agent — round 2 clues">
+        <p class="screenshot-caption">John has submitted two clues and we're waiting for Jane's second clue.</p>
+      </div>
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/undercoveragent/undercoveragent_agent_correct_guess_early.jpg" alt="Undercover Agent — agent correct guess early">
+        <p class="screenshot-caption">Jane submitted "walrus" as her second clue and won the game for discovering the secret word as the undercover agent.</p>
+      </div>
+    </div>
+
+    <h4>Playing as Undercover Agent</h4>
+    <div class="screenshot-row">
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/undercoveragent/undercoveragent_my_guess.jpg" alt="Undercover Agent — my guess">
+        <p class="screenshot-caption">Time to bluff like you know the secret word!</p>
+      </div>
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/undercoveragent/undercoveragent_my_2nd_guess.jpg" alt="Undercover Agent — my 2nd guess">
+        <p class="screenshot-caption">Round two of bluffing — there's more information now.</p>
+      </div>
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/undercoveragent/undercoveragent_voting_as_agent.jpg" alt="Undercover Agent — voting as the agent">
+        <p class="screenshot-caption">Voting as the undercover agent — try to deflect suspicion.</p>
+      </div>
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/undercoveragent/undercoveragent_im_uncovered_chance_to_guess.jpg" alt="Undercover Agent — uncovered, chance to guess">
+        <p class="screenshot-caption">You've been uncovered! You've got one last chance to guess the secret word.</p>
+      </div>
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/undercoveragent/undercoveragent_agent_correct_guess_end.jpg" alt="Undercover Agent — agent correct guess at end">
+        <p class="screenshot-caption">You guessed the secret word!</p>
+      </div>
+    </div>
+
+    <h4>Secret Word — Mango</h4>
+    <div class="screenshot-row">
+      <!--<div class="screenshot-col">
+        <img class="screenshot" src="screenshots/undercoveragent/undercoveragent_mango.jpg" alt="Undercover Agent — Mango the agent">
+      </div>-->
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/undercoveragent/undercoveragent_mango_vote.jpg" alt="Undercover Agent — voting for Mango">
+        <p class="screenshot-caption">It looks pretty clear who the undercover agent is.</p>
+      </div>
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/undercoveragent/undercoveragent_mango_jane_agent.jpg" alt="Undercover Agent — Jane is the agent">
+        <p class="screenshot-caption">Everyone identified Jane as the undercover agent.</p>
+      </div>
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/undercoveragent/undercoveragent_mango_civilians_win.jpg" alt="Undercover Agent — civilians win">
+        <p class="screenshot-caption">Jane got her final guess wrong and the Civilians won.</p>
+      </div>
+    </div>
+
+    <h4>Secret Word — Gazelle</h4>
+    <p>A unanimous vote is required to conclude voting.</p>
+    <div class="screenshot-row">
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/undercoveragent/undercoveragent_gazelle_vote.jpg" alt="Undercover Agent — voting for Gazelle">
+        <p class="screenshot-caption">Voting for Jane as the suspected undercover agent.</p>
+      </div>
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/undercoveragent/undercover_agent_gazelle_non_unanimous.jpg" alt="Undercover Agent — non-unanimous vote for Gazelle">
+        <p class="screenshot-caption">The vote was not unanimous, everyone must vote again. Each player can plead their case.</p>
+      </div>
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/undercoveragent/undercoveragent_gazelle_revote.jpg" alt="Undercover Agent — revote for Gazelle">
+        <p class="screenshot-caption">Jane convinced you to switch your vote to John.</p>
+      </div>
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/undercoveragent/undercoveragent_gazelle_wrong_player.jpg" alt="Undercover Agent — voted wrong player">
+        <p class="screenshot-caption">Jane fooled you! She was the undercover agent all along.</p>
+      </div>
+    </div>
+
+    <h3>Note</h3>
+    <p>A player cannot vote for themself. A vote is considered unanimous if all players, except the recipient, vote for one player.</p>
 
     <a href="index.html" class="back">&larr; All Games</a>
   </div>

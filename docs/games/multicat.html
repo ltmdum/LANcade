@@ -9,6 +9,7 @@
     .container { max-width: 720px; margin: 0 auto; }
     h1 { color: #f8fafc; font-size: 1.5rem; margin-bottom: 0.25rem; }
     h2 { color: #38bdf8; font-size: 1.15rem; margin-top: 2rem; margin-bottom: 0.5rem; }
+    h3 { color: #7dd3fc; font-size: 1rem; margin-top: 1.5rem; margin-bottom: 0.25rem; }
     p  { margin: 0.5rem 0; }
     ul, ol { padding-left: 1.25rem; }
     li { margin: 0.4rem 0; }
@@ -16,7 +17,10 @@
     a:hover { color: #7dd3fc; }
     .slogan { color: #94a3b8; font-style: italic; margin-bottom: 1rem; }
     .back { margin-top: 2rem; display: block; }
-    .placeholder { border: 2px dashed #334155; border-radius: 8px; padding: 2rem; text-align: center; color: #64748b; margin: 1rem 0; }
+    .screenshot-row { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 4px; margin: 0.75rem 0; }
+    .screenshot-col { width: 32%; flex-shrink: 0; }
+    .screenshot { width: 100%; border-radius: 8px; border: 1px solid #334155; }
+    .screenshot-caption { color: #94a3b8; font-size: 0.85rem; margin: 0.25rem 0 0; }
   </style>
 </head>
 <body>
@@ -33,15 +37,34 @@
       <li><strong>Submit:</strong> Submit one word per category, all starting with the given letter.</li>
       <li><strong>Update:</strong> You may change your answers before the timer ends.</li>
       <li><strong>Duplicate:</strong> You cannot use a word twice or at all if another player has already used it.</li>
-      <li><strong>Voting:</strong> When time's up, vote to accept or reject other players' words. Words that receive too many downvotes are removed.</li>
+      <li><strong>Voting:</strong> When time's up, vote to accept or reject other players' words. Words that receive more than 50% downvotes are removed.</li>
       <li><strong>Winner:</strong> The player with the most accepted words wins!</li>
     </ul>
 
-    <h2>Screenshots</h2>
-    <div class="placeholder">[Screenshots coming soon]</div>
+    <h2>Tutorial</h2>
 
-    <h2>Gameplay Video</h2>
-    <div class="placeholder">[Video coming soon]</div>
+    <h3>Gameplay / Voting</h3>
+    <div class="screenshot-row">
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/multicat/multicat_2_accepts_1_reject.jpg" alt="Multicat — 2 accepts, 1 reject">
+        <p class="screenshot-caption">Submit one word per category, all starting with the given letter. You can change your answers until the timer expires.</p>
+      </div>
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/multicat/multicat_voting.jpg" alt="Multicat — voting screen">
+        <p class="screenshot-caption">Vote on other players' words to accept or reject them.</p>
+      </div>
+    </div>
+
+    <h3>Leaderboard</h3>
+    <p>The leaderboard shows scores and gives a breakdown of who beat you to a word and which players rejected your words.</p>
+    <div class="screenshot-row">
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/multicat/multicat_leaderboard.jpg" alt="Multicat leaderboard">
+      </div>
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/multicat/multicat_leaderboard_scrolled.jpg" alt="Multicat leaderboard scrolled">
+      </div>
+    </div>
 
     <a href="index.html" class="back">&larr; All Games</a>
   </div>

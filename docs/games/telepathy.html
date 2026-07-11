@@ -9,6 +9,7 @@
     .container { max-width: 720px; margin: 0 auto; }
     h1 { color: #f8fafc; font-size: 1.5rem; margin-bottom: 0.25rem; }
     h2 { color: #38bdf8; font-size: 1.15rem; margin-top: 2rem; margin-bottom: 0.5rem; }
+    h3 { color: #7dd3fc; font-size: 1rem; margin-top: 1.5rem; margin-bottom: 0.25rem; }
     p  { margin: 0.5rem 0; }
     ul, ol { padding-left: 1.25rem; }
     li { margin: 0.4rem 0; }
@@ -16,7 +17,10 @@
     a:hover { color: #7dd3fc; }
     .slogan { color: #94a3b8; font-style: italic; margin-bottom: 1rem; }
     .back { margin-top: 2rem; display: block; }
-    .placeholder { border: 2px dashed #334155; border-radius: 8px; padding: 2rem; text-align: center; color: #64748b; margin: 1rem 0; }
+    .screenshot-row { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 4px; margin: 0.75rem 0; }
+    .screenshot-col { width: 32%; flex-shrink: 0; }
+    .screenshot { width: 100%; border-radius: 8px; border: 1px solid #334155; }
+    .screenshot-caption { color: #94a3b8; font-size: 0.85rem; margin: 0.25rem 0 0; }
   </style>
 </head>
 <body>
@@ -30,6 +34,7 @@
     <h2>Rules</h2>
     <ul>
       <li><strong>Deal:</strong> Each player is dealt a hand of numbered cards (1–100).</li>
+      <li><strong>No Communication:</strong> Absolutely no discussion of cards or strategy during a round. This is the core of the game. Read the table, not each other.</li>
       <li><strong>Rounds:</strong> Round 1 gives each player 1 card, round 2 gives 2 cards, and so on.</li>
       <li><strong>Play:</strong> Press "Place" to put your lowest card onto the shared pile.</li>
       <li><strong>Loss:</strong> If you place a card higher than another player's unplayed card, the round is lost immediately.</li>
@@ -37,11 +42,53 @@
       <li><strong>Goal:</strong> See how high you can go!</li>
     </ul>
 
-    <h2>Screenshots</h2>
-    <div class="placeholder">[Screenshots coming soon]</div>
+    <h2>Tutorial</h2>
 
-    <h2>Gameplay Video</h2>
-    <div class="placeholder">[Video coming soon]</div>
+    <h3>Round 1</h3>
+    <p>Each player is dealt 1 card. You must stay completely silent — no talking, no signalling. Place your card onto the shared pile in ascending order by reading the table.</p>
+    <div class="screenshot-row">
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/telepathy/telepathy_rd1_0.jpg" alt="Telepathy — round 1 start">
+        <p class="screenshot-caption">You've been dealt quite a high number, your best strategy might be to wait.</p>
+      </div>
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/telepathy/telepathy_rd1_1.jpg" alt="Telepathy — round 1, one card placed">
+        <p class="screenshot-caption">One player places their 41 card on the pile.</p>
+      </div>
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/telepathy/telepathy_rd1_2.jpg" alt="Telepathy — round 1, two cards placed">
+        <p class="screenshot-caption">Another player places their 75 card on the pile. Your 92 is the last card remaining.</p>
+      </div>
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/telepathy/telepathy_rd1_complete.jpg" alt="Telepathy — round 1 complete">
+        <p class="screenshot-caption">You place 92 safely to complete Round 1 and move onto Round 2.</p>
+      </div>
+    </div>
+
+    <h3>Round 2</h3>
+    <p>In round 2, each player gets 2 cards. Place them one at a time.</p>
+    <div class="screenshot-row">
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/telepathy/telepathy_rd2_1.jpg" alt="Telepathy — round 2, one card placed">
+        <p class="screenshot-caption">First card of round 2 placed successfully. Your cards are in the middle and very close together.</p>
+      </div>
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/telepathy/telepathy_rd2_2.jpg" alt="Telepathy — round 2, two cards placed">
+        <p class="screenshot-caption">Two cards down in round 2, staying in order.</p>
+      </div>
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/telepathy/telepathy_rd2_3.jpg" alt="Telepathy — round 2, three cards placed">
+        <p class="screenshot-caption">Three cards placed; players are cooperating well.</p>
+      </div>
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/telepathy/telepathy_rd2_4.jpg" alt="Telepathy — round 2, four cards placed">
+        <p class="screenshot-caption">You correctly place your first card fourth.</p>
+      </div>
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/telepathy/telepathy_rd2_lost.jpg" alt="Telepathy — round 2 lost">
+        <p class="screenshot-caption">Jane jumped in with 58 before you placed 53 and Round 2 was lost. Play moves back to Round 1</p>
+      </div>
+    </div>
 
     <a href="index.html" class="back">&larr; All Games</a>
   </div>

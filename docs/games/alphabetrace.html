@@ -9,6 +9,7 @@
     .container { max-width: 720px; margin: 0 auto; }
     h1 { color: #f8fafc; font-size: 1.5rem; margin-bottom: 0.25rem; }
     h2 { color: #38bdf8; font-size: 1.15rem; margin-top: 2rem; margin-bottom: 0.5rem; }
+    h3 { color: #7dd3fc; font-size: 1rem; margin-top: 1.5rem; margin-bottom: 0.25rem; }
     p  { margin: 0.5rem 0; }
     ul, ol { padding-left: 1.25rem; }
     li { margin: 0.4rem 0; }
@@ -16,14 +17,17 @@
     a:hover { color: #7dd3fc; }
     .slogan { color: #94a3b8; font-style: italic; margin-bottom: 1rem; }
     .back { margin-top: 2rem; display: block; }
-    .placeholder { border: 2px dashed #334155; border-radius: 8px; padding: 2rem; text-align: center; color: #64748b; margin: 1rem 0; }
+    .screenshot-row { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 4px; margin: 0.75rem 0; }
+    .screenshot-col { width: 32%; flex-shrink: 0; }
+    .screenshot { width: 100%; border-radius: 8px; border: 1px solid #334155; }
+    .screenshot-caption { color: #94a3b8; font-size: 0.85rem; margin: 0.25rem 0 0; }
   </style>
 </head>
 <body>
   <div class="container">
     <p><a href="index.html">&larr; All Games</a></p>
     <h1>Alphabet Race</h1>
-    <p class="slogan">A race around the alphabet!</p>
+    <p class="slogan">A race through the alphabet!</p>
 
     <p>Be the first to submit a word for each letter of the alphabet.</p>
 
@@ -37,11 +41,81 @@
       <li><strong>Winner:</strong> The player with the most points after all 26 letters wins!</li>
     </ul>
 
-    <h2>Screenshots</h2>
-    <div class="placeholder">[Screenshots coming soon]</div>
+    <h2>Tutorial</h2>
 
-    <h2>Gameplay Video</h2>
-    <div class="placeholder">[Video coming soon]</div>
+    <h3>Gameplay</h3>
+    <p>The current letter is displayed at the top. Submit a word that fits the category and starts with that letter.</p>
+    <div class="screenshot-row">
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/alphabetrace/alphabet_h_start.jpg" alt="Alphabet Race — starting on letter H">
+        <p class="screenshot-caption">Randomly starting on the letter H.</p>
+      </div>
+    </div>
+
+    <h3>Voting</h3>
+    <p>Submit your word and wait for votes. If you weren't first to submit for a letter then you vote on the submission that got in first.</p>
+    <div class="screenshot-row">
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/alphabetrace/alphabet_waiting_for_votes.jpg" alt="Alphabet Race — waiting for votes">
+        <p class="screenshot-caption">Waiting for other players to submit their votes.</p>
+      </div>
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/alphabetrace/alphabet_voting.jpg" alt="Alphabet Race — voting screen">
+        <p class="screenshot-caption">Vote on other players' words to accept or reject them.</p>
+      </div>
+    </div>
+
+    <h3>Penalties</h3>
+    <p>If a player submits a word that doesn't belong to the category or is otherwise incorrect, it will be rejected if receives 50% or more rejection votes.</p>
+    <div class="screenshot-row">
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/alphabetrace/alphabet_wrong_word_rejected_jane_out.jpg" alt="Alphabet Race — Jane out from wrong word">
+        <p class="screenshot-caption">Jane submitted a made up word starting with K and was rejected</p>
+      </div>
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/alphabetrace/alphabet_jane_penalty_still_out.jpg" alt="Alphabet Race — Jane still out from penalty">
+        <p class="screenshot-caption">As a further penalty, Jane must sit out the next letter as well.</p>
+      </div>
+    </div>
+
+    <p>You are also subject to penalties. If your word is incorrect or doesn't belong to the category, other players may vote to reject it.</p>
+    <div class="screenshot-row">
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/alphabetrace/alphabet_my_wrong_word.jpg" alt="Alphabet Race — my wrong word">
+        <p class="screenshot-caption">This word doesn't belong to the category</p>
+      </div>
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/alphabetrace/alphabet_my_wrong_word_rejected.jpg" alt="Alphabet Race — my wrong word rejected">
+        <p class="screenshot-caption">Your word was rejected and now you are sitting out of this round.</p>
+      </div>
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/alphabetrace/alphabet_my_wrong_word_penalty.jpg" alt="Alphabet Race — penalty for wrong word">
+        <p class="screenshot-caption">As a further penalty, you also sit out the next letter.</p>
+      </div>
+    </div>
+
+    <p>There are two ways that you can re-enter the game:</p>
+    <ol>
+      <li>Serve your two letter penalty.</li>
+      <li>If ever there is only one active player remaining after a rejection, then all players are automatically brought back into the game.</li>
+    </ol>
+    <div class="screenshot-row">
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/alphabetrace/alphabet_another_wrong_word_im_back_in.jpg" alt="Alphabet Race — another wrong word, I'm back in">
+        <p class="screenshot-caption">Play is still on "O" but you're back in the game!</p>
+      </div>
+    </div>
+
+    <h3>Winner</h3>
+    <p>The player with the most points after all 26 letters wins.</p>
+    <div class="screenshot-row">
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/alphabetrace/alphabet_winner.jpg" alt="Alphabet Race — winner screen">
+      </div>
+    </div>
+
+    <h3>Note</h3>
+    <p>Nefarious actors can easily ruin this game by rejecting everyone else's submissions. Don't be that person.</p>
 
     <a href="index.html" class="back">&larr; All Games</a>
   </div>

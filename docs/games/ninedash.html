@@ -9,6 +9,7 @@
     .container { max-width: 720px; margin: 0 auto; }
     h1 { color: #f8fafc; font-size: 1.5rem; margin-bottom: 0.25rem; }
     h2 { color: #38bdf8; font-size: 1.15rem; margin-top: 2rem; margin-bottom: 0.5rem; }
+    h3 { color: #7dd3fc; font-size: 1rem; margin-top: 1.5rem; margin-bottom: 0.25rem; }
     p  { margin: 0.5rem 0; }
     ul, ol { padding-left: 1.25rem; }
     li { margin: 0.4rem 0; }
@@ -16,7 +17,10 @@
     a:hover { color: #7dd3fc; }
     .slogan { color: #94a3b8; font-style: italic; margin-bottom: 1rem; }
     .back { margin-top: 2rem; display: block; }
-    .placeholder { border: 2px dashed #334155; border-radius: 8px; padding: 2rem; text-align: center; color: #64748b; margin: 1rem 0; }
+    .screenshot-row { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 4px; margin: 0.75rem 0; }
+    .screenshot-col { width: 32%; flex-shrink: 0; }
+    .screenshot { width: 100%; border-radius: 8px; border: 1px solid #334155; }
+    .screenshot-caption { color: #94a3b8; font-size: 0.85rem; margin: 0.25rem 0 0; }
   </style>
 </head>
 <body>
@@ -37,11 +41,52 @@
       <li><strong>Winner:</strong> Highest score wins!</li>
     </ul>
 
-    <h2>Screenshots</h2>
-    <div class="placeholder">[Screenshots coming soon]</div>
+    <h2>Tutorial</h2>
 
-    <h2>Gameplay Video</h2>
-    <div class="placeholder">[Video coming soon]</div>
+    <h3>Gameplay</h3>
+    <p>The 3x3 grid is revealed.</p>
+    <div class="screenshot-row">
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/ninedash/ninedash_grid_reveal.jpg" alt="Nine Dash — grid revealed">
+        <p class="screenshot-caption">Start looking for words! Remember the 9-letter word is worth double points!</p>
+      </div>
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/ninedash/ninedash_2_successes.jpg" alt="Nine Dash — 2 successful words">
+        <p class="screenshot-caption">Successful submissions turn the input box green.</p>
+      </div>
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/ninedash/ninedash_incorrect_word.jpg" alt="Nine Dash — incorrect word">
+        <p class="screenshot-caption">Words using the wrong letters are rejected and shown in red.</p>
+      </div>
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/ninedash/ninedash_blocked.jpg" alt="Nine Dash — blocked word">
+        <p class="screenshot-caption">A word that has already been taken by another player is also rejected.</p>
+      </div>
+    </div>
+
+    <h3>Voting</h3>
+    <p>When time's up, vote to accept or reject other players' words. The words are anonymised and shown in order of submission time. A word is rejected if it receives 50% or more downvotes.</p>
+    <div class="screenshot-row">
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/ninedash/ninedash_voting.jpg" alt="Nine Dash — voting screen">
+        <p class="screenshot-caption">Vote on other players' words to accept or reject them.</p>
+      </div>
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/ninedash/ninedash_votes_submitted.jpg" alt="Nine Dash — votes submitted">
+        <p class="screenshot-caption">Your votes have been submitted, waiting for other players.</p>
+      </div>
+    </div>
+
+    <h3>Leaderboard</h3>
+    <p>The leaderboard shows how each player performed and gives a breakdown of your submissions.</p>
+    <div class="screenshot-row">
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/ninedash/ninedash_leaderboard.jpg" alt="Nine Dash leaderboard">
+      </div>
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/ninedash/ninedash_leaderboard_scrolled.jpg" alt="Nine Dash leaderboard scrolled">
+      </div>
+    </div>
 
     <a href="index.html" class="back">&larr; All Games</a>
   </div>

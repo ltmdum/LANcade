@@ -187,6 +187,7 @@
     @apply sticky left-0 whitespace-normal break-words;
     background-color: inherit;
     max-width: 120px;
+    z-index: 1;
   }
 
   .results-table thead th {

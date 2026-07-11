@@ -3,7 +3,7 @@
 ## Getting Started
 
 - Use `npm install` (yarn is not used in this project).
-- Start the dev server with `npm run dev` — this runs both the backend (`localhost:3000`) and frontend (`localhost:5173`) with hot reload.
+- Start the dev server with `npm run dev` — this runs both the backend (`localhost:<port>`) and frontend (`localhost:5173`) with hot reload. The backend port is randomised between 3000–3100; check the console output for the URL.
 - Build all packages with `npm run build`.
 - Run tests with `npm test`.
 

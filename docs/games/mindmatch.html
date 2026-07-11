@@ -9,6 +9,7 @@
     .container { max-width: 720px; margin: 0 auto; }
     h1 { color: #f8fafc; font-size: 1.5rem; margin-bottom: 0.25rem; }
     h2 { color: #38bdf8; font-size: 1.15rem; margin-top: 2rem; margin-bottom: 0.5rem; }
+    h3 { color: #7dd3fc; font-size: 1rem; margin-top: 1.5rem; margin-bottom: 0.25rem; }
     p  { margin: 0.5rem 0; }
     ul, ol { padding-left: 1.25rem; }
     li { margin: 0.4rem 0; }
@@ -16,7 +17,10 @@
     a:hover { color: #7dd3fc; }
     .slogan { color: #94a3b8; font-style: italic; margin-bottom: 1rem; }
     .back { margin-top: 2rem; display: block; }
-    .placeholder { border: 2px dashed #334155; border-radius: 8px; padding: 2rem; text-align: center; color: #64748b; margin: 1rem 0; }
+    .screenshot-row { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 4px; margin: 0.75rem 0; }
+    .screenshot-col { width: 32%; flex-shrink: 0; }
+    .screenshot { width: 100%; border-radius: 8px; border: 1px solid #334155; }
+    .screenshot-caption { color: #94a3b8; font-size: 0.85rem; margin: 0.25rem 0 0; }
   </style>
 </head>
 <body>
@@ -36,11 +40,75 @@
       <li><strong>Winner:</strong> First to 25 points wins!</li>
     </ul>
 
-    <h2>Screenshots</h2>
-    <div class="placeholder">[Screenshots coming soon]</div>
+    <h2>Tutorial</h2>
 
-    <h2>Gameplay Video</h2>
-    <div class="placeholder">[Video coming soon]</div>
+    <h3>Gameplay — Submit Phase</h3>
+    <p>Each round presents a fill-in-the-blank prompt. Submit your word secretly.</p>
+    <div class="screenshot-row">
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/mindmatch/mindmatch_prompt.jpg" alt="Mind Match — prompt screen">
+      </div>
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/mindmatch/mindmatch_submitted.jpg" alt="Mind Match — word submitted">
+      </div>
+    </div>
+
+    <h3>Scoring</h3>
+    <p>Matches are revealed round by round..</p>
+    <div class="screenshot-row">
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/mindmatch/mindmatch_pair_points.jpg" alt="Mind Match — pair match scoring">
+        <p class="screenshot-caption">A pair match scores 3 points each.</p>
+      </div>
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/mindmatch/mindmatch_1_point_each.jpg" alt="Mind Match — 1 point each for group match">
+        <p class="screenshot-caption">Larger groups score 1 each.</p>
+      </div>
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/mindmatch/mindmatch_all_unique.jpg" alt="Mind Match — all unique answers, 0 points">
+        <p class="screenshot-caption">Unique answers score 0.</p>
+      </div>
+    </div>
+
+    <h3>Claims</h3>
+    <p>If your word is unique but similar to another, you may be offered a claim. Players vote to decide.</p>
+    <div class="screenshot-row">
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/mindmatch/mindmatch_claim_offered.jpg" alt="Mind Match — waiting for claims">
+        <p class="screenshot-caption">You have been offered a claim.</p>
+      </div>
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/mindmatch/mindmatch_waiting_for_claims.jpg" alt="Mind Match — waiting for claims">
+        <p class="screenshot-caption">One or more other players have been offered a claim.</p>
+      </div>
+    </div>
+
+    <div class="screenshot-row">
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/mindmatch/mindmatch_claim_voting.jpg" alt="Mind Match — claim voting screen">
+        <p class="screenshot-caption">This claim looks like a legitimate typo.</p>
+      </div>
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/mindmatch/mindmatch_false_claim.jpg" alt="Mind Match — false claim">
+        <p class="screenshot-caption">This claim looks false.</p>
+      </div>
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/mindmatch/mindmatch_false_claim_rejected.jpg" alt="Mind Match — false claim rejected">
+        <p class="screenshot-caption">The false claim was rejected and received no points.</p>
+      </div>
+    </div>
+
+    <h3>Leaderboard</h3>
+    <div class="screenshot-row">
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/mindmatch/mindmatch_submitted_scores_updated.jpg" alt="Mind Match — scores updated after claim">
+        <p class="screenshot-caption">The running total is shown throughout the game.</p>
+      </div>
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/mindmatch/mindmatch_leaderboard.jpg" alt="Mind Match leaderboard">
+        <p class="screenshot-caption">The winner is the first to reach 25.</p>
+      </div>
+    </div>
 
     <a href="index.html" class="back">&larr; All Games</a>
   </div>

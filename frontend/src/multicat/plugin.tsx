@@ -73,7 +73,7 @@ export const plugin: GamePlugin = {
       { heading: "Submit", text: "Submit one word per category, all starting with the given letter." },
       { heading: "Update", text: "You may change your answers before the timer ends." },
       { heading: "Duplicate", text: "You cannot use a word twice or at all if another player has already used it." },
-      { heading: "Voting", text: "When time's up, vote to accept or reject other players' words. Words that receive too many downvotes are removed." },
+      { heading: "Voting", text: "When time's up, vote to accept or reject other players' words. Words that receive more than 50% downvotes are removed." },
       { heading: "Winner", text: "The player with the most accepted words wins!" },
     ],
     defaultTimer: {

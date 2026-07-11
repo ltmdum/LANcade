@@ -52,6 +52,7 @@ export const plugin: GamePlugin = {
     description:
       "A cooperative card game where players must place their numbered cards onto the shared pile in ascending order.",
     instructions: [
+      { heading: "No Communication", text: "Absolutely no discussion of cards or strategy during a round. This is the core of the game. Read the table, not each other." },
       { heading: "Deal", text: "Each player is dealt a hand of numbered cards (1–100)." },
       { heading: "Rounds", text: "Round 1 gives each player 1 card, round 2 gives 2 cards, and so on." },
       { heading: "Play", text: 'Press "Place" to put your lowest card onto the shared pile.' },

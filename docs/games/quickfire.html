@@ -17,7 +17,10 @@
     a:hover { color: #7dd3fc; }
     .slogan { color: #94a3b8; font-style: italic; margin-bottom: 1rem; }
     .back { margin-top: 2rem; display: block; }
-    .placeholder { border: 2px dashed #334155; border-radius: 8px; padding: 2rem; text-align: center; color: #64748b; margin: 1rem 0; }
+    .screenshot-row { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 4px; margin: 0.75rem 0; }
+    .screenshot-col { width: 32%; flex-shrink: 0; }
+    .screenshot { width: 100%; border-radius: 8px; border: 1px solid #334155; }
+    .screenshot-caption { color: #94a3b8; font-size: 0.85rem; margin: 0.25rem 0 0; }
   </style>
 </head>
 <body>
@@ -33,15 +36,39 @@
       <li><strong>Setup:</strong> Admin chooses a category and a random letter is given.</li>
       <li><strong>Submit:</strong> Submit as many words as you can that start with the letter and fit the category.</li>
       <li><strong>Be quick:</strong> You can't submit a word that another player has already submitted.</li>
-      <li><strong>Voting:</strong> When time's up, vote to accept or reject other players' words. Words that receive too many downvotes are removed.</li>
+      <li><strong>Voting:</strong> When time's up, vote to accept or reject other players' words. Words that receive more than 50% downvotes are removed.</li>
       <li><strong>Winner:</strong> The player with the most accepted words wins!</li>
     </ul>
 
-    <h2>Screenshots</h2>
-    <div class="placeholder">[Screenshots coming soon]</div>
+    <h2>Tutorial</h2>
 
-    <h2>Gameplay Video</h2>
-    <div class="placeholder">[Video coming soon]</div>
+    <h3>Gameplay / Voting</h3>
+    <p>When it's your turn, submit words that match the category and start with the letter.</p>
+    <div class="screenshot-row">
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/quickfire/quickfire_word_accepted.jpg" alt="Quick Fire — word accepted successfully">
+        <p class="screenshot-caption">The input turns green for accepted words.</p>
+      </div>
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/quickfire/quickfire_word_rejected.jpg" alt="Quick Fire — word rejected">
+        <p class="screenshot-caption">If your word is rejected or invalid, the input turns red.</p>
+      </div>
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/quickfire/quickfire_voting.jpg" alt="Quick Fire — voting screen">
+        <p class="screenshot-caption">Vote on other players' words to accept or reject them.</p>
+      </div>
+    </div>
+
+    <h3>Leaderboard</h3>
+    <p>The leaderboard tracks accepted words per player.</p>
+    <div class="screenshot-row">
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/quickfire/quickfire_leaderboard.jpg" alt="Quick Fire leaderboard">
+      </div>
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/quickfire/quickfire_leaderboard_scrolled.jpg" alt="Quick Fire leaderboard scrolled">
+      </div>
+    </div>
 
     <a href="index.html" class="back">&larr; All Games</a>
   </div>

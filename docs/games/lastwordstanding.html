@@ -9,6 +9,7 @@
     .container { max-width: 720px; margin: 0 auto; }
     h1 { color: #f8fafc; font-size: 1.5rem; margin-bottom: 0.25rem; }
     h2 { color: #38bdf8; font-size: 1.15rem; margin-top: 2rem; margin-bottom: 0.5rem; }
+    h3 { color: #7dd3fc; font-size: 1rem; margin-top: 1.5rem; margin-bottom: 0.25rem; }
     p  { margin: 0.5rem 0; }
     ul, ol { padding-left: 1.25rem; }
     li { margin: 0.4rem 0; }
@@ -16,7 +17,10 @@
     a:hover { color: #7dd3fc; }
     .slogan { color: #94a3b8; font-style: italic; margin-bottom: 1rem; }
     .back { margin-top: 2rem; display: block; }
-    .placeholder { border: 2px dashed #334155; border-radius: 8px; padding: 2rem; text-align: center; color: #64748b; margin: 1rem 0; }
+    .screenshot-row { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 4px; margin: 0.75rem 0; }
+    .screenshot-col { width: 32%; flex-shrink: 0; }
+    .screenshot { width: 100%; border-radius: 8px; border: 1px solid #334155; }
+    .screenshot-caption { color: #94a3b8; font-size: 0.85rem; margin: 0.25rem 0 0; }
   </style>
 </head>
 <body>
@@ -25,23 +29,68 @@
     <h1>Last Word Standing</h1>
     <p class="slogan">Race the clock and survive the votes.</p>
 
-    <p>1 player is chosen to submit a word that fits the category and the assigned letter. Last player standing wins!</p>
+    <p>One player is chosen to submit a word that fits the category and the assigned letter. Last player standing wins!</p>
 
     <h2>Rules</h2>
     <ul>
       <li><strong>Turns:</strong> Players get assigned turns. When it's your turn, you get a random letter.</li>
       <li><strong>Submit:</strong> Submit a word that fits the category and starts with that letter before time runs out.</li>
-      <li><strong>Vote:</strong> Other players vote to accept or reject your word.</li>
+      <li><strong>Vote:</strong> Other players vote to accept or reject your word. 50% or more downvotes gets your word rejected.</li>
       <li><strong>Penalty:</strong> If rejected, you get one more chance with half the time.</li>
       <li><strong>Elimination:</strong> Run out of time or get rejected twice and you're eliminated.</li>
       <li><strong>Winner:</strong> Last player standing wins!</li>
     </ul>
 
-    <h2>Screenshots</h2>
-    <div class="placeholder">[Screenshots coming soon]</div>
+    <h2>Tutorial</h2>
 
-    <h2>Gameplay Video</h2>
-    <div class="placeholder">[Video coming soon]</div>
+    <h3>Gameplay</h3>
+    <p>When it's your turn, you have until the timer runs out to submit a category word starting with your assigned letter.</p>
+    <div class="screenshot-row">
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/lastwordstanding/lastwordstanding_my_turn.jpg" alt="Last Word Standing — my turn, input ready">
+        <p class="screenshot-caption">The input is ready for your submission.</p>
+      </div>
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/lastwordstanding/lastwordstanding_my_turn_filled.jpg" alt="Last Word Standing — my turn, word filled in">
+        <p class="screenshot-caption">A word has been typed and is ready to submit.</p>
+      </div>
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/lastwordstanding/lastwordstanding_waiting_for_votes.jpg" alt="Last Word Standing — waiting for votes">
+        <p class="screenshot-caption">After submitting, wait for other players to vote.</p>
+      </div>
+    </div>
+
+    <p>When it's someone else's turn...</p>
+    <div class="screenshot-row">
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/lastwordstanding/lastwordstanding_not_my_turn.jpg" alt="Last Word Standing — not my turn">
+        <p class="screenshot-caption">Wait and watch their countdown.</p>
+      </div>
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/lastwordstanding/lastwordstanding_vote.jpg" alt="Last Word Standing — voting screen">
+        <p class="screenshot-caption">Vote to accept or reject their submitted word.</p>
+      </div>
+    </div>
+
+    <h3>Elimination</h3>
+    <div class="screenshot-row">
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/lastwordstanding/lastwordstanding_reduced_time.jpg" alt="Last Word Standing — not my turn">
+        <p class="screenshot-caption">If your first submission gets rejected, you are given a new letter with half the time allowance.</p>
+      </div>
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/lastwordstanding/lastwordstanding_eliminated.jpg" alt="Last Word Standing — not my turn">
+        <p class="screenshot-caption">If you receive two rejections or run out of time, then you're eliminated.</p>
+      </div>
+    </div>
+
+    <h3>Winner</h3>
+    <p>The last player standing is crowned the winner.</p>
+    <div class="screenshot-row">
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/lastwordstanding/lastwordstanding_winner.jpg" alt="Last Word Standing — winner screen">
+      </div>
+    </div>
 
     <a href="index.html" class="back">&larr; All Games</a>
   </div>

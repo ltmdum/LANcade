@@ -9,6 +9,7 @@
     .container { max-width: 720px; margin: 0 auto; }
     h1 { color: #f8fafc; font-size: 1.5rem; margin-bottom: 0.25rem; }
     h2 { color: #38bdf8; font-size: 1.15rem; margin-top: 2rem; margin-bottom: 0.5rem; }
+    h3 { color: #7dd3fc; font-size: 1rem; margin-top: 1.5rem; margin-bottom: 0.25rem; }
     p  { margin: 0.5rem 0; }
     ul, ol { padding-left: 1.25rem; }
     li { margin: 0.4rem 0; }
@@ -16,7 +17,10 @@
     a:hover { color: #7dd3fc; }
     .slogan { color: #94a3b8; font-style: italic; margin-bottom: 1rem; }
     .back { margin-top: 2rem; display: block; }
-    .placeholder { border: 2px dashed #334155; border-radius: 8px; padding: 2rem; text-align: center; color: #64748b; margin: 1rem 0; }
+    .screenshot-row { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 4px; margin: 0.75rem 0; }
+    .screenshot-col { width: 32%; flex-shrink: 0; }
+    .screenshot { width: 100%; border-radius: 8px; border: 1px solid #334155; }
+    .screenshot-caption { color: #94a3b8; font-size: 0.85rem; margin: 0.25rem 0 0; }
   </style>
 </head>
 <body>
@@ -37,11 +41,28 @@
       <li><strong>Leaderboard:</strong> A mini display shows the current leader's result on each row.</li>
     </ul>
 
-    <h2>Screenshots</h2>
-    <div class="placeholder">[Screenshots coming soon]</div>
+    <h2>Tutorial</h2>
 
-    <h2>Gameplay Video</h2>
-    <div class="placeholder">[Video coming soon]</div>
+    <h3>Gameplay</h3>
+    <p>Guess the word letter by letter. Green means correct position, yellow means wrong position, and gray means the letter isn't in the word.</p>
+    <div class="screenshot-row">
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/5letterword/5letterword_3_yellow.jpg" alt="5 Letter Word — 3 yellow letters">
+        <p class="screenshot-caption">3 yellow letters means 3 letters are in the word but in the wrong position.</p>
+      </div>
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/5letterword/5letterword_1_green_4_yellow_for_leader.jpg" alt="5 Letter Word — 1 green and 4 yellow showing the leader's progress">
+        <p class="screenshot-caption">The mini display shows the leader is almost there with 1 green and 4 yellow!</p>
+      </div>
+    </div>
+
+    <h3>Winner</h3>
+    <p>The first player to guess the word wins.</p>
+    <div class="screenshot-row">
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/5letterword/5letterword_winner.jpg" alt="5 Letter Word — winner screen">
+      </div>
+    </div>
 
     <a href="index.html" class="back">&larr; All Games</a>
   </div>

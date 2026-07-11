@@ -21,7 +21,7 @@ const __dirname = path.dirname(__filename);
 initializeGames();
 
 const EXPLICIT_HOST = process.env.HOST || null;
-const PORT = parseInt(process.env.PORT || '3000', 10);
+const PORT = parseInt(process.env.PORT || String(Math.floor(Math.random() * 101) + 3000), 10);
 const HTTPS_REQUIRED = process.env.HTTPS_REQUIRED === 'true';
 const HTTPS_KEY_PATH = process.env.HTTPS_KEY_PATH || path.join(__dirname, '..', '..', 'certs', 'lan-key.pem');
 const HTTPS_CERT_PATH = process.env.HTTPS_CERT_PATH || path.join(__dirname, '..', '..', 'certs', 'lan-cert.pem');

@@ -17,7 +17,11 @@
     a:hover { color: #7dd3fc; }
     .slogan { color: #94a3b8; font-style: italic; margin-bottom: 1rem; }
     .back { margin-top: 2rem; display: block; }
-    .placeholder { border: 2px dashed #334155; border-radius: 8px; padding: 2rem; text-align: center; color: #64748b; margin: 1rem 0; }
+    .screenshot-row { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 4px; margin: 0.75rem 0; }
+    .screenshot-col { width: 32%; flex-shrink: 0; }
+    .screenshot { width: 100%; border-radius: 8px; border: 1px solid #334155; }
+    .screenshot-caption { color: #94a3b8; font-size: 0.85rem; margin: 0.25rem 0 0; }
+    .side-text { width: 64%; flex-shrink: 0; color: #94a3b8; font-size: 0.85rem; margin: 0.25rem 0 0; }
   </style>
 </head>
 <body>
@@ -26,7 +30,7 @@
     <h1>Trading Exchange</h1>
     <p class="slogan">Buy low, sell high, read the market</p>
 
-    <p>Everyone is dealt cards and trades based on the total value of ALL cards in play.</p>
+    <p>Everyone is dealt cards and trades based on the total value of all cards in play.</p>
 
     <h2>Rules</h2>
     <ul>
@@ -38,11 +42,131 @@
       <li><strong>Winner:</strong> All trades settle at the total card value. Most profit wins!</li>
     </ul>
 
-    <h2>Screenshots</h2>
-    <div class="placeholder">[Screenshots coming soon]</div>
+    <h2>Tutorial</h2>
 
-    <h2>Gameplay Video</h2>
-    <div class="placeholder">[Video coming soon]</div>
+    <h3>Conceptualising Trading</h3>
+    <p>Assume that you and every other player each start with a pot of gold. Every nugget of gold is identical to all others and they have equal value.</p>
+    <p>Think of each trade as though you're signing a contract to buy or sell a nugget of gold at a fixed price at the end of the game.</p>
+    <p>The true value of a nugget of gold is the sum of all cards in play. During the game, you don't know this exact value until everyone's cards have been revealed, so you must estimate using the information that is available to you.</p>
+    <p>If you make an agreement to <strong>buy</strong> a nugget at a certain price and the final value is <strong>higher</strong> than that price, you <strong>profit</strong> because you buy it for less than you can sell it for. If <strong>lower</strong>, you <strong>lose</strong> money.</p>
+    <p>If you make an agreement to <strong>sell</strong> a nugget at a certain price and the final value is <strong>lower</strong> than that price, you <strong>profit</strong> because you sell it for more than you can buy it back for. If <strong>higher</strong>, you <strong>lose</strong> money.</p>
+
+    <h3>Understanding Orders</h3>
+    <p>Players must always submit a <strong>bid</strong> and <strong>offer</strong> pair of orders:</p>
+    <ul>
+      <li>The <strong>bid</strong> order is the highest price that you would be willing to <strong>buy</strong> a gold nugget for.</li>
+      <li>The <strong>offer</strong> order is the lowest price you would be willing to <strong>sell</strong> one of your gold nuggets for.</li>
+    </ul>
+    <p>The price of these orders should reflect your estimate. Your estimate should depend on the value of the cards you can see and your best guess of the value of the rest of the cards.</p>
+    <p>The difference between your bid and offer should reflect the confidence you have in your estimate but also incorporate your risk appetite and willingness to trade.</p>
+    <p>If your bid is very low and your offer is very high, you will never trade. You can't lose if you don't trade, but you also can't win. Besides, the game isn't fun if you don't trade.</p>
+
+    <h3>How does a trade occur?</h3>
+    <p>A trade will occur instantaneously whenever one player's bid order is higher than or equal to another player's offer order.</p>
+    <p>Conceptually, if Player A is willing to buy a gold nugget for $15 and Player B is willing to sell their gold nugget for $13, then they can make a deal. In this example, the game will automatically match them at the mid point of $14</p>
+
+    <h3>Auction</h3>
+    <p>To start the game, players are given unlimited time to submit their auction orders.</p> 
+    <div class="screenshot-row">
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/tradingexchange/tradingexchange_auction.jpg" alt="Trading Exchange — auction view">
+        <p class="screenshot-caption">We are willing to buy for 48 and sell for 52.</p>
+      </div>
+    </div>
+
+    <h3>Round 1 — Initial Trading</h3>
+    <p>During Round 1, you cannot see other players' cards but you can see any trades that have happened and what price each player has their orders.</p>
+    <p>Players can update their orders as many times as they like.</p>
+    <div class="screenshot-row">
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/tradingexchange/tradingexchange_rd1_no_trades.jpg" alt="Trading Exchange — round 1, no trades yet">
+        <p class="screenshot-caption">No trades occur from the initial auction orders because no player's bid is higher than any other player's offer.</p>
+      </div>
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/tradingexchange/tradingexchange_rd1_no_trades_estimate_adjust.jpg" alt="Trading Exchange — round 1, no trades, estimate adjusts">
+        <p class="screenshot-caption">The estimate defaults to the mid point of the highest bid in the market and the lowest offer. Adjusting this to your estimate helps to keep track as new information is revealed later.</p>
+      </div>
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/tradingexchange/tradingexchange_rd1_update_orders.jpg" alt="Trading Exchange — round 1, updating orders">
+        <p class="screenshot-caption">We adjust our orders up to 50 and 54.</p>
+      </div>
+    </div>
+    <div class="screenshot-row">
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/tradingexchange/tradingexchange_rd1_trade.jpg" alt="Trading Exchange — round 1, trade executed">
+      </div>
+      <div class="side-text">
+        <p>Upon submission, our 50 bid immediately trades with Jane's 50 offer and our position goes to +1. In other words, we have bought 1 gold nugget for $50 from Jane.</p>
+        <p>Based on our current estimated price, our profit is going to be $2.</p>
+        <p>Now that our bid has traded, it is no longer in the market, and Jane also does not have an offer in the market.</p>
+        <p>After every trade, the cards reveal timer is reset.</p>
+      </div>
+    </div>
+    <div class="screenshot-row">
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/tradingexchange/tradingexchange_rd1_market_reacts.jpg" alt="Trading Exchange — round 1, market reacts">
+      </div>
+      <div class="side-text">
+        <p>Trades can give insight into the value of other players' cards. For example, our estimate is above 50, but Jane's estimate is probably below that. Since we were the aggressor in this trade, it is probably a strong signal to Jane that her estimate might too low.</p>
+        <p>The cards reveal timer resetting allows time to react to any trades. In this instance, Jane "retreats" and increases her offer while we reassert our willingness to buy at 50.</p>
+        <p>In a more advanced version of the game, the admin can set an auto-submit timer. This puts pressure on players to adjust their order prices quickly upon trading before the game just submits whatever values are in their bid and offer inputs. Players who are not quick enough may find themselves accumulating big positions at adverse prices. The game is most fun when players are actively in the market, so even if this setting is not turned on, try to get your orders back in the market soon after trading.</p>
+      </div>
+    </div>
+
+    <h3>Round 2 — First Cards Reveal</h3>
+    <p>In the second round, one card from each player is revealed. The second round of trading begins when the first round timer expires. React quickly to take advantage of the new information.</p>
+    <div class="screenshot-row">
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/tradingexchange/tradingexchange_rd2_update_estimate.jpg" alt="Trading Exchange — round 2, updating estimate">
+	<p class="screenshot-caption">We adjust our estimate up in reaction to the new information. This is good news because we bought low at $50.</p>
+      </div>
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/tradingexchange/tradingexchange_rd2_update_orders_trades.jpg" alt="Trading Exchange — round 2, updating orders with trades">
+        <p class="screenshot-caption">We're the first to update our orders and we submit and resubmit to buy both Jane's and John's $51 offers.</p>
+      </div>
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/tradingexchange/tradingexchange_rd2_market_reacts.jpg" alt="Trading Exchange — round 2, market reacts">
+        <p class="screenshot-caption">Jane and John react by adjusting their prices up.</p>
+      </div>
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/tradingexchange/tradingexchange_rd2_update_orders_again_trades.jpg" alt="Trading Exchange — round 2, updating orders again with trades">
+        <p class="screenshot-caption">Jane's offer is still pretty low, so we decide to buy her $53 offer as well. We now have +4 nuggets which we've bought for an average $51.30</p>
+      </div>
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/tradingexchange/trading_exchange_rd2_market_reacts_again.jpg" alt="Trading Exchange — round 2, market reacts again">
+        <p class="screenshot-caption">Jane adjusts again to join John's offer at $54.</p>
+      </div>
+    </div>
+
+    <h3>Final Round</h3>
+    <p>Each round reveals an additional card from each player. In the final round, all cards are shown and the true value can be calculated. Fast mental maths is required now.</p>
+    <div class="screenshot-row">
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/tradingexchange/tradingexchange_finalrd_update_estimate.jpg" alt="Trading Exchange — final round, updating estimate">
+        <p class="screenshot-caption">We update our final estimate to the true value, $60.</p>
+      </div>
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/tradingexchange/tradingexchange_finalrd_update_orders_trades.jpg" alt="Trading Exchange — final round, updating orders with trades">
+        <p class="screenshot-caption">We spam the submit button to buy any offers that are still below $60.</p>
+      </div>
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/tradingexchange/tradingexchange_finalrd_reinsert.jpg" alt="Trading Exchange — final round, reinserting orders">
+        <p class="screenshot-caption">During trading, we've agreed to buy 6 gold nuggets for an average price of $52.20. We're expecting $47 profit.</p>
+      </div>
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/tradingexchange/tradingexchange_finalrd_market_reacts.jpg" alt="Trading Exchange — final round, market reacts">
+        <p class="screenshot-caption">Jane and John react but it's too late.</p>
+      </div>
+    </div>
+
+    <h3>Leaderboard</h3>
+    <p>The leaderboard shows final profit tallies — most profit wins.</p>
+    <div class="screenshot-row">
+      <div class="screenshot-col">
+        <img class="screenshot" src="screenshots/tradingexchange/tradingexchange_leaderboard.jpg" alt="Trading Exchange leaderboard">
+        <p class="screenshot-caption">Our calculations were correct, Jane and John lost money because they sold their gold nuggets for under value.</p>
+      </div>
+    </div>
 
     <a href="index.html" class="back">&larr; All Games</a>
   </div>

@@ -58,7 +58,7 @@ export function GameInfoModal({ name, description, instructions, gameId, onClose
         )}
         <p className="game-info-docs-link">
           <a href={docsUrl} target="_blank" rel="noopener noreferrer">
-            Detailed run-through &rarr;
+            Tutorial &rarr;
           </a>
         </p>
       </div>

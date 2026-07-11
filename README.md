@@ -28,8 +28,8 @@ Lightweight LAN-only party game server with a React + TypeScript frontend and Ex
    ```
 6. Check the console output for the player and admin invite URLs.
 7. Open on your LAN device using the printed invite link:
-   - Players: `http(s)://<host-ip>:3000/p/<player-key>`
-   - Admin: `http(s)://<host-ip>:3000/admin/<admin-key>`
+    - Players: `http(s)://<host-ip>:<port>/p/<player-key>`
+    - Admin: `http(s)://<host-ip>:<port>/admin/<admin-key>`
 
 ## Development
 
@@ -39,7 +39,7 @@ npm run dev
 ```
 
 This starts:
-- Backend on `http://localhost:3000`
+- Backend on `http://localhost:<port>` (randomised between 3000–3100 by default)
 - Frontend on `http://localhost:5173` (with API proxy to backend)
 
 ## Testing
@@ -218,7 +218,7 @@ Games that use categories (Category Clash: Quick Fire, Category Clash: Multicat,
 
 Environment variables:
 - `HOST` (optional): bind address. When not set and `LAN_ONLY` is true, the server auto-discovers private network interfaces and binds to each one. Set this explicitly to override (e.g., `HOST=192.168.1.5`).
-- `PORT` (default `3000`)
+- `PORT` (default: randomised between 3000–3100 on each startup)
 - `LAN_ONLY` (default `true`): set to `false` to allow non-LAN clients.
 - `CLIENT_GRACE_MS` (default `5000`): wait time after the timer ends if a client never reports completion.
 - `KEY_LENGTH` (default `8`, minimum `6`): length of the generated admin and player access keys (the random part of the invite URLs).
