@@ -2,6 +2,8 @@
 
 Lightweight LAN-only party game server with a React + TypeScript frontend and Express backend.
 
+No accounts, no data collection, no ads, no analytics. The server runs entirely on your local network, nothing leaves your WiFi. Designed to bring people together in the same room for sociable, fun party gaming.
+
 ## Tech Stack
 
 - **Frontend**: React 18, TypeScript, Vite, TailwindCSS
