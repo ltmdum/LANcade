@@ -217,14 +217,12 @@ export function NineDashGame({
           playerName={playerName}
           myScore={myScore}
           myWords={myWords}
-          isAdmin={isAdmin}
           isParticipating={isParticipating}
           timeUp={timeUp}
           wordInput={wordInput}
           submitStatus={submitStatus}
           onWordInputChange={handleWordInputChange}
           onWordSubmit={onWordSubmit}
-          onNewGrid={onPlayAgain}
         />
       )}
 
