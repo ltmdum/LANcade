@@ -1,0 +1,25 @@
+.confirm-overlay {
+  @apply fixed inset-0 flex items-center justify-center z-50;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.confirm-popup {
+  @apply p-6 max-w-sm mx-4;
+  background: var(--bg-card);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+}
+
+.confirm-popup-title {
+  @apply text-lg font-semibold mb-2;
+  color: var(--text-primary);
+}
+
+.confirm-popup-message {
+  @apply mb-4;
+  color: var(--text-secondary);
+}
+
+.confirm-popup-actions {
+  @apply flex gap-3 justify-end;
+}

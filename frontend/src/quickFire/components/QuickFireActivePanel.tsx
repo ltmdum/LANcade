@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Panel } from '../../shared/components/Panel';
 import { LetterDisplay } from '../../shared/components/LetterDisplay';
 import { WordSubmitForm } from '../../shared/components/WordSubmitForm';
 import { PlayerScoreTags } from '../../shared/components/PlayerScoreTags';
+import { ConfirmDialog } from '../../shared/components/ConfirmDialog';
 import './QuickFireActivePanel.css';
 
 interface QuickFireActivePanelProps {
@@ -43,6 +44,7 @@ export function QuickFireActivePanel({
   onWordSubmit,
   onNewLetter,
 }: QuickFireActivePanelProps) {
+  const [showConfirm, setShowConfirm] = useState(false);
   const statusClass = submitStatus ? `categoryclash1-status-message text-${submitStatus}` : 'categoryclash1-status-message';
 
   return (
@@ -51,10 +53,18 @@ export function QuickFireActivePanel({
       <LetterDisplay letter={letter} countdown={countdown} showCountdown />
       <div className={statusClass}>{statusMessage}</div>
       {isAdmin && (
-        <button type="button" className="btn btn-secondary" onClick={onNewLetter}>
+        <button type="button" className="btn btn-secondary" onClick={() => setShowConfirm(true)}>
           New Letter
         </button>
       )}
+      <ConfirmDialog
+        isOpen={showConfirm}
+        title="New Letter?"
+        message="Are you sure you want to start a new letter? This will reset the current round."
+        confirmLabel="New Letter"
+        onConfirm={() => { setShowConfirm(false); onNewLetter(); }}
+        onCancel={() => setShowConfirm(false)}
+      />
       <div className="categoryclash1-connection">{connection}</div>
       {isParticipating && !timeUp && (
         <WordSubmitForm

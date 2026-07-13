@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Panel } from '../../shared/components/Panel';
 import { LetterDisplay } from '../../shared/components/LetterDisplay';
 import { PlayerScoreTags } from '../../shared/components/PlayerScoreTags';
 import { CategoryWordInput } from './CategoryWordInput';
+import { ConfirmDialog } from '../../shared/components/ConfirmDialog';
 import './MulticatActivePanel.css';
 
 interface MulticatActivePanelProps {
@@ -47,6 +48,8 @@ export function MulticatActivePanel({
   onWordSubmit,
   onNewLetter,
 }: MulticatActivePanelProps) {
+  const [showConfirm, setShowConfirm] = useState(false);
+
   function getCurrentInput(category: string): string {
     const hasUserInput = category in wordInputs;
     const acceptedWord = acceptedByCategory.get(category);
@@ -62,10 +65,18 @@ export function MulticatActivePanel({
       <div className={statusClass}>{statusMessage}</div>
       <div className="categoryclash2-connection">{connection}</div>
       {isAdmin && (
-        <button type="button" className="btn btn-secondary" onClick={onNewLetter}>
+        <button type="button" className="btn btn-secondary" onClick={() => setShowConfirm(true)}>
           New Letter
         </button>
       )}
+      <ConfirmDialog
+        isOpen={showConfirm}
+        title="New Letter?"
+        message="Are you sure you want to start a new letter? This will reset the current round."
+        confirmLabel="New Letter"
+        onConfirm={() => { setShowConfirm(false); onNewLetter(); }}
+        onCancel={() => setShowConfirm(false)}
+      />
       {isParticipating && (
         <div className="categoryclash2-categories">
           {categories.map((category) => (
