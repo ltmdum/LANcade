@@ -42,6 +42,16 @@
   color: var(--accent);
 }
 
+.app-how-to-play {
+  @apply block w-full text-center py-3 mt-6 rounded-lg text-sm font-semibold cursor-pointer;
+  border: 1px solid var(--border);
+  color: var(--accent);
+  background: transparent;
+}
+.app-how-to-play:hover {
+  background: rgba(56, 189, 248, 0.08);
+}
+
 .app-links {
   @apply border-t text-center py-6 mt-8;
   border-color: var(--border);

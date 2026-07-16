@@ -90,6 +90,14 @@ function App() {
     }
   }, [isAdmin, phase, showConfig]);
 
+  const prevPhaseRef = useMemo(() => ({ current: phase }), []);
+  useEffect(() => {
+    if (showGameInfo && prevPhaseRef.current === 'idle' && phase !== 'idle') {
+      setShowGameInfo(false);
+    }
+    prevPhaseRef.current = phase;
+  }, [phase, showGameInfo]);
+
   const isParticipating = isAdmin ? adminIsPlaying && isKnownPlayer : isKnownPlayer;
   const canSeeGame = isParticipating || (isAdmin && !adminIsPlaying);
 
@@ -285,6 +293,17 @@ function App() {
               onUnauthorized={handleUnauthorized}
               onEnded={() => setShowConfig(true)}
             />
+          )}
+
+          {/* How to Play link — shown during idle phase for players */}
+          {pluginConfig && phase === 'idle' && !isAdmin && isKnownPlayer && (
+            <button
+              type="button"
+              className="app-how-to-play"
+              onClick={() => setShowGameInfo(true)}
+            >
+              How to Play
+            </button>
           )}
 
           {/* App Links — shown when connected but no game in progress */}
