@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import './GameInfoModal.css';
 
 interface GameInfoModalProps {
@@ -17,8 +17,6 @@ const DOCS_BASE = 'https://ltmdum.github.io/LANcade/games';
  * @returns Modal element.
  */
 export function GameInfoModal({ name, description, instructions, gameId, onClose }: GameInfoModalProps) {
-  const [showInstructions, setShowInstructions] = useState(false);
-
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
       if (e.key === 'Escape') onClose();
@@ -39,23 +37,14 @@ export function GameInfoModal({ name, description, instructions, gameId, onClose
           </button>
         </div>
         <p className="game-info-description">{description}</p>
-        <button
-          type="button"
-          className="game-info-toggle"
-          onClick={() => setShowInstructions((v) => !v)}
-          aria-expanded={showInstructions}
-        >
-          {showInstructions ? 'How to Play \u25B2' : 'How to Play \u25BC'}
-        </button>
-        {showInstructions && (
-          <ul className="game-info-instructions">
-            {instructions.map((step, i) => (
-              <li key={i} className="game-info-step">
-                <strong>{step.heading}:</strong> {step.text}
-              </li>
-            ))}
-          </ul>
-        )}
+        <h3 className="game-info-subtitle">How to Play</h3>
+        <ul className="game-info-instructions">
+          {instructions.map((step, i) => (
+            <li key={i} className="game-info-step">
+              <strong>{step.heading}:</strong> {step.text}
+            </li>
+          ))}
+        </ul>
         <p className="game-info-docs-link">
           <a href={docsUrl} target="_blank" rel="noopener noreferrer">
             Online Tutorial
