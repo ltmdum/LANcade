@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { AlphabetRaceGame } from '../AlphabetRaceGame';
 import type { AlphabetRaceState } from '@lancade/shared';
 
@@ -155,6 +155,25 @@ describe('AlphabetRaceGame', () => {
       render(<AlphabetRaceGame {...createDefaultProps(state)} />);
 
       expect(screen.getByText(/Category: Animals/)).toBeInTheDocument();
+    });
+
+    it('clears word input when the letter advances', () => {
+      const state = createBaseState();
+      state.match.state = 'racing';
+      state.match.currentLetter = 'A';
+
+      const { rerender } = render(<AlphabetRaceGame {...createDefaultProps(state)} />);
+
+      const input = screen.getByRole('textbox');
+      fireEvent.change(input, { target: { value: 'apple' } });
+      expect(input).toHaveValue('apple');
+
+      state.match.currentLetter = 'B';
+      state.match.currentLetterIndex = 1;
+      state.match.completedCount = 1;
+      rerender(<AlphabetRaceGame {...createDefaultProps(state)} />);
+
+      expect(screen.getByRole('textbox')).toHaveValue('');
     });
   });
 
