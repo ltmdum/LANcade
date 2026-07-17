@@ -76,6 +76,16 @@ Each game has a dedicated tutorial page with detailed rules, gameplay explanatio
 
 Games are configured via `games.config.json` in the project root. See [CONTRIBUTING.md](CONTRIBUTING.md) for the config format and instructions on adding or removing games.
 
+### Word Lists
+
+| Game | Full Dictionary (guess validation) | Curated Pool (target/seed words) |
+|------|-----------------------------------|----------------------------------|
+| 5 Letter Word | `words-5.json` — 12,578 words | `answer-words-5.json` — 2,312 common words |
+| Nine Dash | (grid-based word formation) | `answer-words-9.json` — 6,580 common words |
+| Undercover Agent | — | `common-words.json` — 739 everyday nouns |
+
+Target words for **5 Letter Word** and seed words for **Nine Dash** are drawn from curated pools to avoid obscure vocabulary. The full `words-5.json` dictionary is still used to validate player guesses in 5 Letter Word, so no legitimate word is blocked.
+
 ## Admin + Player Access
 
 - Each server start generates a random admin key and a random player key, and prints both as invite URLs to the console.

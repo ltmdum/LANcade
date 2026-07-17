@@ -1,4 +1,4 @@
-import { useRef, useEffect, useCallback } from 'react';
+import { useRef, useEffect } from 'react';
 import type { LetterStatus } from '@lancade/shared';
 import './WordInput.css';
 
@@ -9,14 +9,9 @@ interface WordInputProps {
   disabled: boolean;
   status: string;
   letterStatuses: Record<string, LetterStatus>;
+  greenLetters: (string | null)[];
 }
 
-/**
- * Get the CSS class for a keyboard key based on its letter status.
- * @param letter The letter key.
- * @param statuses Map of letter to status.
- * @returns CSS class name.
- */
 function getKeyStatusClass(letter: string, statuses: Record<string, LetterStatus>): string {
   const status = statuses[letter];
   if (!status) return '';
@@ -32,46 +27,49 @@ function getKeyStatusClass(letter: string, statuses: Record<string, LetterStatus
   }
 }
 
-/**
- * Word input component with virtual keyboard for Guess.
- * Uses a hidden input to capture physical keyboard events while
- * preventing the mobile keyboard from appearing.
- * @param props Input props.
- * @returns Input element.
- */
-export function WordInput({ value, onChange, onSubmit, disabled, status, letterStatuses }: WordInputProps) {
+export function WordInput({ value: _value, onChange, onSubmit, disabled, status, letterStatuses, greenLetters }: WordInputProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const nonGreenCount = greenLetters.filter(l => !l).length;
+  const valueRef = useRef(_value);
+  valueRef.current = _value;
 
-  const handleKeyPress = useCallback((key: string) => {
+  const handleKeyPressRef = useRef<(key: string) => void>(() => {});
+
+  handleKeyPressRef.current = (key: string) => {
     if (disabled) return;
-    
+
+    const currentValue = valueRef.current;
+
     if (key === 'ENTER') {
-      if (value.length === 5) {
+      if (currentValue.length === nonGreenCount) {
         onSubmit();
       }
     } else if (key === 'BACK' || key === 'BACKSPACE') {
-      onChange(value.slice(0, -1));
-    } else if (key.length === 1 && /^[A-Z]$/i.test(key) && value.length < 5) {
-      onChange(value + key.toUpperCase());
-    }
-  }, [disabled, value, onChange, onSubmit]);
+      const newValue = currentValue.slice(0, -1);
+      valueRef.current = newValue;
+      onChange(newValue);
+    } else if (key.length === 1 && /^[A-Z]$/i.test(key)) {
+      if (currentValue.length >= nonGreenCount) return;
 
-  // Listen for physical keyboard events on the container
+      const letter = key.toUpperCase();
+      const newValue = currentValue + letter;
+      valueRef.current = newValue;
+      onChange(newValue);
+    }
+  };
+
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
-      if (disabled) return;
-      
       const key = e.key.toUpperCase();
       if (key === 'ENTER' || key === 'BACKSPACE' || /^[A-Z]$/.test(key)) {
         e.preventDefault();
-        handleKeyPress(key);
+        handleKeyPressRef.current(key);
       }
     }
 
     const container = containerRef.current;
     if (container) {
       container.addEventListener('keydown', handleKeyDown);
-      // Make container focusable and focus it
       container.setAttribute('tabindex', '0');
       if (!disabled) {
         container.focus();
@@ -83,7 +81,7 @@ export function WordInput({ value, onChange, onSubmit, disabled, status, letterS
         container.removeEventListener('keydown', handleKeyDown);
       }
     };
-  }, [disabled, handleKeyPress]);
+  }, [disabled]);
 
   const keyboardRows = [
     ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
@@ -102,12 +100,13 @@ export function WordInput({ value, onChange, onSubmit, disabled, status, letterS
             {row.map((key) => {
               const isWideKey = key === 'ENTER' || key === 'BACK';
               const statusClass = isWideKey ? '' : getKeyStatusClass(key, letterStatuses);
+              const actionClass = key === 'ENTER' ? 'word-keyboard-key-enter' : key === 'BACK' ? 'word-keyboard-key-back' : '';
               return (
                 <button
                   key={key}
                   type="button"
-                  className={`word-keyboard-key ${isWideKey ? 'word-keyboard-key-wide' : ''} ${statusClass}`}
-                  onClick={() => handleKeyPress(key)}
+                  className={`word-keyboard-key ${isWideKey ? 'word-keyboard-key-wide' : ''} ${statusClass} ${actionClass}`}
+                  onClick={() => handleKeyPressRef.current(key)}
                   disabled={disabled}
                   tabIndex={-1}
                 >

@@ -9,8 +9,8 @@
     "frontend"
   ],
   "scripts": {
-    "dev": "node scripts/extract-word-lists.js && concurrently \"npm run dev -w backend\" \"npm run dev -w frontend\"",
-    "build": "node scripts/extract-word-lists.js && node scripts/validate-games-config.js && npm run build -w shared && npm run build -w backend && npm run build -w frontend",
+    "dev": "concurrently \"npm run dev -w backend\" \"npm run dev -w frontend\"",
+    "build": "node scripts/validate-games-config.js && npm run build -w shared && npm run build -w backend && npm run build -w frontend",
     "start": "npm run start -w backend",
     "test": "npm run test -w backend && npm run test -w frontend",
     "validate-config": "node scripts/validate-games-config.js"

@@ -1,11 +1,12 @@
-import { pickRandomWordOfLength, getWordsOfLength } from '../shared/utils/word-list.js';
+import { pickRandomWordOfLength, getAnswerWordsOfLength } from '../shared/utils/word-list.js';
 
 /**
- * Load all nine-letter words from the word-list package.
+ * Load all nine-letter seed words for Nine Dash.
+ * Uses the curated answer word list to avoid obscure words.
  * @returns Array of unique uppercase nine-letter words.
  */
 export function loadNineLetterWords(): string[] {
-  return getWordsOfLength(9);
+  return getAnswerWordsOfLength(9);
 }
 
 /**
@@ -15,5 +16,6 @@ export function loadNineLetterWords(): string[] {
  * @returns A random uppercase nine-letter word.
  */
 export function pickRandomNineLetterWord(words?: string[], rng: () => number = Math.random): string {
-  return pickRandomWordOfLength(9, words, rng);
+  const list = words || loadNineLetterWords();
+  return pickRandomWordOfLength(9, list, rng);
 }

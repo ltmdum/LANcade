@@ -36,7 +36,8 @@ describe('Nine Dash grid', () => {
     expect(/^[A-Z]{9}$/.test(word)).toBe(true);
   });
 
-  it('loads a non-empty bundled word list', () => {
+  it('loads a non-empty curated word list', () => {
     expect(loadNineLetterWords().length).toBeGreaterThan(1000);
+    expect(loadNineLetterWords().every((w) => w.length === 9)).toBe(true);
   });
 });

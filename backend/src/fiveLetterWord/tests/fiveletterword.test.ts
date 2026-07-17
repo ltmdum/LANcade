@@ -380,4 +380,117 @@ describe('fiveletterword', () => {
       });
     });
   });
+
+  describe('hard mode', () => {
+    it('rejects guess that moves a green letter', async () => {
+      await withFakeTimers(() => {
+        const store = createPlayerStore();
+        const player = store.joinPlayer({ name: 'Alice' }).playerId!;
+        const words = new Set(['ALPHA', 'APPLE', 'AMPLE', 'MAPLE']);
+        const game = createGame({ playerStore: store, validWords: words, answerWords: ['APPLE'] });
+        game.updateSettings({ hardMode: true });
+        game.startRound(0);
+
+        // First guess: ALPHA
+        // Target APPLE:
+        // A at pos 0 = correct (A)
+        // L at pos 1 = absent (target has P)
+        // P at pos 2 = present (target has P at pos 1)
+        // H at pos 3 = absent
+        // A at pos 4 = absent
+        game.submitWord(player, 'ALPHA');
+
+        // In hard mode, A must stay at position 0
+        // MAPLE moves A to position 1 instead
+        const result = game.submitWord(player, 'MAPLE');
+        expect(result.ok).toBe(false);
+        expect(result.reason).toBe('hard_mode_wrong_position');
+      });
+    });
+
+    it('allows guess that keeps green letters in place', async () => {
+      await withFakeTimers(() => {
+        const store = createPlayerStore();
+        const player = store.joinPlayer({ name: 'Alice' }).playerId!;
+        const words = new Set(['ALPHA', 'APPLE', 'AMPLE']);
+        const game = createGame({ playerStore: store, validWords: words, answerWords: ['APPLE'] });
+        game.updateSettings({ hardMode: true });
+        game.startRound(0);
+
+        // First guess: ALPHA (A at pos 0 = correct)
+        game.submitWord(player, 'ALPHA');
+
+        // AMPLE: A at pos 0 (keeps green), M at 1, P at 2, L at 3, E at 4
+        const result = game.submitWord(player, 'AMPLE');
+        expect(result.ok).toBe(true);
+      });
+    });
+
+    it('passes through when hard mode is off', async () => {
+      await withFakeTimers(() => {
+        const store = createPlayerStore();
+        const player = store.joinPlayer({ name: 'Alice' }).playerId!;
+        const words = new Set(['ALPHA', 'APPLE', 'AMPLE', 'MAPLE']);
+        const game = createGame({ playerStore: store, validWords: words, answerWords: ['APPLE'] });
+        game.startRound(0);
+
+        game.submitWord(player, 'ALPHA');
+
+        // Without hard mode, moving A away should be allowed
+        const result = game.submitWord(player, 'MAPLE');
+        expect(result.ok).toBe(true);
+      });
+    });
+  });
+
+  describe('updateSettings', () => {
+    it('enables hard mode', async () => {
+      await withFakeTimers(() => {
+        const store = createPlayerStore();
+        const game = createGame({ playerStore: store, validWords: createTestWords(), answerWords: createTestAnswers() });
+        
+        const result = game.updateSettings({ hardMode: 1 });
+        expect(result.ok).toBe(true);
+        
+        const state = game.getState();
+        expect(state.gameSettings).toEqual({ hardMode: 1 });
+      });
+    });
+
+    it('disables hard mode', async () => {
+      await withFakeTimers(() => {
+        const store = createPlayerStore();
+        const game = createGame({ playerStore: store, validWords: createTestWords(), answerWords: createTestAnswers() });
+        
+        game.updateSettings({ hardMode: 1 });
+        expect(game.getState().gameSettings).toEqual({ hardMode: 1 });
+
+        game.updateSettings({ hardMode: 0 });
+        expect(game.getState().gameSettings).toEqual({ hardMode: 0 });
+      });
+    });
+
+    it('rejects settings update when round is active', async () => {
+      await withFakeTimers(() => {
+        const store = createPlayerStore();
+        store.joinPlayer({ name: 'Alice' });
+        const game = createGame({ playerStore: store, validWords: createTestWords(), answerWords: createTestAnswers() });
+        game.startRound(0);
+        
+        const result = game.updateSettings({ hardMode: 1 });
+        expect(result.ok).toBe(false);
+        expect(result.reason).toBe('game_active');
+      });
+    });
+
+    it('returns default gameSettings', async () => {
+      await withFakeTimers(() => {
+        const store = createPlayerStore();
+        const game = createGame({ playerStore: store, validWords: createTestWords(), answerWords: createTestAnswers() });
+        
+        const state = game.getState();
+        expect(state.gameSettings).toEqual({ hardMode: 0 });
+      });
+    });
+  });
 });

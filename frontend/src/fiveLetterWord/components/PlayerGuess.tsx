@@ -11,14 +11,9 @@ interface PlayerGuessProps {
   onSubmit: () => void;
   isInputEnabled: boolean;
   status: string;
+  greenLetters: (string | null)[];
 }
 
-/**
- * Compute the best known status for each letter based on previous guesses.
- * Priority: correct > present > absent
- * @param grid Player's grid of guesses.
- * @returns Map of letter to best known status.
- */
 function computeLetterStatuses(grid: PlayerGameState['grid']): Record<string, LetterStatus> {
   const statuses: Record<string, LetterStatus> = {};
   
@@ -28,7 +23,6 @@ function computeLetterStatuses(grid: PlayerGameState['grid']): Record<string, Le
       const status = row.letters[i];
       const existing = statuses[letter];
       
-      // Priority: correct > present > absent
       if (!existing) {
         statuses[letter] = status;
       } else if (status === 'correct') {
@@ -36,18 +30,12 @@ function computeLetterStatuses(grid: PlayerGameState['grid']): Record<string, Le
       } else if (status === 'present' && existing === 'absent') {
         statuses[letter] = 'present';
       }
-      // If existing is correct or (existing is present and new is absent), keep existing
     }
   }
   
   return statuses;
 }
 
-/**
- * Complete Guess interface for a single player including grid and input.
- * @param props Player guess props.
- * @returns Player guess element.
- */
 export function PlayerGuess({
   playerState,
   rowBests,
@@ -56,6 +44,7 @@ export function PlayerGuess({
   onSubmit,
   isInputEnabled,
   status,
+  greenLetters,
 }: PlayerGuessProps) {
   const grid = playerState?.grid || [];
   const currentRow = grid.length;
@@ -70,6 +59,7 @@ export function PlayerGuess({
         currentInput={isInputEnabled ? wordInput : ''}
         isInputEnabled={isInputEnabled}
         rowBests={rowBests}
+        greenLetters={greenLetters}
       />
 
       <WordInput
@@ -79,6 +69,7 @@ export function PlayerGuess({
         disabled={!isInputEnabled}
         status={status}
         letterStatuses={letterStatuses}
+        greenLetters={greenLetters}
       />
     </div>
   );

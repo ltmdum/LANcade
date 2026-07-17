@@ -50,6 +50,7 @@ export interface FiveLetterWordState {
     categories: string[];
     selectedCategory: string;
   };
+  gameSettings: Record<string, unknown>;
   match: FiveLetterWordMatchState;
 }
 
@@ -141,6 +142,7 @@ export function createGame(options: FiveLetterWordGameOptions = {}) {
   const answerWords = options.answerWords || loadAnswerWords();
   
   let match = createEmptyMatch();
+  let hardMode = false;
 
   /**
    * Notify listeners that state has changed.
@@ -225,6 +227,17 @@ export function createGame(options: FiveLetterWordGameOptions = {}) {
       return { ok: false, reason: 'invalid_word' };
     }
 
+    // Hard mode: green letters must stay in their positions
+    if (hardMode && playerState.grid.length > 0) {
+      for (const row of playerState.grid) {
+        for (let i = 0; i < row.letters.length; i++) {
+          if (row.letters[i] === 'correct' && word[i] !== row.word[i]) {
+            return { ok: false, reason: 'hard_mode_wrong_position' };
+          }
+        }
+      }
+    }
+
     const result = evaluateGuess(word, match.targetWord);
 
     // Add guess to player's grid
@@ -296,6 +309,7 @@ export function createGame(options: FiveLetterWordGameOptions = {}) {
         categories: [],
         selectedCategory: '',
       },
+      gameSettings: { hardMode: hardMode ? 1 : 0 },
       match: {
         id: match.id,
         state: match.state,
@@ -307,6 +321,24 @@ export function createGame(options: FiveLetterWordGameOptions = {}) {
         winnerName,
       },
     };
+  }
+
+  /**
+   * Update game settings from admin.
+   * @param settings Settings object.
+   * @returns Result payload.
+   */
+  function updateSettings(settings: Record<string, unknown>) {
+    if (match.state === 'active') {
+      return { ok: false, reason: 'game_active' };
+    }
+    if (settings.hardMode === true || settings.hardMode === 1) {
+      hardMode = true;
+    } else if (settings.hardMode === false || settings.hardMode === 0) {
+      hardMode = false;
+    }
+    notifyChange();
+    return { ok: true };
   }
 
   /**
@@ -348,6 +380,7 @@ export function createGame(options: FiveLetterWordGameOptions = {}) {
     submitVotes,
     joinPlayer,
     endGame,
+    updateSettings,
   };
 }
 

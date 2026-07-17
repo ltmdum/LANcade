@@ -63,6 +63,10 @@
   opacity: 0.6;
 }
 
+.guess-cell-locked {
+  cursor: default;
+}
+
 .guess-row-submitted .guess-cell {
   animation: flip 0.3s ease;
 }

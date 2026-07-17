@@ -1,4 +1,4 @@
-import { getWordsOfLength, pickRandomWordOfLength } from '../shared/utils/word-list.js';
+import { getWordsOfLength, getAnswerWordsOfLength, pickRandomWordOfLength } from '../shared/utils/word-list.js';
 
 /**
  * Load all valid 5-letter words from the word-list package.
@@ -10,10 +10,11 @@ export function loadValidGuesses(): Set<string> {
 
 /**
  * Load the list of possible answer words for Five Letter Word.
+ * Uses the curated answer word list to avoid obscure words.
  * @returns Array of answer words in uppercase.
  */
 export function loadAnswerWords(): string[] {
-  return getWordsOfLength(5);
+  return getAnswerWordsOfLength(5);
 }
 
 /**

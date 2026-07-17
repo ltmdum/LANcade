@@ -24,7 +24,6 @@ lancade/
 ├── games.config.json           # Enabled games with display names
 ├── .github/workflows/ci.yml    # Build + test on push/PR to main
 ├── scripts/
-│   ├── extract-word-lists.js   # Generates per-length word JSON files
 │   └── validate-games-config.js
 ├── frontend/                   # React + Vite + TailwindCSS
 │   └── src/
@@ -96,6 +95,7 @@ lancade/
 |       ├── shared/
 │       │   ├── stores/         # Shared state management
 │       │   ├── utils/          # Shared utility functions
+│       │   ├── data/           # Word list JSON files
 │       │   └── tests/          # Shared Vitest tests
 |       ├── categoryclashshared/
 │       │   ├── stores/         # CategoryClash-specific stores
@@ -124,7 +124,7 @@ lancade/
 │       │   ├── tests/          # 5 Letter Word specific Vitest tests
 │       │   ├── fiveletterword.ts
 │       │   ├── scoring.ts      # Guess-style letter evaluation
-│       │   ├── word-list.ts    # Word list loading utilities (reads from word-list package)
+│       │   ├── word-list.ts    # Word list loading utilities (full dict for guesses, curated for answers)
 │       │   └── plugin.ts
 |       ├── mindMatch/
 │       │   ├── tests/          # Mind Match specific Vitest tests
@@ -147,7 +147,7 @@ lancade/
 |       ├── ninedash/
 │       │   ├── tests/          # Nine Dash specific Vitest tests
 │       │   ├── grid.ts         # Grid generation and letter jumbling
-│       │   ├── word-source.ts  # Loads nine-letter words from the word-list package
+│       │   ├── word-source.ts  # Loads curated nine-letter seed words
 │       │   ├── ninedash.ts
 │       │   └── plugin.ts
 │       └── plugins/        # Backend plugin system

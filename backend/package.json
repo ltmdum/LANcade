@@ -6,8 +6,8 @@
   "main": "./dist/server.js",
   "scripts": {
     "build": "tsc && npm run copy-assets",
-    "copy-assets": "mkdir -p dist/shared/data && cp src/shared/data/words-*.json dist/shared/data/",
-    "dev": "node ../scripts/extract-word-lists.js && tsx watch src/server.ts",
+    "copy-assets": "mkdir -p dist/shared/data && cp src/shared/data/words-5.json dist/shared/data/ && cp src/shared/data/answer-words-*.json dist/shared/data/",
+    "dev": "tsx watch src/server.ts",
     "start": "node dist/server.js",
     "test": "vitest run",
     "test:watch": "vitest"

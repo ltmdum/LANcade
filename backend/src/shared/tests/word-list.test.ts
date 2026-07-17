@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getWordsOfLength, pickRandomWordOfLength } from '../utils/word-list.js';
+import { getWordsOfLength, getAnswerWordsOfLength, pickRandomWordOfLength } from '../utils/word-list.js';
 
 describe('word-list', () => {
   describe('getWordsOfLength', () => {
@@ -7,12 +7,6 @@ describe('word-list', () => {
       const words = getWordsOfLength(5);
       expect(words.length).toBeGreaterThan(1000);
       expect(words.every((w) => w.length === 5)).toBe(true);
-    });
-
-    it('returns words of the correct length for length 9', () => {
-      const words = getWordsOfLength(9);
-      expect(words.length).toBeGreaterThan(1000);
-      expect(words.every((w) => w.length === 9)).toBe(true);
     });
 
     it('returns all uppercase words', () => {
@@ -29,9 +23,19 @@ describe('word-list', () => {
     it('has the expected number of 5-letter words', () => {
       expect(getWordsOfLength(5).length).toBe(12578);
     });
+  });
 
-    it('has the expected number of 9-letter words', () => {
-      expect(getWordsOfLength(9).length).toBe(41139);
+  describe('getAnswerWordsOfLength', () => {
+    it('returns curated 5-letter answer words', () => {
+      const words = getAnswerWordsOfLength(5);
+      expect(words.length).toBeGreaterThan(1000);
+      expect(words.every((w) => w.length === 5)).toBe(true);
+    });
+
+    it('returns curated 9-letter answer words', () => {
+      const words = getAnswerWordsOfLength(9);
+      expect(words.length).toBeGreaterThan(100);
+      expect(words.every((w) => w.length === 9)).toBe(true);
     });
   });
 

@@ -99,6 +99,24 @@
   font-size: 0.7rem;
 }
 
+.word-keyboard-key-enter {
+  background-color: #2196F3;
+  color: white;
+}
+
+.word-keyboard-key-enter:hover:not(:disabled) {
+  background-color: #1976D2;
+}
+
+.word-keyboard-key-back {
+  background-color: #f44336;
+  color: white;
+}
+
+.word-keyboard-key-back:hover:not(:disabled) {
+  background-color: #d32f2f;
+}
+
 .word-input-status {
   font-size: 0.875rem;
   color: var(--danger);

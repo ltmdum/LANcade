@@ -35,6 +35,7 @@ function createBaseState(): FiveLetterWordState {
       categories: [],
       selectedCategory: '',
     },
+    gameSettings: {},
     match: {
       id: 1,
       state: 'idle',
@@ -383,4 +384,99 @@ describe('FiveLetterWordGame', () => {
     });
   });
 
+  describe('hard mode', () => {
+    it('renders locked green cells in current input row', () => {
+      const state = createBaseState();
+      state.match.state = 'active';
+      state.gameSettings = { hardMode: 1 };
+      state.match.playerStates[0].grid = [
+        {
+          word: 'CRANE',
+          letters: ['absent', 'absent', 'present', 'absent', 'correct'] as LetterStatus[],
+        },
+      ];
+      state.match.rowBests = [
+        { letters: ['absent', 'absent', 'present', 'absent', 'correct'], greenCount: 1, yellowCount: 1 },
+      ];
+
+      render(<FiveLetterWordGame {...createDefaultProps(state)} />);
+
+      const currentRowCells = document.querySelectorAll('.guess-row-current .guess-cell');
+      expect(currentRowCells.length).toBe(5);
+      expect(currentRowCells[4].className).toContain('guess-cell-correct');
+      expect(currentRowCells[4].className).toContain('guess-cell-locked');
+      expect(currentRowCells[4].textContent).toBe('E');
+    });
+
+    it('does not render locked cells in non-hard mode', () => {
+      const state = createBaseState();
+      state.match.state = 'active';
+      state.match.playerStates[0].grid = [
+        {
+          word: 'CRANE',
+          letters: ['absent', 'absent', 'present', 'absent', 'correct'] as LetterStatus[],
+        },
+      ];
+      state.match.rowBests = [
+        { letters: ['absent', 'absent', 'present', 'absent', 'correct'], greenCount: 1, yellowCount: 1 },
+      ];
+
+      render(<FiveLetterWordGame {...createDefaultProps(state)} />);
+
+      const currentRowCells = document.querySelectorAll('.guess-row-current .guess-cell');
+      expect(currentRowCells.length).toBe(5);
+      expect(currentRowCells[4].className).not.toContain('guess-cell-locked');
+    });
+
+    it('renders multiple locked green cells from multiple rows', () => {
+      const state = createBaseState();
+      state.match.state = 'active';
+      state.gameSettings = { hardMode: 1 };
+      state.match.playerStates[0].grid = [
+        {
+          word: 'CRANE',
+          letters: ['absent', 'absent', 'present', 'absent', 'correct'] as LetterStatus[],
+        },
+        {
+          word: 'STARE',
+          letters: ['correct', 'absent', 'absent', 'absent', 'correct'] as LetterStatus[],
+        },
+      ];
+      state.match.rowBests = [
+        { letters: ['absent', 'absent', 'present', 'absent', 'correct'], greenCount: 1, yellowCount: 1 },
+        { letters: ['correct', 'absent', 'absent', 'absent', 'correct'], greenCount: 2, yellowCount: 0 },
+      ];
+
+      render(<FiveLetterWordGame {...createDefaultProps(state)} />);
+
+      const currentRowCells = document.querySelectorAll('.guess-row-current .guess-cell');
+      expect(currentRowCells.length).toBe(5);
+      expect(currentRowCells[0].className).toContain('guess-cell-correct');
+      expect(currentRowCells[0].className).toContain('guess-cell-locked');
+      expect(currentRowCells[0].textContent).toBe('S');
+      expect(currentRowCells[4].className).toContain('guess-cell-correct');
+      expect(currentRowCells[4].className).toContain('guess-cell-locked');
+      expect(currentRowCells[4].textContent).toBe('E');
+    });
+
+    it('renders green enter button', () => {
+      const state = createBaseState();
+      state.match.state = 'active';
+
+      render(<FiveLetterWordGame {...createDefaultProps(state)} />);
+
+      const enterButton = screen.getByText('ENTER');
+      expect(enterButton.className).toContain('word-keyboard-key-enter');
+    });
+
+    it('renders red backspace button', () => {
+      const state = createBaseState();
+      state.match.state = 'active';
+
+      render(<FiveLetterWordGame {...createDefaultProps(state)} />);
+
+      const backButton = screen.getByText('⌫').closest('button');
+      expect(backButton!.className).toContain('word-keyboard-key-back');
+    });
+  });
 });

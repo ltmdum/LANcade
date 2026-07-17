@@ -7,13 +7,9 @@ interface GuessGridProps {
   currentInput: string;
   isInputEnabled: boolean;
   rowBests: RowBestResult[];
+  greenLetters: (string | null)[];
 }
 
-/**
- * Get the CSS class for a letter status.
- * @param status Letter status.
- * @returns CSS class name.
- */
 function getStatusClass(status: LetterStatus): string {
   switch (status) {
     case 'correct':
@@ -25,11 +21,6 @@ function getStatusClass(status: LetterStatus): string {
   }
 }
 
-/**
- * Render a single grid row with its letters.
- * @param props Row props.
- * @returns Row element.
- */
 function GridRowDisplay({ row }: { row: PlayerGridRow }) {
   return (
     <>
@@ -42,32 +33,29 @@ function GridRowDisplay({ row }: { row: PlayerGridRow }) {
   );
 }
 
-/**
- * Render the current input row.
- * @param props Input row props.
- * @returns Input row element.
- */
-function CurrentInputRow({ input, isEnabled }: { input: string; isEnabled: boolean }) {
+function CurrentInputRow({ input, isEnabled, greenLetters }: { input: string; isEnabled: boolean; greenLetters: (string | null)[] }) {
   const cells = [];
+  let typedIndex = 0;
   for (let i = 0; i < 5; i++) {
-    const letter = input[i] || '';
-    const hasLetter = letter !== '';
+    const isGreen = !!greenLetters[i];
+    const letter = isGreen ? greenLetters[i] : (input[typedIndex] || '');
+    const hasLetter = !!letter;
+    const classNames = [
+      'guess-cell',
+      isGreen ? 'guess-cell-correct guess-cell-locked' : 'guess-cell-input',
+      hasLetter && !isGreen ? 'guess-cell-filled' : '',
+      !isEnabled && !isGreen ? 'guess-cell-disabled' : '',
+    ].filter(Boolean).join(' ');
     cells.push(
-      <div 
-        key={i} 
-        className={`guess-cell guess-cell-input ${hasLetter ? 'guess-cell-filled' : ''} ${!isEnabled ? 'guess-cell-disabled' : ''}`}
-      >
+      <div key={i} className={classNames}>
         {letter}
       </div>
     );
+    if (!isGreen) typedIndex++;
   }
   return <>{cells}</>;
 }
 
-/**
- * Render empty cells.
- * @returns Empty cells element.
- */
 function EmptyRow() {
   return (
     <>
@@ -82,12 +70,6 @@ interface RowBestMiniProps {
   best: RowBestResult | undefined;
 }
 
-/**
- * Mini display showing the best result across all players for a row.
- * Shows 5 small colored squares representing the best letters found.
- * @param props Row best mini props.
- * @returns Row best mini element.
- */
 function RowBestMini({ best }: RowBestMiniProps) {
   if (!best) {
     return <div className="row-best-mini row-best-mini-empty" />;
@@ -105,16 +87,10 @@ function RowBestMini({ best }: RowBestMiniProps) {
   );
 }
 
-/**
- * The main Guess-style grid display with row best indicators.
- * @param props Grid props.
- * @returns Grid element.
- */
-export function GuessGrid({ grid, currentRow, currentInput, isInputEnabled, rowBests }: GuessGridProps) {
+export function GuessGrid({ grid, currentRow, currentInput, isInputEnabled, rowBests, greenLetters }: GuessGridProps) {
   const totalRows = 6;
   const rows = [];
 
-  // Add submitted rows
   for (let i = 0; i < grid.length; i++) {
     rows.push(
       <div key={`submitted-${i}`} className="guess-row guess-row-submitted">
@@ -124,20 +100,19 @@ export function GuessGrid({ grid, currentRow, currentInput, isInputEnabled, rowB
     );
   }
 
-  // Add current input row if game is still active
   if (currentRow < totalRows) {
     rows.push(
       <div key="current" className="guess-row guess-row-current">
         <CurrentInputRow 
           input={currentInput} 
           isEnabled={isInputEnabled} 
+          greenLetters={greenLetters}
         />
         <RowBestMini best={rowBests[currentRow]} />
       </div>
     );
   }
 
-  // Fill remaining rows with empty placeholders
   for (let i = rows.length; i < totalRows; i++) {
     rows.push(
       <div key={`empty-${i}`} className="guess-row guess-row-empty">

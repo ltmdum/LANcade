@@ -178,6 +178,7 @@ export interface FiveLetterWordState {
   serverTime: number;
   players: PlayerInfo[];
   settings: CategorySettings;
+  gameSettings: Record<string, unknown>;
   match: FiveLetterWordMatchState;
   game: GameInfo;
   games: GameInfo[];

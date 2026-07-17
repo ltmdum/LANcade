@@ -39,6 +39,25 @@ export function getWordsOfLength(length: number): string[] {
 }
 
 /**
+ * Load the curated answer word list for a given length.
+ * These are common words filtered from the full word list,
+ * intended to be used as target/seed words (not for guess validation).
+ * @param length Exact number of letters.
+ * @returns Array of uppercase answer words.
+ */
+export function getAnswerWordsOfLength(length: number): string[] {
+  const cached = cache.get(-length);
+  if (cached) {
+    return cached;
+  }
+  const dataPath = path.join(getDataDir(), `answer-words-${length}.json`);
+  const content = fs.readFileSync(dataPath, 'utf-8');
+  const words = JSON.parse(content) as string[];
+  cache.set(-length, words);
+  return words;
+}
+
+/**
  * Pick a random word of the given length.
  * @param length Exact number of letters.
  * @param words Optional word list override (for testing).
