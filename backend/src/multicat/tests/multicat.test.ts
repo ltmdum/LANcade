@@ -263,7 +263,7 @@ describe('multicat', () => {
       const duplicate = game.submitWord(alice, `${letter}lpha`, categories[1]);
       expect(duplicate.ok).toBe(false);
       expect(duplicate.reason).toBe('already_used_by_self');
-      expect(duplicate.blockedWord).toBe(`${letter}lpha`);
+      expect(duplicate.blockedWord).toBe(`${letter.toLowerCase()}lpha`);
       expect(duplicate.blockedCategory).toBe(categories[0]);
     });
   });

@@ -74,7 +74,7 @@ export const plugin: GamePlugin = {
       { heading: "Update", text: "You may change your answers before the timer ends." },
       { heading: "Duplicate", text: "You cannot use a word twice or at all if another player has already used it." },
       { heading: "Voting", text: "When time's up, vote to accept or reject other players' words. Words that receive more than 50% downvotes are removed." },
-      { heading: "Winner", text: "The player with the most accepted words wins!" },
+      { heading: "Winner", text: "The player with the most accepted words wins! Ties are possible." },
     ],
     defaultTimer: {
       minutes: '01',

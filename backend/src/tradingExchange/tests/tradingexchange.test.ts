@@ -455,4 +455,71 @@ describe('tradingexchange', () => {
       expect(state.gameSettings.cardsPerPlayer).toBe(2);
     });
   });
+
+  describe('tie detection', () => {
+    it('declares a tie when players have the same P&L', async () => {
+      await withFakeTimers(async () => {
+        const { game } = setupGame(['Alice', 'Bob', 'Charlie']);
+        game.startRound(30000);
+
+        // Complete auction by submitting cards for all players
+        const state1 = getExchangeState(game);
+        const playerIds = state1.exchange.participants;
+        for (const playerId of playerIds) {
+          game.submitWord(playerId, '');
+        }
+
+        // Submit orders that result in equal P&L
+        for (const playerId of playerIds) {
+          game.handleAction(playerId, { type: 'submit_order', bid: null, offer: null });
+        }
+
+        // Advance through rounds until finished
+        for (let i = 0; i < 15; i++) {
+          const st = getExchangeState(game);
+          if (st.exchange.state === 'finished') break;
+          // Auto-submit for all players
+          for (const playerId of playerIds) {
+            game.handleAction(playerId, { type: 'submit_order', bid: null, offer: null });
+          }
+        }
+
+        const finalState = getExchangeState(game);
+        if (finalState.exchange.state === 'finished' && finalState.exchange.leaderboard) {
+          const topPnl = finalState.exchange.leaderboard[0].pnl;
+          const tiedPlayers = finalState.exchange.leaderboard.filter((e) => e.pnl === topPnl);
+          if (tiedPlayers.length > 1) {
+            expect(finalState.exchange.winnerIds.length).toBeGreaterThanOrEqual(2);
+            for (const player of tiedPlayers) {
+              expect(finalState.exchange.winnerIds).toContain(player.playerId);
+            }
+          }
+        }
+      });
+    });
+
+    it('broadcasts winnerIds and winnerNames in state', async () => {
+      const { game } = setupGame(['Alice', 'Bob']);
+      game.startRound(30000);
+
+      // Finish the game
+      const playerIds = getExchangeState(game).exchange.participants;
+      for (const playerId of playerIds) {
+        game.handleAction(playerId, { type: 'submit_order', bid: null, offer: null });
+      }
+
+      // Trigger finish by auto-submitting all
+      for (let i = 0; i < 15; i++) {
+        const st = getExchangeState(game);
+        if (st.exchange.state === 'finished') break;
+        for (const playerId of playerIds) {
+          game.handleAction(playerId, { type: 'submit_order', bid: null, offer: null });
+        }
+      }
+
+      const finalState = getExchangeState(game);
+      expect(Array.isArray(finalState.exchange.winnerIds)).toBe(true);
+      expect(Array.isArray(finalState.exchange.winnerNames)).toBe(true);
+    });
+  });
 });

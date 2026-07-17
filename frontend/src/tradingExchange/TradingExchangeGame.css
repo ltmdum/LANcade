@@ -519,6 +519,14 @@
   text-align: center;
 }
 
+.te-leaderboard__tie {
+  text-align: center;
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 1.1rem;
+  margin: 0;
+}
+
 .te-leaderboard__true-value {
   text-align: center;
   color: var(--text-secondary);

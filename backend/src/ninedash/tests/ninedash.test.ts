@@ -97,7 +97,9 @@ describe('Nine Dash', () => {
       expect(game.submitWord(alice, word).ok).toBe(true);
       const duplicate = game.submitWord(alice, word.toLowerCase());
       expect(duplicate.ok).toBe(false);
-      expect(duplicate.reason).toBe('duplicate');
+      expect(duplicate.reason).toBe('already_used_by_self');
+      expect(duplicate.blockedWord).toBe(word.toLowerCase());
+      expect(duplicate.blockedByName).toBeUndefined();
     });
   });
 
@@ -115,6 +117,7 @@ describe('Nine Dash', () => {
       expect(duplicate.ok).toBe(false);
       expect(duplicate.reason).toBe('duplicate');
       expect(duplicate.blockedByName).toBe('Alice');
+      expect(duplicate.blockedWord).toBeUndefined();
     });
   });
 

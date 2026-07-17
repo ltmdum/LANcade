@@ -41,7 +41,7 @@ const multicatStrategy: WordSubmissionStrategy = {
       return {
         ok: false,
         reason: 'already_used_by_self',
-        blockedWord: existingWord.word,
+        blockedWord: existingWord.word.toLowerCase(),
         blockedCategory: existingWord.category,
       };
     }

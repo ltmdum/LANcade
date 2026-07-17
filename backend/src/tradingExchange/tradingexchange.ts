@@ -61,7 +61,7 @@ interface Match {
   playerColours: Map<string, string>;
   participants: string[];
   auctionSubmittedIds: Set<string>;
-  winnerId: string | null;
+  winnerIds: string[];
   leaderboard: TradingExchangeLeaderboardEntry[] | null;
   trueValue: number;
 }
@@ -90,7 +90,7 @@ function createEmptyMatch(): Match {
     playerColours: new Map(),
     participants: [],
     auctionSubmittedIds: new Set(),
-    winnerId: null,
+    winnerIds: [],
     leaderboard: null,
     trueValue: 0,
   };
@@ -374,9 +374,14 @@ export function createGame(options: TradingExchangeGameOptions = {}) {
     match.revealedCardCount = match.cardsPerPlayer;
     settlePositions();
     match.leaderboard = calculateLeaderboard();
-    match.winnerId = match.leaderboard.length > 0
-      ? match.leaderboard[0].playerId
-      : null;
+    if (match.leaderboard.length > 0) {
+      const topPnl = match.leaderboard[0].pnl;
+      match.winnerIds = match.leaderboard
+        .filter((e) => e.pnl === topPnl)
+        .map((e) => e.playerId);
+    } else {
+      match.winnerIds = [];
+    }
     notifyChange();
   }
 
@@ -514,10 +519,8 @@ export function createGame(options: TradingExchangeGameOptions = {}) {
         playerColours: buildPlayerColours(),
         participants: match.participants.slice(),
         auctionSubmittedIds: Array.from(match.auctionSubmittedIds),
-        winnerId: match.winnerId,
-        winnerName: match.winnerId
-          ? playerStore.getPlayerName(match.winnerId)
-          : null,
+        winnerIds: match.winnerIds,
+        winnerNames: match.winnerIds.map((id) => playerStore.getPlayerName(id)),
         leaderboard: match.leaderboard,
         trueValue: match.state === 'finished' ? match.trueValue : null,
       },
@@ -567,7 +570,7 @@ export function createGame(options: TradingExchangeGameOptions = {}) {
       playerColours: assignColours(playerIds),
       participants: playerIds,
       auctionSubmittedIds: new Set(),
-      winnerId: null,
+      winnerIds: [],
       leaderboard: null,
       trueValue: calculateTrueValue(hands),
     };

@@ -29,12 +29,15 @@ export interface QuickFireGame extends CategoryClashEngine {
 const quickFireStrategy: WordSubmissionStrategy = {
   validateSubmission(
     _round: Round,
-    _playerId: string,
+    playerId: string,
     _key: string,
     _category: string,
-    _existingWord: WordEntry | undefined,
+    existingWord: WordEntry | undefined,
     _getPlayerName: (id: string) => string
   ): SubmitWordResult | null {
+    if (existingWord && existingWord.playerId === playerId) {
+      return { ok: false, reason: 'already_used_by_self', blockedWord: existingWord.word.toLowerCase() };
+    }
     return null;
   },
 

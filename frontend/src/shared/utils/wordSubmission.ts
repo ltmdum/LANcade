@@ -95,9 +95,9 @@ export async function handleWordSubmission(
 
     if (!response.ok) {
       const msg = data.reason === 'already_used_by_self'
-        ? `Honk! You've already used ${data.blockedWord} for ${data.blockedCategory}, you silly goose!`
+        ? `Honk! You've already used ${data.blockedWord}${data.blockedCategory ? ` for ${data.blockedCategory}` : ""}, you silly goose!`
         : data.reason === 'duplicate'
-          ? `Already used by ${data.blockedByName || 'another player'}.`
+            ? `Already used by ${data.blockedByName || 'another player'}.`
           : data.reason === 'invalid_letter'
             ? `Word must start with ${config.letter}.`
             : data.reason === 'invalid_letters'

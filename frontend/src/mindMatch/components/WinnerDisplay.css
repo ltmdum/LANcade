@@ -9,6 +9,22 @@
   margin-bottom: 1.5rem;
 }
 
+.winner-names {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
+
+.winner-names__name {
+  padding: 0.25rem 0.75rem;
+  border-radius: 0.25rem;
+  font-weight: 600;
+  background-color: var(--success-muted);
+  color: var(--text);
+}
+
 .final-scores h4 {
   margin-bottom: 0.75rem;
 }

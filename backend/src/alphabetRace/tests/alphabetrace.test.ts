@@ -816,8 +816,8 @@ describe('alphabetrace', () => {
 
           const finalState = game.getState();
           expect(finalState.match.state).toBe('finished');
-          expect(finalState.match.winnerId).toBe(alice);
-          expect(finalState.match.winnerName).toBe('Alice');
+          expect(finalState.match.winnerIds).toEqual([alice]);
+          expect(finalState.match.winnerNames).toEqual(['Alice']);
           expect(finalState.match.scores[alice]).toBe(26);
         })
       );
@@ -840,6 +840,53 @@ describe('alphabetrace', () => {
           }
 
           expect(game.getPhase()).toBe('finished');
+        })
+      );
+    });
+
+    it('declares a tie when players have the same highest score', async () => {
+      await withFakeTimers(() =>
+        withStubbedRandom(0, () => {
+          const store = createPlayerStore();
+          const alice = store.joinPlayer({ name: 'Alice' }).playerId!;
+          const bob = store.joinPlayer({ name: 'Bob' }).playerId!;
+          const charlie = store.joinPlayer({ name: 'Charlie' }).playerId!;
+
+          const game = createGame({ playerStore: store });
+          game.startRound(10000);
+
+          // Helper: submit a word and handle voting with all eligible voters
+          function submitAndVote(submitter: string, voters: string[]) {
+            const state = game.getState();
+            if (state.match.state === 'finished') return;
+            const letter = state.match.currentLetter!;
+            game.submitWord(submitter, `${letter}word`);
+            if (game.getState().match.state === 'voting') {
+              for (const voter of voters) {
+                game.submitVotes(voter, { decision: 'accept' });
+              }
+            }
+          }
+
+          // Alice and Bob alternate submitting, both get accepted
+          // Alice submits on even letters, Bob on odd letters
+          // Both end with 13 points each
+          for (let i = 0; i < 26; i++) {
+            const state = game.getState();
+            if (state.match.state === 'finished') break;
+            if (i % 2 === 0) {
+              submitAndVote(alice, [bob, charlie]);
+            } else {
+              submitAndVote(bob, [alice, charlie]);
+            }
+          }
+
+          const finalState = game.getState();
+          expect(finalState.match.state).toBe('finished');
+          expect(finalState.match.winnerIds).toContain(alice);
+          expect(finalState.match.winnerIds).toContain(bob);
+          expect(finalState.match.scores[alice]).toBe(13);
+          expect(finalState.match.scores[bob]).toBe(13);
         })
       );
     });

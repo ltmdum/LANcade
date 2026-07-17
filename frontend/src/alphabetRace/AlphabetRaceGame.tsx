@@ -333,7 +333,7 @@ function PhasePanel({ match, flags, isParticipating, props }: PhasePanelProps) {
   }
 
   if (match.state === 'finished') {
-    return <AlphabetWinnerDisplay winnerName={match.winnerName} />;
+    return <AlphabetWinnerDisplay winnerNames={match.winnerNames} />;
   }
 
   return null;

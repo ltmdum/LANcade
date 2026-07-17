@@ -69,7 +69,7 @@ export const plugin: GamePlugin = {
       { heading: "Submit", text: "Submit as many words as you can that start with the letter and fit the category." },
       { heading: "Be quick", text: "You can't submit a word that another player has already submitted." },
       { heading: "Voting", text: "When time's up, vote to accept or reject other players' words. Words that receive more than 50% downvotes are removed." },
-      { heading: "Winner", text: "The player with the most accepted words wins!" },
+      { heading: "Winner", text: "The player with the most accepted words wins! Ties are possible." },
     ],
     defaultTimer: {
       minutes: '01',

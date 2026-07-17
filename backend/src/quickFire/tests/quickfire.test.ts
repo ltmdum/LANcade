@@ -14,6 +14,43 @@ describe('quickfire', () => {
     });
   });
 
+  it('rejects a word already submitted by the same player', async () => {
+    await withFakeTimers(() => {
+      const store = createPlayerStore();
+      const alice = store.joinPlayer({ name: 'Alice' }).playerId!;
+      const game = createGame({ playerStore: store, clientGraceMs: 0 });
+      const start = game.startRound(2000);
+      const letter = start.letter!;
+      const word = `${letter}lpha`;
+
+      expect(game.submitWord(alice, word).ok).toBe(true);
+      const duplicate = game.submitWord(alice, word.toLowerCase());
+      expect(duplicate.ok).toBe(false);
+      expect(duplicate.reason).toBe('already_used_by_self');
+      expect(duplicate.blockedWord).toBe(word.toLowerCase());
+      expect(duplicate.blockedByName).toBeUndefined();
+    });
+  });
+
+  it('rejects a word already submitted by another player', async () => {
+    await withFakeTimers(() => {
+      const store = createPlayerStore();
+      const alice = store.joinPlayer({ name: 'Alice' }).playerId!;
+      const bob = store.joinPlayer({ name: 'Bob' }).playerId!;
+      const game = createGame({ playerStore: store, clientGraceMs: 0 });
+      const start = game.startRound(2000);
+      const letter = start.letter!;
+      const word = `${letter}lpha`;
+
+      expect(game.submitWord(alice, word).ok).toBe(true);
+      const duplicate = game.submitWord(bob, word);
+      expect(duplicate.ok).toBe(false);
+      expect(duplicate.reason).toBe('duplicate');
+      expect(duplicate.blockedByName).toBe('Alice');
+      expect(duplicate.blockedWord).toBeUndefined();
+    });
+  });
+
   it('accepts, rejects, and tallies votes correctly', async () => {
     await withFakeTimers((_timers) => {
       const store = createPlayerStore();
@@ -36,8 +73,8 @@ describe('quickfire', () => {
 
       const selfDuplicate = game.submitWord(alice, validWord.toLowerCase());
       expect(selfDuplicate.ok).toBe(false);
-      expect(selfDuplicate.reason).toBe('duplicate');
-      expect(selfDuplicate.blockedByName).toBe('Alice');
+      expect(selfDuplicate.reason).toBe('already_used_by_self');
+      expect(selfDuplicate.blockedWord).toBeDefined();
 
       const invalid = game.submitWord(bob, invalidWord);
       expect(invalid.ok).toBe(false);

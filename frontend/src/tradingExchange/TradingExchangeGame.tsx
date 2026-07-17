@@ -282,6 +282,7 @@ function FinishedSection({
       {ex.leaderboard && (
         <Leaderboard
           leaderboard={ex.leaderboard}
+          winnerIds={ex.winnerIds}
           trueValue={ex.trueValue}
           playerColours={ex.playerColours}
         />

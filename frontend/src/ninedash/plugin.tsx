@@ -45,7 +45,7 @@ export const plugin: GamePlugin = {
       { heading: "Scoring", text: "Every accepted word scores one point per letter." },
       { heading: "Bonus", text: "The hidden nine-letter word scores double (18 points) if you find it!" },
       { heading: "Voting", text: "When time's up, vote to accept or reject other players' words. Words that receive too many downvotes are removed." },
-      { heading: "Winner", text: "Highest score wins!" },
+      { heading: "Winner", text: "Highest score wins! Ties are possible." },
     ],
     defaultTimer: {
       minutes: '02',

@@ -29,14 +29,14 @@ export interface NineDashGame extends CategoryClashEngine {
 const wordStrategy: WordSubmissionStrategy = {
   validateSubmission(
     _round: Round,
-    _playerId: string,
+    playerId: string,
     _key: string,
     _category: string,
     existingWord: WordEntry | undefined,
     _getPlayerName: (id: string) => string
   ): SubmitWordResult | null {
-    if (existingWord) {
-      return { ok: false, reason: 'duplicate' };
+    if (existingWord && existingWord.playerId === playerId) {
+      return { ok: false, reason: 'already_used_by_self', blockedWord: existingWord.word.toLowerCase() };
     }
     return null;
   },

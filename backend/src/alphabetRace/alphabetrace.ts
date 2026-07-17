@@ -64,7 +64,7 @@ interface Match {
   penalties: Map<string, number>;
   participants: string[];
   completedCount: number;
-  winnerId: string | null;
+  winnerIds: string[];
 }
 
 const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -102,7 +102,7 @@ function createEmptyMatch(): Match {
     penalties: new Map(),
     participants: [],
     completedCount: 0,
-    winnerId: null,
+    winnerIds: [],
   };
 }
 
@@ -227,6 +227,7 @@ export function createGame(options: AlphabetRaceGameOptions = {}): AlphabetRaceG
 
   /**
    * Determine the winner based on scores and set match to finished state.
+   * If multiple players share the highest score, all are winners (tie).
    */
   function finishGame(): void {
     match.state = 'finished';
@@ -235,25 +236,25 @@ export function createGame(options: AlphabetRaceGameOptions = {}): AlphabetRaceG
     match.votesByPlayer = new Map();
     match.voteEndsAt = null;
     clearVoteTimer();
-    match.winnerId = determineWinner();
+    match.winnerIds = determineWinners();
     notifyChange();
   }
 
   /**
-   * Determine the player with the highest score.
-   * @returns Player ID of the winner, or null if no participants.
+   * Determine the players with the highest score.
+   * If multiple players share the highest score, it's a tie.
+   * @returns Array of winning player IDs.
    */
-  function determineWinner(): string | null {
-    let bestId: string | null = null;
+  function determineWinners(): string[] {
     let bestScore = -1;
     for (const id of match.participants) {
       const score = match.scores[id] || 0;
       if (score > bestScore) {
         bestScore = score;
-        bestId = id;
       }
     }
-    return bestId;
+    if (bestScore < 0) return [];
+    return match.participants.filter((id) => (match.scores[id] || 0) === bestScore);
   }
 
   /**
@@ -358,7 +359,7 @@ export function createGame(options: AlphabetRaceGameOptions = {}): AlphabetRaceG
       penalties: new Map(),
       participants: playerIds,
       completedCount: 0,
-      winnerId: null,
+      winnerIds: [],
     };
 
     notifyChange();
@@ -504,9 +505,9 @@ export function createGame(options: AlphabetRaceGameOptions = {}): AlphabetRaceG
     const submitterName = match.submittedBy
       ? playerStore.getPlayerName(match.submittedBy)
       : null;
-    const winnerName = match.winnerId
-      ? playerStore.getPlayerName(match.winnerId)
-      : null;
+    const winnerNames = match.winnerIds
+      ? match.winnerIds.map((id) => playerStore.getPlayerName(id))
+      : [];
 
     return {
       ...buildBaseState(),
@@ -530,8 +531,8 @@ export function createGame(options: AlphabetRaceGameOptions = {}): AlphabetRaceG
         ineligiblePlayerIds: getIneligiblePlayerIds(),
         completedCount: match.completedCount,
         participants: match.participants.slice(),
-        winnerId: match.winnerId,
-        winnerName,
+        winnerIds: match.winnerIds,
+        winnerNames,
       },
     };
   }

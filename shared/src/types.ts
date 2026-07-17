@@ -240,10 +240,11 @@ export interface MindMatchState {
   serverTime: number;
   players: PlayerInfo[];
   settings: CategorySettings;
+  gameSettings: Record<string, unknown>;
   round: MindMatchRoundState;
   scores: Record<string, number>;
-  winnerId: string | null;
-  winnerName: string | null;
+  winnerIds: string[];
+  winnerNames: string[];
   game: GameInfo;
   games: GameInfo[];
 }
@@ -269,8 +270,8 @@ export interface AlphabetRaceMatchState {
   ineligiblePlayerIds: string[];
   completedCount: number;
   participants: string[];
-  winnerId: string | null;
-  winnerName: string | null;
+  winnerIds: string[];
+  winnerNames: string[];
 }
 
 export interface AlphabetRaceState {
@@ -378,8 +379,8 @@ export interface TradingExchangeMatchState {
   playerColours: Record<string, string>;
   participants: string[];
   auctionSubmittedIds: string[];
-  winnerId: string | null;
-  winnerName: string | null;
+  winnerIds: string[];
+  winnerNames: string[];
   leaderboard: TradingExchangeLeaderboardEntry[] | null;
   trueValue: number | null;
 }

@@ -2,6 +2,7 @@ import type { TradingExchangeLeaderboardEntry } from '@lancade/shared';
 
 interface LeaderboardProps {
   leaderboard: TradingExchangeLeaderboardEntry[];
+  winnerIds: string[];
   trueValue: number | null;
   playerColours: Record<string, string>;
 }
@@ -11,7 +12,7 @@ interface LeaderboardProps {
  * @param props Leaderboard props.
  * @returns Leaderboard element.
  */
-export function Leaderboard({ leaderboard, trueValue, playerColours }: LeaderboardProps) {
+export function Leaderboard({ leaderboard, winnerIds, trueValue, playerColours }: LeaderboardProps) {
   return (
     <div className="te-leaderboard">
       <h3 className="te-leaderboard__title">Final Results</h3>
@@ -20,6 +21,9 @@ export function Leaderboard({ leaderboard, trueValue, playerColours }: Leaderboa
           True Value: <strong>{trueValue}</strong>
         </p>
       )}
+      {winnerIds.length > 1 && (
+        <p className="te-leaderboard__tie">It's a tie!</p>
+      )}
       <div className="te-leaderboard__list">
         {leaderboard.map((entry, i) => (
           <LeaderboardRow
@@ -27,7 +31,7 @@ export function Leaderboard({ leaderboard, trueValue, playerColours }: Leaderboa
             rank={i + 1}
             entry={entry}
             colour={playerColours[entry.playerId] || 'inherit'}
-            isWinner={i === 0}
+            isWinner={winnerIds.includes(entry.playerId)}
           />
         ))}
       </div>

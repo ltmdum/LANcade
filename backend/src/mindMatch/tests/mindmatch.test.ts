@@ -252,7 +252,8 @@ describe('mindmatch', () => {
 
         // After 9 rounds of 3 points each, Alice and Bob should have 27 points
         const state = game.getState();
-        expect(state.winnerId).not.toBeNull();
+        expect(state.winnerIds).toContain(alice);
+        expect(state.winnerIds).toContain(bob);
         expect(state.scores[alice]).toBe(27);
         expect(state.scores[bob]).toBe(27);
       });
@@ -917,6 +918,170 @@ describe('mindmatch', () => {
 
         const state = game.getState();
         expect(state.scores[result.playerId!]).toBe(0);
+      });
+    });
+  });
+
+  describe('tie detection', () => {
+    it('declares a tie when two players reach the same highest score above winningScore', async () => {
+      await withFakeTimers(() => {
+        const store = createPlayerStore();
+        const alice = store.joinPlayer({ name: 'Alice' }).playerId!;
+        const bob = store.joinPlayer({ name: 'Bob' }).playerId!;
+        const charlie = store.joinPlayer({ name: 'Charlie' }).playerId!;
+        const dave = store.joinPlayer({ name: 'Dave' }).playerId!;
+        const eve = store.joinPlayer({ name: 'Eve' }).playerId!;
+
+        const game = createGame({ playerStore: store });
+
+        // Alice and Bob always match (3 pts each), Charlie/Dave/Eve always match
+        // After 9 rounds: Alice=27, Bob=27, Charlie=3, Dave=3, Eve=3
+        for (let i = 0; i < 9; i++) {
+          game.startRound(1000);
+          game.submitWord(alice, 'match');
+          game.submitWord(bob, 'match');
+          game.submitWord(charlie, 'other');
+          game.submitWord(dave, 'other');
+          game.submitWord(eve, 'other');
+        }
+
+        const state = game.getState();
+        expect(state.winnerIds).toContain(alice);
+        expect(state.winnerIds).toContain(bob);
+        expect(state.winnerIds.length).toBe(2);
+        expect(state.winnerNames).toContain('Alice');
+        expect(state.winnerNames).toContain('Bob');
+      });
+    });
+
+    it('declares a single winner when one player has the highest score', async () => {
+      await withFakeTimers(() => {
+        const store = createPlayerStore();
+        const alice = store.joinPlayer({ name: 'Alice' }).playerId!;
+        const bob = store.joinPlayer({ name: 'Bob' }).playerId!;
+        const charlie = store.joinPlayer({ name: 'Charlie' }).playerId!;
+
+        const game = createGame({ playerStore: store });
+
+        // Alice always matches with Charlie (3 pts), Bob is unique (0 pts)
+        // After 9 rounds: Alice=27, Bob=0, Charlie=27
+        // Alice and Charlie tie at 27
+        for (let i = 0; i < 9; i++) {
+          game.startRound(1000);
+          game.submitWord(alice, 'match');
+          game.submitWord(bob, 'unique');
+          game.submitWord(charlie, 'match');
+        }
+
+        const state = game.getState();
+        expect(state.winnerIds).toContain(alice);
+        expect(state.winnerIds).toContain(charlie);
+        expect(state.winnerIds.length).toBe(2);
+      });
+    });
+
+    it('returns empty winnerIds when no one reaches winningScore', async () => {
+      await withFakeTimers(() => {
+        const store = createPlayerStore();
+        const alice = store.joinPlayer({ name: 'Alice' }).playerId!;
+        const bob = store.joinPlayer({ name: 'Bob' }).playerId!;
+        const charlie = store.joinPlayer({ name: 'Charlie' }).playerId!;
+
+        const game = createGame({ playerStore: store });
+        game.startRound(1000);
+        game.submitWord(alice, 'one');
+        game.submitWord(bob, 'two');
+        game.submitWord(charlie, 'three');
+
+        const state = game.getState();
+        expect(state.winnerIds).toEqual([]);
+        expect(state.round.state).toBe('results');
+      });
+    });
+  });
+
+  describe('updateSettings', () => {
+    it('allows updating winningScore when idle', async () => {
+      await withFakeTimers(() => {
+        const store = createPlayerStore();
+        const game = createGame({ playerStore: store });
+
+        const result = game.updateSettings({ winningScore: 15 });
+        expect(result.ok).toBe(true);
+
+        const state = game.getState();
+        expect(state.gameSettings.winningScore).toBe(15);
+      });
+    });
+
+    it('rejects invalid winningScore values', async () => {
+      await withFakeTimers(() => {
+        const store = createPlayerStore();
+        const game = createGame({ playerStore: store });
+
+        expect(game.updateSettings({ winningScore: 3 }).ok).toBe(false);
+        expect(game.updateSettings({ winningScore: 105 }).ok).toBe(false);
+        expect(game.updateSettings({ winningScore: 2.5 }).ok).toBe(false);
+        expect(game.updateSettings({ winningScore: -1 }).ok).toBe(false);
+      });
+    });
+
+    it('rejects settings updates when game is active', async () => {
+      await withFakeTimers(() => {
+        const store = createPlayerStore();
+        store.joinPlayer({ name: 'Alice' });
+        store.joinPlayer({ name: 'Bob' });
+        store.joinPlayer({ name: 'Charlie' });
+
+        const game = createGame({ playerStore: store });
+        game.startRound(30000);
+
+        expect(game.updateSettings({ winningScore: 10 }).ok).toBe(false);
+      });
+    });
+
+    it('rejects unknown setting keys', async () => {
+      await withFakeTimers(() => {
+        const store = createPlayerStore();
+        const game = createGame({ playerStore: store });
+
+        expect(game.updateSettings({ unknownKey: 42 }).ok).toBe(false);
+      });
+    });
+
+    it('uses custom winningScore for winner detection', async () => {
+      await withFakeTimers(() => {
+        const store = createPlayerStore();
+        const alice = store.joinPlayer({ name: 'Alice' }).playerId!;
+        const bob = store.joinPlayer({ name: 'Bob' }).playerId!;
+        const charlie = store.joinPlayer({ name: 'Charlie' }).playerId!;
+
+        const game = createGame({ playerStore: store });
+        game.updateSettings({ winningScore: 10 });
+
+        // Alice and Bob match (3 pts each) for 4 rounds = 12 pts each
+        for (let i = 0; i < 4; i++) {
+          game.startRound(1000);
+          game.submitWord(alice, 'match');
+          game.submitWord(bob, 'match');
+          game.submitWord(charlie, 'other');
+        }
+
+        const state = game.getState();
+        expect(state.winnerIds).toContain(alice);
+        expect(state.winnerIds).toContain(bob);
+        expect(state.scores[alice]).toBe(12);
+      });
+    });
+
+    it('broadcasts gameSettings in state', async () => {
+      await withFakeTimers(() => {
+        const store = createPlayerStore();
+        const game = createGame({ playerStore: store });
+        game.updateSettings({ winningScore: 50 });
+
+        const state = game.getState();
+        expect(state.gameSettings).toEqual({ winningScore: 50 });
       });
     });
   });

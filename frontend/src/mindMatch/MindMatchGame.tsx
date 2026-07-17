@@ -69,21 +69,21 @@ export function MindMatchGame({
     }
   }
 
-  if (round.state === 'idle' && !serverState.winnerId) {
+  if (round.state === 'idle' && serverState.winnerIds.length === 0) {
     return null;
   }
 
   return (
     <div className="blankslate-container">
-      {serverState.winnerId && (
+      {serverState.winnerIds.length > 0 && (
         <WinnerDisplay
-          winnerName={serverState.winnerName || 'Unknown'}
+          winnerNames={serverState.winnerNames}
           scores={scores}
           playerLookup={playerLookup}
         />
       )}
 
-      {!serverState.winnerId && round.prompt && (
+      {!serverState.winnerIds.length && round.prompt && (
         <PromptDisplay prompt={round.prompt} />
       )}
 
@@ -125,7 +125,7 @@ export function MindMatchGame({
         />
       )}
 
-      {!serverState.winnerId && (
+      {!serverState.winnerIds.length && (
         <ScoreBoard
           scores={scores}
           playerLookup={playerLookup}
@@ -133,13 +133,13 @@ export function MindMatchGame({
         />
       )}
 
-      {isAdmin && (round.state === 'results' || serverState.winnerId) && (
+      {isAdmin && (round.state === 'results' || serverState.winnerIds.length > 0) && (
         <PlayAgainPanel
           onPlayAgain={onRestart}
           onBackToConfig={() => setShowConfig(true)}
           status={adminStatus}
-          playAgainText={serverState.winnerId ? 'New Game' : 'Next Round'}
-          title={serverState.winnerId ? 'Game Over' : 'Next Steps'}
+          playAgainText={serverState.winnerIds.length > 0 ? 'New Game' : 'Next Round'}
+          title={serverState.winnerIds.length > 0 ? 'Game Over' : 'Next Steps'}
         />
       )}
     </div>

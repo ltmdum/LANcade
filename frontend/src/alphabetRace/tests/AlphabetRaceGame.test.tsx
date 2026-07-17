@@ -41,8 +41,8 @@ function createBaseState(): AlphabetRaceState {
       ineligiblePlayerIds: [],
       completedCount: 0,
       participants: ['player-1', 'player-2', 'player-3'],
-      winnerId: null,
-      winnerName: null,
+      winnerIds: [],
+      winnerNames: [],
     },
     game: { id: 'alphabetrace', name: 'Alphabet Race' },
     games: [{ id: 'alphabetrace', name: 'Alphabet Race' }],
@@ -241,8 +241,8 @@ describe('AlphabetRaceGame', () => {
     it('shows winner name before game over text', () => {
       const state = createBaseState();
       state.match.state = 'finished';
-      state.match.winnerId = 'player-1';
-      state.match.winnerName = 'Alice';
+      state.match.winnerIds = ['player-1'];
+      state.match.winnerNames = ['Alice'];
       state.match.completedCount = 26;
 
       const { container } = render(<AlphabetRaceGame {...createDefaultProps(state)} />);
@@ -260,8 +260,8 @@ describe('AlphabetRaceGame', () => {
     it('shows final scores', () => {
       const state = createBaseState();
       state.match.state = 'finished';
-      state.match.winnerId = 'player-1';
-      state.match.winnerName = 'Alice';
+      state.match.winnerIds = ['player-1'];
+      state.match.winnerNames = ['Alice'];
       state.match.scores = { 'player-1': 15, 'player-2': 8, 'player-3': 3 };
       state.match.completedCount = 26;
 
@@ -276,8 +276,8 @@ describe('AlphabetRaceGame', () => {
     it('admin sees play again controls', () => {
       const state = createBaseState();
       state.match.state = 'finished';
-      state.match.winnerId = 'player-1';
-      state.match.winnerName = 'Alice';
+      state.match.winnerIds = ['player-1'];
+      state.match.winnerNames = ['Alice'];
       state.match.completedCount = 26;
 
       const props = createDefaultProps(state);
@@ -295,8 +295,8 @@ describe('AlphabetRaceGame', () => {
     it('shows play again panel in finished state', () => {
       const state = createBaseState();
       state.match.state = 'finished';
-      state.match.winnerId = 'player-2';
-      state.match.winnerName = 'Bob';
+      state.match.winnerIds = ['player-2'];
+      state.match.winnerNames = ['Bob'];
       state.match.completedCount = 26;
 
       const props = createDefaultProps(state);
@@ -352,8 +352,8 @@ describe('AlphabetRaceGame', () => {
     it('admin with stale playerId sees controls in finished state', () => {
       const state = createBaseState();
       state.match.state = 'finished';
-      state.match.winnerId = 'player-1';
-      state.match.winnerName = 'Alice';
+      state.match.winnerIds = ['player-1'];
+      state.match.winnerNames = ['Alice'];
       state.match.completedCount = 26;
 
       const props = createDefaultProps(state);

@@ -23,7 +23,7 @@ function getPhase(serverState: unknown): string {
     return 'idle';
   }
   const state = serverState as MindMatchState;
-  if (state.winnerId) {
+  if (state.winnerIds?.length > 0) {
     return 'finished';
   }
   return state.round?.state || 'idle';
@@ -79,7 +79,7 @@ export const plugin: GamePlugin = {
       { heading: "Submit", text: "Secretly submit your word hoping to match with other players!" },
       { heading: "Match", text: "Match with exactly one other player: 3 points each. Match with a group of 3+: 1 point each." },
       { heading: "Unique", text: "Unique answers score 0 points, but you may claim yours matches another. Other players vote to decide." },
-      { heading: "Winner", text: "First to 25 points wins!" },
+      { heading: "Winner", text: "First to reach the target score wins! (Default: 25)" },
     ],
     defaultTimer: {
       minutes: '00',
@@ -89,6 +89,18 @@ export const plugin: GamePlugin = {
     joinPanelTitle: 'Join the Game',
     minPlayers: 3,
     hideTimer: true,
+    gameSettings: [
+      {
+        key: 'winningScore',
+        label: 'Winning Score',
+        type: 'select',
+        options: Array.from({ length: 20 }, (_, i) => ({
+          label: `${(i + 1) * 5} points`,
+          value: (i + 1) * 5,
+        })),
+        defaultValue: 25,
+      },
+    ],
   },
   canRender,
   getPhase,

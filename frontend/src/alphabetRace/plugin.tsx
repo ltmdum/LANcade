@@ -70,7 +70,7 @@ export const plugin: GamePlugin = {
       { heading: "Vote", text: "Players vote to accept or reject whether the word belongs to the category." },
       { heading: "Penalty", text: "If rejected, you sit out this letter AND the next one." },
       { heading: "Score", text: "Accepted words score 1 point, then play moves to the next letter." },
-      { heading: "Winner", text: "The player with the most points after all 26 letters wins!" },
+      { heading: "Winner", text: "The player with the most points after all 26 letters wins! Ties are possible." },
     ],
     defaultTimer: {
       minutes: '00',

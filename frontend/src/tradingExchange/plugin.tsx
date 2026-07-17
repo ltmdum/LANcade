@@ -15,7 +15,7 @@ export const plugin: GamePlugin = {
       { heading: "Trade", text: "Update your bid and offer anytime. Trades happen instantly when they cross." },
       { heading: "Reveal", text: "Each round reveals one card per player. If trades stall, more cards are revealed. All cards are shown in the final round." },
       { heading: "Profit", text: "A BUY trade profits if the final card value is higher than your trade price. A SELL trade profits if the final value is lower." },
-      { heading: "Winner", text: "All trades settle at the total card value. Most profit wins!" },
+      { heading: "Winner", text: "All trades settle at the total card value. Most profit wins! Ties are possible." },
     ],
     defaultTimer: { minutes: '00', seconds: '30' },
     gameSettings: [

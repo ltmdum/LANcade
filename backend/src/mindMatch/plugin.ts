@@ -16,6 +16,7 @@ function adaptToBaseGame(game: MindMatchGame): BaseGame {
     startRound: (durationMs) => game.startRound(durationMs),
     finishRound: (playerId, roundId) => game.finishRound(playerId, roundId),
     endGame: () => game.endGame(),
+    updateSettings: (settings) => game.updateSettings(settings),
   };
 }
 

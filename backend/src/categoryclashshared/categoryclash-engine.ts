@@ -109,7 +109,7 @@ export interface SubmitWordResult {
   blockedByName?: string;
   /** The word the player previously used (set when reason is already_used_by_self). */
   blockedWord?: string;
-  /** The category that word was used in (set when reason is already_used_by_self). */
+  /** The category that word was used in (only useful for mutli category games). */
   blockedCategory?: string;
 }
 

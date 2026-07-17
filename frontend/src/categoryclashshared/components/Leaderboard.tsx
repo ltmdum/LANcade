@@ -17,12 +17,15 @@ interface LeaderboardProps {
 
 /**
  * Render a leaderboard table for results.
+ * Detects ties when the top entries share the same finalScore.
  * @param props Leaderboard props.
  * @returns Leaderboard element.
  */
 export function Leaderboard({ entries, currentPlayerId }: LeaderboardProps) {
+  const isTie = entries.length >= 2 && entries[0].finalScore === entries[1].finalScore;
+
   return (
-    <Panel title="Leaderboard">
+    <Panel title={isTie ? "It's a tie!" : 'Leaderboard'}>
       <div className="results-table-container">
         <table className="results-table">
           <thead>

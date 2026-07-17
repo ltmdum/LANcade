@@ -21,6 +21,7 @@ function createBaseState(): MindMatchState {
       categories: [],
       selectedCategory: '',
     },
+    gameSettings: { winningScore: 25 },
     round: {
       id: 0,
       state: 'idle',
@@ -36,8 +37,8 @@ function createBaseState(): MindMatchState {
       result: null,
     },
     scores: { 'player-1': 5, 'player-2': 3, 'player-3': 0 },
-    winnerId: null,
-    winnerName: null,
+    winnerIds: [],
+    winnerNames: [],
     game: { id: 'mindmatch', name: 'Mind Match' },
     games: [{ id: 'mindmatch', name: 'Mind Match' }],
   };
@@ -430,8 +431,8 @@ describe('MindMatchGame', () => {
   describe('winner state', () => {
     it('renders winner display', () => {
       const state = createBaseState();
-      state.winnerId = 'player-1';
-      state.winnerName = 'Alice';
+      state.winnerIds = ['player-1'];
+      state.winnerNames = ['Alice'];
       state.scores = { 'player-1': 25, 'player-2': 20, 'player-3': 15 };
 
       render(<MindMatchGame {...createDefaultProps(state)} />);
@@ -442,8 +443,8 @@ describe('MindMatchGame', () => {
 
     it('renders admin controls for new game when there is a winner', () => {
       const state = createBaseState();
-      state.winnerId = 'player-1';
-      state.winnerName = 'Alice';
+      state.winnerIds = ['player-1'];
+      state.winnerNames = ['Alice'];
       state.round.durationMs = 30000;
 
       const props = createDefaultProps(state);

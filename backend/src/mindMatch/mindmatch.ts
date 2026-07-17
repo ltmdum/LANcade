@@ -13,7 +13,7 @@ import { normalizeWord } from '../shared/utils/normalize-word.js';
 import { calculateSimilarity } from '../shared/utils/word-similarity.js';
 import promptsData from './prompts.json' with { type: 'json' };
 
-const WINNING_SCORE = 25;
+const DEFAULT_WINNING_SCORE = 25;
 const POINTS_FOR_PAIR = 3;
 const POINTS_FOR_GROUP = 1;
 const SIMILARITY_THRESHOLD = 0.6; // Minimum similarity ratio (0-1) for claim eligibility
@@ -95,6 +95,7 @@ export interface MindMatchGame {
     error?: string;
   };
   endGame(): EndGameResult;
+  updateSettings(settings: Record<string, unknown>): { ok: boolean; reason?: string };
 }
 
 /**
@@ -146,7 +147,8 @@ export function createGame(options: MindMatchGameOptions = {}): MindMatchGame {
 
   let round = createEmptyRound();
   let scores: Record<string, number> = {};
-  let winnerId: string | null = null;
+  let winnerIds: string[] = [];
+  let winningScore = DEFAULT_WINNING_SCORE;
   let roundEndTimeout: ReturnType<typeof setTimeout> | null = null;
   const usedPromptIds = new Set<number>();
 
@@ -252,10 +254,11 @@ export function createGame(options: MindMatchGameOptions = {}): MindMatchGame {
         categories: [],
         selectedCategory: '',
       },
+      gameSettings: { winningScore },
       round: buildRoundState(),
       scores,
-      winnerId,
-      winnerName: winnerId ? getPlayerName(winnerId) : null,
+      winnerIds,
+      winnerNames: winnerIds.map((id) => getPlayerName(id)),
     };
   }
 
@@ -264,7 +267,7 @@ export function createGame(options: MindMatchGameOptions = {}): MindMatchGame {
    * @returns Phase string.
    */
   function getPhase(): string {
-    if (winnerId) {
+    if (winnerIds.length > 0) {
       return 'finished';
     }
     return round.state;
@@ -391,13 +394,29 @@ export function createGame(options: MindMatchGameOptions = {}): MindMatchGame {
 
   /**
    * Check for a winner after score updates.
+   * Among players at or above winningScore, the highest scorer wins.
+   * If multiple players share the highest score, it's a tie.
    */
   function checkForWinner(): void {
+    const qualified: { id: string; score: number }[] = [];
     for (const [playerId, score] of Object.entries(scores)) {
-      if (score >= WINNING_SCORE) {
-        winnerId = playerId;
-        break;
+      if (score >= winningScore) {
+        qualified.push({ id: playerId, score });
       }
+    }
+
+    if (qualified.length === 0) {
+      winnerIds = [];
+      return;
+    }
+
+    const maxScore = Math.max(...qualified.map((p) => p.score));
+    const topPlayers = qualified.filter((p) => p.score === maxScore);
+
+    if (topPlayers.length === 1) {
+      winnerIds = [topPlayers[0].id];
+    } else {
+      winnerIds = topPlayers.map((p) => p.id);
     }
   }
 
@@ -700,9 +719,9 @@ export function createGame(options: MindMatchGameOptions = {}): MindMatchGame {
       return { ok: false, reason: 'need_3_players' };
     }
 
-    if (winnerId) {
+    if (winnerIds.length > 0) {
       // Reset for new game
-      winnerId = null;
+      winnerIds = [];
       scores = {};
       usedPromptIds.clear();
     }
@@ -971,15 +990,44 @@ export function createGame(options: MindMatchGameOptions = {}): MindMatchGame {
    * @returns End result.
    */
   function endGame(): EndGameResult {
-    if (round.state === 'idle' && !winnerId) {
+    if (round.state === 'idle' && winnerIds.length === 0) {
       return { ok: false, reason: 'not_active' };
     }
 
     clearRoundTimer();
     round = createEmptyRound();
     scores = {};
-    winnerId = null;
+    winnerIds = [];
     notifyChange();
+    return { ok: true };
+  }
+
+  /**
+   * Update admin-configurable settings (only when idle).
+   * @param settings Settings object with winningScore.
+   * @returns Result indicating success or failure.
+   */
+  function updateSettings(settings: Record<string, unknown>) {
+    if (round.state !== 'idle') {
+      return { ok: false, reason: 'game_active' };
+    }
+    if (winnerIds.length > 0) {
+      return { ok: false, reason: 'game_active' };
+    }
+    let changed = false;
+    for (const key of Object.keys(settings)) {
+      const val = settings[key];
+      if (key === 'winningScore') {
+        if (typeof val !== 'number' || !Number.isInteger(val) || val < 5 || val > 100) {
+          return { ok: false, reason: 'invalid_value' };
+        }
+        winningScore = val;
+        changed = true;
+      } else {
+        return { ok: false, reason: 'unknown_setting' };
+      }
+    }
+    if (changed) notifyChange();
     return { ok: true };
   }
 
@@ -995,5 +1043,6 @@ export function createGame(options: MindMatchGameOptions = {}): MindMatchGame {
     finishRound,
     joinPlayer,
     endGame,
+    updateSettings,
   };
 }
