@@ -88,7 +88,6 @@ lancade/
 |       ├── ninedash/
 │       │   ├── components/         # Nine Dash specific components (LetterGrid, active panel)
 │       │   ├── tests/              # Nine Dash specific tests
-│       │   ├── utils/              # Nine Dash specific utility functions (tile validation)
 │       │   ├── NineDashGame.tsx
 │       │   └── plugin.tsx          # Nine Dash frontend plugin registration
 │       └── plugins/            # Frontend plugin system
@@ -313,6 +312,19 @@ Add to `games.config.json`:
 ### 9. Add Tests
 
 Create tests for your game logic in `backend/src/tests/yourgame/`. If your game has a frontend component, add frontend tests too.
+
+### 10. Create a Tutorial Page
+
+Every game must ship with an HTML tutorial page at `docs/games/<gameid>.html`. This page is linked from the in-app "How to Play" modal and serves as the primary reference for players.
+
+The page should follow the same structure as existing game pages:
+
+- **Title and slogan** at the top
+- **Player count** recommendation
+- **Tutorial section** with gameplay screenshots in horizontally scrollable rows, each with a caption explaining what the player sees
+- **Rules section** summarising the game rules in a bulleted list
+
+Use the existing pages (e.g. `docs/games/quickfire.html`) as a template. Screenshots go in `docs/games/screenshots/<gameid>/`.
 
 ## Code Standards
 

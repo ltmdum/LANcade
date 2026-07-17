@@ -3,7 +3,6 @@ import { NineDashActivePanel } from './components/NineDashActivePanel';
 import { NineDashResults } from './components/NineDashResults';
 import { VotingPanel } from '../categoryclashshared/components/VotingPanel';
 import { toggleVoteSelection } from '../categoryclashshared/utils/voting';
-import { validateGridWord } from './utils/letters';
 import { formatMs } from '../shared/utils/time';
 import { handleWordSubmission } from '../shared/utils/wordSubmission';
 import { handleVoteSubmit } from '../shared/utils/voting';
@@ -76,13 +75,14 @@ export function NineDashGame({
   setShowConfig,
 }: NineDashGameProps) {
   const [countdown, setCountdown] = useState('');
-  const [wordInput, setWordInput] = useState('');
+  const [selectedIndices, setSelectedIndices] = useState<number[]>([]);
   const [flash, setFlash] = useState('');
   const [voteSet, setVoteSet] = useState<Set<string>>(new Set());
   const [voteStatus, setVoteStatus] = useState('');
   const [status, setStatus] = useState('');
   const [actionStatus, setActionStatus] = useState('');
   const [submitStatus, setSubmitStatus] = useState<'success' | 'error' | ''>('');
+  const [inputHint, setInputHint] = useState('');
 
   const { flashTimerRef, countdownTimerRef } = useTimerRefs();
   const finishSentRef = useRef<Set<number>>(new Set());
@@ -117,10 +117,19 @@ export function NineDashGame({
     [round.anonymousWords, myWordIds]
   );
 
+  const wordInput = useMemo(
+    () => selectedIndices.map((i) => letters[i]).join(''),
+    [selectedIndices, letters],
+  );
+
   useEffect(() => {
     setStatus('');
     setSubmitStatus('');
     setVoteStatus('');
+  }, [round.id]);
+
+  useEffect(() => {
+    setSelectedIndices([]);
   }, [round.id]);
 
   useEffect(() => {
@@ -145,6 +154,29 @@ export function NineDashGame({
     }
   }, [round.durationMs, accessKey, setShowConfig]);
 
+  const onTileClick = useCallback((index: number) => {
+    setInputHint('');
+    setSelectedIndices((prev) => {
+      if (prev.includes(index)) return prev;
+      return [...prev, index];
+    });
+    setSubmitStatus('');
+  }, []);
+
+  const onBackspace = useCallback(() => {
+    setSelectedIndices((prev) => prev.slice(0, -1));
+    setSubmitStatus('');
+  }, []);
+
+  const onClear = useCallback(() => {
+    setSelectedIndices([]);
+    setSubmitStatus('');
+  }, []);
+
+  const onInputClick = useCallback(() => {
+    setInputHint('Tap the letters in the grid to type');
+  }, []);
+
   const onWordSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     setStatus('');
@@ -154,28 +186,29 @@ export function NineDashGame({
       triggerFlash('error');
       setStatus('Time is up.');
       setSubmitStatus('error');
-      setWordInput('');
+      setSelectedIndices([]);
       return;
     }
 
     const result = await handleWordSubmission(wordInput, {
       playerId,
       accessKey,
-      validate: (word) => validateGridWord(word, letters),
+      validate: (word) => {
+        const trimmed = word.trim();
+        if (!trimmed) {
+          return { valid: false, errorMessage: 'Select some letters first.' };
+        }
+        return { valid: true, trimmedWord: trimmed };
+      },
     });
 
     triggerFlash(result.success ? 'success' : 'error');
     setStatus(result.success ? 'Word accepted.' : result.statusMessage);
     setSubmitStatus(result.success ? 'success' : 'error');
     if (result.success) {
-      setWordInput('');
+      setSelectedIndices([]);
     }
   }, [timeUp, triggerFlash, playerId, accessKey, wordInput, letters]);
-
-  const handleWordInputChange = useCallback((value: string) => {
-    setWordInput(value);
-    setSubmitStatus('');
-  }, []);
 
   const onToggleVote = useCallback((wordId: string) => {
     setVoteSet((prev) => toggleVoteSelection(prev, wordId));
@@ -220,8 +253,13 @@ export function NineDashGame({
           isParticipating={isParticipating}
           timeUp={timeUp}
           wordInput={wordInput}
+          selectedIndices={selectedIndices}
           submitStatus={submitStatus}
-          onWordInputChange={handleWordInputChange}
+          inputHint={inputHint}
+          onTileClick={onTileClick}
+          onBackspace={onBackspace}
+          onClear={onClear}
+          onInputClick={onInputClick}
           onWordSubmit={onWordSubmit}
         />
       )}

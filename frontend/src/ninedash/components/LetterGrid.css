@@ -19,4 +19,18 @@
   color: var(--tile-fg, #f5f5f5);
   border-radius: 0.5rem;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
+  user-select: none;
+}
+
+.letter-grid-tile-interactive {
+  cursor: pointer;
+}
+
+.letter-grid-tile-interactive:active {
+  transform: scale(0.95);
+}
+
+.letter-grid-tile-selected {
+  background: var(--accent, #00C6F5);
+  color: #0f172a;
 }

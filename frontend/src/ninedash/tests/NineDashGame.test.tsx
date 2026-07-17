@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { NineDashGame } from '../NineDashGame';
 import type { CategoryClashState } from '@lancade/shared';
 
@@ -61,7 +61,7 @@ describe('NineDashGame', () => {
   });
 
   describe('active state', () => {
-    it('renders the nine letter tiles and word input', () => {
+    it('renders the nine letter tiles and input placeholder', () => {
       const state = createBaseState();
       state.round.state = 'active';
       state.round.letters = TILES;
@@ -72,7 +72,7 @@ describe('NineDashGame', () => {
       for (const tile of TILES) {
         expect(screen.getByText(tile)).toBeInTheDocument();
       }
-      expect(screen.getByPlaceholderText(/make a word from the tiles/i)).toBeInTheDocument();
+      expect(screen.getByPlaceholderText(/tap letters to make a word/i)).toBeInTheDocument();
     });
 
     it('shows the player score', () => {
@@ -100,7 +100,138 @@ describe('NineDashGame', () => {
 
       render(<NineDashGame {...props} />);
 
-      expect(screen.queryByPlaceholderText(/make a word/i)).not.toBeInTheDocument();
+      expect(screen.queryByPlaceholderText(/tap letters to make a word/i)).not.toBeInTheDocument();
+    });
+
+    it('shows Clear and Submit buttons', () => {
+      const state = createBaseState();
+      state.round.state = 'active';
+      state.round.letters = TILES;
+      state.round.durationMs = 120000;
+
+      render(<NineDashGame {...createDefaultProps(state)} />);
+
+      expect(screen.getByRole('button', { name: /clear/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /submit/i })).toBeInTheDocument();
+    });
+
+    it('shows backspace button', () => {
+      const state = createBaseState();
+      state.round.state = 'active';
+      state.round.letters = TILES;
+      state.round.durationMs = 120000;
+
+      render(<NineDashGame {...createDefaultProps(state)} />);
+
+      expect(screen.getByRole('button', { name: /backspace/i })).toBeInTheDocument();
+    });
+
+    it('appends letter to input when tile is clicked', () => {
+      const state = createBaseState();
+      state.round.state = 'active';
+      state.round.letters = TILES;
+      state.round.durationMs = 120000;
+
+      render(<NineDashGame {...createDefaultProps(state)} />);
+
+      fireEvent.click(screen.getByText('T'));
+      fireEvent.click(screen.getByText('R'));
+
+      const input = screen.getByPlaceholderText(/tap letters to make a word/i);
+      expect(input).toHaveValue('TR');
+    });
+
+    it('does not append a letter when the same tile is clicked twice', () => {
+      const state = createBaseState();
+      state.round.state = 'active';
+      state.round.letters = TILES;
+      state.round.durationMs = 120000;
+
+      render(<NineDashGame {...createDefaultProps(state)} />);
+
+      fireEvent.click(screen.getByText('T'));
+      fireEvent.click(screen.getByText('T'));
+
+      const input = screen.getByPlaceholderText(/tap letters to make a word/i);
+      expect(input).toHaveValue('T');
+    });
+
+    it('highlights selected tiles', () => {
+      const state = createBaseState();
+      state.round.state = 'active';
+      state.round.letters = TILES;
+      state.round.durationMs = 120000;
+
+      render(<NineDashGame {...createDefaultProps(state)} />);
+
+      fireEvent.click(screen.getByText('T'));
+
+      const tile = screen.getByText('T').closest('[role="gridcell"]');
+      expect(tile).toHaveClass('letter-grid-tile-selected');
+    });
+
+    it('removes last letter when backspace is clicked', () => {
+      const state = createBaseState();
+      state.round.state = 'active';
+      state.round.letters = TILES;
+      state.round.durationMs = 120000;
+
+      render(<NineDashGame {...createDefaultProps(state)} />);
+
+      fireEvent.click(screen.getByText('T'));
+      fireEvent.click(screen.getByText('R'));
+      fireEvent.click(screen.getByRole('button', { name: /backspace/i }));
+
+      const input = screen.getByPlaceholderText(/tap letters to make a word/i);
+      expect(input).toHaveValue('T');
+    });
+
+    it('clears input when Clear is clicked', () => {
+      const state = createBaseState();
+      state.round.state = 'active';
+      state.round.letters = TILES;
+      state.round.durationMs = 120000;
+
+      render(<NineDashGame {...createDefaultProps(state)} />);
+
+      fireEvent.click(screen.getByText('T'));
+      fireEvent.click(screen.getByText('R'));
+      fireEvent.click(screen.getByText('I'));
+      fireEvent.click(screen.getByRole('button', { name: /clear/i }));
+
+      const input = screen.getByPlaceholderText(/tap letters to make a word/i);
+      expect(input).toHaveValue('');
+    });
+
+    it('shows error when submitting with empty input', async () => {
+      const state = createBaseState();
+      state.round.state = 'active';
+      state.round.letters = TILES;
+      state.round.durationMs = 120000;
+
+      vi.mocked(fetch).mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({}),
+      } as Response);
+
+      render(<NineDashGame {...createDefaultProps(state)} />);
+
+      fireEvent.submit(screen.getByRole('button', { name: /submit/i }));
+
+      expect(await screen.findByText(/select some letters first/i)).toBeInTheDocument();
+    });
+
+    it('shows hint message when input is clicked', () => {
+      const state = createBaseState();
+      state.round.state = 'active';
+      state.round.letters = TILES;
+      state.round.durationMs = 120000;
+
+      render(<NineDashGame {...createDefaultProps(state)} />);
+
+      fireEvent.click(screen.getByPlaceholderText(/tap letters to make a word/i));
+
+      expect(screen.getByText(/tap the letters in the grid/i)).toBeInTheDocument();
     });
   });
 

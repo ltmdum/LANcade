@@ -41,7 +41,7 @@ export const plugin: GamePlugin = {
     description: "Make as many words as you can from the available 3x3 grid of letters before time runs out.",
     instructions: [
       { heading: "Grid", text: "A 3x3 grid of nine letters is revealed." },
-      { heading: "Submit", text: "Submit as many words as you can using only those letters. Each letter can be used once per word." },
+      { heading: "Submit", text: "Tap letters on the grid to build words, then tap Submit. Each letter can be used once per word." },
       { heading: "Scoring", text: "Every accepted word scores one point per letter." },
       { heading: "Bonus", text: "The hidden nine-letter word scores double (18 points) if you find it!" },
       { heading: "Voting", text: "When time's up, vote to accept or reject other players' words. Words that receive too many downvotes are removed." },
