@@ -4,6 +4,7 @@ interface ScoreBoardProps {
   scores: Record<string, number>;
   playerLookup: Record<string, string>;
   winnerId: string | null;
+  winningScore: number;
 }
 
 /**
@@ -11,7 +12,7 @@ interface ScoreBoardProps {
  * @param props ScoreBoard props.
  * @returns ScoreBoard element.
  */
-export function ScoreBoard({ scores, playerLookup, winnerId }: ScoreBoardProps) {
+export function ScoreBoard({ scores, playerLookup, winnerId, winningScore }: ScoreBoardProps) {
   const sortedScores = Object.entries(scores)
     .map(([id, score]) => ({ id, name: playerLookup[id] || 'Unknown', score }))
     .sort((a, b) => b.score - a.score);
@@ -36,7 +37,7 @@ export function ScoreBoard({ scores, playerLookup, winnerId }: ScoreBoardProps) 
           );
         })}
       </div>
-      <div className="scoreboard-goal">First to 25 wins!</div>
+      <div className="scoreboard-goal">First to {winningScore} wins!</div>
     </div>
   );
 }

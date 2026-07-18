@@ -54,7 +54,8 @@ export function UndercoverSubmitPanel({
 
       {hasSubmittedThisRound ? (
         <p className="undercover-turn-info">
-          You have submitted your clue this round. Waiting for others...
+          You have submitted your clue this round. Waiting for{' '}
+          <strong>{currentTurnPlayerName}</strong> to submit...
         </p>
       ) : isMyTurn ? (
         <div>

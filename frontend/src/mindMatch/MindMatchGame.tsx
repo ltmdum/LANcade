@@ -33,6 +33,7 @@ export function MindMatchGame({
 
   const round = serverState.round;
   const scores = serverState.scores || {};
+  const winningScore = (serverState.gameSettings?.winningScore as number) ?? 25;
 
   const playerLookup = useMemo(() => {
     const lookup: Record<string, string> = {};
@@ -130,6 +131,7 @@ export function MindMatchGame({
           scores={scores}
           playerLookup={playerLookup}
           winnerId={null}
+          winningScore={winningScore}
         />
       )}
 
