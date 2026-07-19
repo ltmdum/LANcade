@@ -17,9 +17,8 @@ describe('resolveBindAddress', () => {
     expect(result).toBe('192.168.1.10');
   });
 
-  it('throws when no private interface found', () => {
-    expect(() => resolveBindAddress(null, [])).toThrow(
-      'No private network interface was found'
-    );
+  it('falls back to 0.0.0.0 when no private interface found', () => {
+    const result = resolveBindAddress(null, []);
+    expect(result).toBe('0.0.0.0');
   });
 });

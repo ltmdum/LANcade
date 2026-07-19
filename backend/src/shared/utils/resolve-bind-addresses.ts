@@ -6,7 +6,6 @@
  * @param explicitHost HOST env var value, or null if not set.
  * @param lanAddresses Private IPv4 addresses discovered on the machine, best first.
  * @returns Address to bind to.
- * @throws When no private network interface is available.
  */
 export function resolveBindAddress(
   explicitHost: string | null,
@@ -17,9 +16,12 @@ export function resolveBindAddress(
   }
 
   if (lanAddresses.length === 0) {
-    throw new Error(
-      'No private network interface was found. Set HOST explicitly or connect to a LAN.'
+    console.warn(
+      'No Wi-Fi network detected. Other devices cannot join over the network, ' +
+      'but single-player games will still work. To play with others, connect to ' +
+      'a Wi-Fi network or set the HOST environment variable to the device\'s IP address.'
     );
+    return '0.0.0.0';
   }
   return lanAddresses[0];
 }

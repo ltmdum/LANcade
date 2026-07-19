@@ -3,7 +3,6 @@ import { createGameBase } from '../shared/stores/game-base.js';
 
 interface TelepathyOptions {
   onStateChange?: () => void;
-  clientGraceMs?: number;
   playerStore?: import('../shared/stores/player-store.js').PlayerStore;
 }
 

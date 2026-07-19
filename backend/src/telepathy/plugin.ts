@@ -4,7 +4,6 @@ import { createGame } from './telepathy.js';
 function factory(options: GameFactoryOptions): BaseGame {
   return createGame({
     onStateChange: options.onStateChange,
-    clientGraceMs: options.clientGraceMs,
     playerStore: options.playerStore,
   });
 }

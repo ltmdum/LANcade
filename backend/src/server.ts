@@ -820,13 +820,7 @@ function createServer(): http.Server | https.Server {
 warnIfUntrustedNetwork();
 
 // Resolve which address to bind to
-let bindAddress: string;
-try {
-  bindAddress = resolveBindAddress(EXPLICIT_HOST, getLanAddresses());
-} catch (err) {
-  console.error(`Error: ${(err as Error).message}`);
-  process.exit(1);
-}
+const bindAddress = resolveBindAddress(EXPLICIT_HOST, getLanAddresses());
 
 const scheme = tlsConfig ? 'https' : 'http';
 const server = createServer();

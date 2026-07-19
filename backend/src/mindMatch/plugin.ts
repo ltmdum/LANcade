@@ -28,7 +28,6 @@ function adaptToBaseGame(game: MindMatchGame): BaseGame {
 function factory(options: GameFactoryOptions): BaseGame {
   const game = createGame({
     onStateChange: options.onStateChange,
-    clientGraceMs: options.clientGraceMs,
     playerStore: options.playerStore,
   });
   return adaptToBaseGame(game);

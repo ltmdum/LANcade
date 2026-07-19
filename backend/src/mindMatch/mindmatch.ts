@@ -20,7 +20,6 @@ const SIMILARITY_THRESHOLD = 0.6; // Minimum similarity ratio (0-1) for claim el
 
 export interface MindMatchGameOptions {
   onStateChange?: () => void;
-  clientGraceMs?: number;
   playerStore?: PlayerStore;
 }
 
@@ -142,7 +141,6 @@ function selectRandomPrompt(usedIds: Set<number>): MindMatchPrompt {
  */
 export function createGame(options: MindMatchGameOptions = {}): MindMatchGame {
   const onStateChange = options.onStateChange || (() => {});
-  const clientGraceMs = Number.isFinite(options.clientGraceMs) ? options.clientGraceMs! : 5000;
   const playerStore = options.playerStore;
 
   let round = createEmptyRound();

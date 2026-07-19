@@ -8,7 +8,6 @@ export interface FiveLetterWordGameOptions {
   playerStore?: PlayerStore;
   validWords?: Set<string>;
   answerWords?: string[];
-  clientGraceMs?: number;
 }
 
 /** A single row in a player's grid */
@@ -155,7 +154,6 @@ export function createGame(options: FiveLetterWordGameOptions = {}) {
   let match = createEmptyMatch();
   let hardMode = false;
   let gracePeriodSeconds = 60;
-  const clientGraceMs = options.clientGraceMs ?? 5000;
 
   /**
    * Clear the grace period timeout.
@@ -188,7 +186,7 @@ export function createGame(options: FiveLetterWordGameOptions = {}) {
    */
   function startGracePeriod(): void {
     clearGraceTimeout();
-    const durationMs = gracePeriodSeconds * 1000 + clientGraceMs;
+    const durationMs = gracePeriodSeconds * 1000;
     match.graceEndsAt = Date.now() + gracePeriodSeconds * 1000;
     match.graceTimeout = setTimeout(() => {
       endGracePeriod();

@@ -188,6 +188,7 @@
     background-color: inherit;
     max-width: 120px;
     z-index: 1;
+    overflow: hidden;
   }
 
   .results-table thead th {
@@ -222,6 +223,7 @@
   }
 
   .results-table tbody tr.highlight td:first-child {
-    background-color: var(--accent-muted);
+    background-color: var(--bg-card);
+    box-shadow: inset 3px 0 0 var(--accent);
   }
 }
