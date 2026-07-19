@@ -1,16 +1,29 @@
 /* GameSettingsPanel component styles */
 .game-settings-controls {
-  @apply flex flex-wrap items-end gap-3;
+  @apply flex flex-wrap items-start gap-3;
 }
 
 .game-settings-field {
 }
 
 .game-settings-label {
-  @apply block text-sm font-medium mb-1;
+  @apply block text-base font-medium mb-1;
   color: var(--text-primary);
 }
 
 .game-settings-select {
   @apply input w-full;
+}
+
+.game-settings-duration-row {
+  @apply flex gap-2;
+}
+
+.game-settings-select-alone {
+  margin-top: 1.5rem;
+}
+
+.game-settings-controls > .game-settings-field + .game-settings-field {
+  border-left: 1px solid var(--border);
+  padding-left: 1rem;
 }

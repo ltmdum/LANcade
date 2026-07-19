@@ -73,7 +73,7 @@ export const plugin: GamePlugin = {
           label: `${i + 1} card${i === 0 ? '' : 's'}`,
           value: i + 1,
         })),
-        defaultValue: 1,
+        defaultValue: 3,
       },
     ],
   },

@@ -76,7 +76,7 @@ export const plugin: GamePlugin = {
       minutes: '00',
       seconds: '10',
     },
-    roundControlTitle: 'Game Control',
+    roundControlTitle: 'Voting Timout',
     joinPanelTitle: 'Join the Race',
     minPlayers: 2,
   },

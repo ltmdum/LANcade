@@ -1,5 +1,6 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { PlayerGuess } from './components/PlayerGuess';
+import { GuessGrid } from './components/GuessGrid';
 import { GameResult } from './components/GameResult';
 import { PlayAgainPanel } from '../shared/components/PlayAgainPanel';
 import { submitWord, startRound } from '../shared/utils/api';
@@ -63,6 +64,8 @@ export function FiveLetterWordGame({
   const [wordInput, setWordInput] = useState('');
   const [status, setStatus] = useState('');
   const [adminStatus, setAdminStatus] = useState('');
+  const submittingRef = useRef(false);
+  const [now, setNow] = useState(Date.now());
 
   const match = serverState.match;
   const hardMode = (serverState as FiveLetterWordState).gameSettings?.hardMode === 1;
@@ -92,7 +95,16 @@ export function FiveLetterWordGame({
     setStatus('');
   }, [match.id]);
 
+  // Tick clock for the grace period countdown
+  useEffect(() => {
+    if (match.state !== 'grace') return;
+    setNow(Date.now());
+    const interval = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(interval);
+  }, [match.state]);
+
   async function handleSubmit() {
+    if (submittingRef.current) return;
     const nonGreenCount = greenLetters.filter(l => !l).length;
     if (wordInput.length !== nonGreenCount) {
       setStatus('Enter a 5-letter word');
@@ -124,8 +136,10 @@ export function FiveLetterWordGame({
     }
 
     setStatus('');
+    submittingRef.current = true;
     try {
       const { response, data } = await submitWord(playerId, fullWord, accessKey);
+      submittingRef.current = false;
       
       if (!response.ok) {
         const reason = data?.reason || 'unknown';
@@ -145,6 +159,7 @@ export function FiveLetterWordGame({
       setStatus('');
     } catch {
       setStatus('Could not submit word');
+      submittingRef.current = false;
     }
   }
 
@@ -166,10 +181,23 @@ export function FiveLetterWordGame({
 
   if (match.state === 'idle') return null;
 
-  const isInputEnabled = isParticipating && match.state === 'active' && myState && !myState.solved && myState.grid.length < 6;
+  const canType = isParticipating && match.state === 'active' && myState && !myState.solved && myState.grid.length < 6;
+  const canTypeGrace = isParticipating && match.state === 'grace' && myState && !myState.solved && myState.grid.length < 6;
+
+  const graceRemaining = match.state === 'grace' && match.graceEndsAt
+    ? Math.max(0, Math.ceil((match.graceEndsAt - now) / 1000))
+    : 0;
+
+  const countdownDisplay = match.state === 'grace' ? (
+    <div className="game-grace-banner">
+      <span className="game-grace-timer">{graceRemaining}s</span>
+      <span>{myState?.solved ? 'You solved it! Waiting for others...' : 'Someone solved it! Solve before the countdown finishes!'}</span>
+    </div>
+  ) : null;
 
   return (
     <div className="wordsprint-game">
+      {/* Active state — normal play */}
       {match.state === 'active' && isParticipating && (
         <PlayerGuess
           playerState={myState}
@@ -177,7 +205,7 @@ export function FiveLetterWordGame({
           wordInput={wordInput}
           onWordInputChange={setWordInput}
           onSubmit={handleSubmit}
-          isInputEnabled={!!isInputEnabled}
+          isInputEnabled={!!canType}
           status={status}
           greenLetters={greenLetters}
         />
@@ -195,14 +223,58 @@ export function FiveLetterWordGame({
         />
       )}
 
-      {match.state === 'finished' && (
+      {/* Grace state — someone solved */}
+      {match.state === 'grace' && isParticipating && myState?.solved && (
         <>
+          {countdownDisplay}
+          <GuessGrid
+            grid={myState.grid}
+            currentRow={myState.grid.length}
+            currentInput=""
+            isInputEnabled={false}
+            rowBests={match.rowBests}
+            greenLetters={[null, null, null, null, null]}
+          />
+        </>
+      )}
+      {match.state === 'grace' && isParticipating && !myState?.solved && (
+        <>
+          {countdownDisplay}
+          <PlayerGuess
+            playerState={myState}
+            rowBests={match.rowBests}
+            wordInput={wordInput}
+            onWordInputChange={setWordInput}
+            onSubmit={handleSubmit}
+            isInputEnabled={!!canTypeGrace}
+            status={status}
+            greenLetters={greenLetters}
+          />
+        </>
+      )}
+      {match.state === 'grace' && !isParticipating && (
+        <PlayerGuess
+          playerState={undefined}
+          rowBests={match.rowBests}
+          wordInput=""
+          onWordInputChange={() => {}}
+          onSubmit={() => {}}
+          isInputEnabled={false}
+          status=""
+          greenLetters={[null, null, null, null, null]}
+        />
+      )}
+
+      {/* Finished state — results */}
+      {match.state === 'finished' && (
+        <div className="game-results-wrapper">
           <GameResult
             winnerId={match.winnerId}
             winnerName={match.winnerName}
             targetWord={match.targetWord}
             currentPlayerId={playerId}
             playerStates={match.playerStates}
+            finishOrder={match.finishOrder}
           />
 
           {isAdmin && (
@@ -214,7 +286,7 @@ export function FiveLetterWordGame({
               title="Next Steps"
             />
           )}
-        </>
+        </div>
       )}
     </div>
   );

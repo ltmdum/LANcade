@@ -1,7 +1,8 @@
 import { useId, useState, useEffect } from 'react';
 import { Panel } from './Panel';
+import { DurationSelector } from './DurationSelector';
 import { startRound } from '../utils/api';
-import { buildDurationMs, minuteOptions, secondOptions } from '../utils/time';
+import { buildDurationMs } from '../utils/time';
 import { checkPlayerRequirements } from '../utils/playerRequirements';
 import './RoundControl.css';
 
@@ -118,38 +119,11 @@ export function RoundControl({
           </div>
         )}
         {!customDuration && !hideTimer && (
-          <>
-            <div className="round-control-field">
-              <label className="round-control-label" htmlFor={`${baseId}-minutes`}>
-                Minutes
-              </label>
-              <select
-                id={`${baseId}-minutes`}
-                className="round-control-select"
-                value={minutes}
-                onChange={(e) => setMinutes(e.target.value)}
-              >
-                {minuteOptions.map((opt) => (
-                  <option key={opt} value={opt}>{opt}</option>
-                ))}
-              </select>
-            </div>
-            <div className="round-control-field">
-              <label className="round-control-label" htmlFor={`${baseId}-seconds`}>
-                Seconds
-              </label>
-              <select
-                id={`${baseId}-seconds`}
-                className="round-control-select"
-                value={seconds}
-                onChange={(e) => setSeconds(e.target.value)}
-              >
-                {secondOptions.map((opt) => (
-                  <option key={opt} value={opt}>{opt}</option>
-                ))}
-              </select>
-            </div>
-          </>
+          <DurationSelector
+            minutes={minutes}
+            seconds={seconds}
+            onChange={(m, s) => { setMinutes(m); setSeconds(s); }}
+          />
         )}
         <button
           type="button"

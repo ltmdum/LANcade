@@ -1,4 +1,4 @@
-import type { PlayerGameState } from '@lancade/shared';
+import type { PlayerGameState, PlayerFinishInfo, PlayerGridRow, LetterStatus } from '@lancade/shared';
 import './GameResult.css';
 
 interface GameResultProps {
@@ -7,14 +7,40 @@ interface GameResultProps {
   targetWord: string | null;
   currentPlayerId: string;
   playerStates: PlayerGameState[];
+  finishOrder: PlayerFinishInfo[];
 }
+
+/* ---------- cell helpers ---------- */
+
+function getCellClass(status: LetterStatus): string {
+  switch (status) {
+    case 'correct': return 'guess-cell-correct';
+    case 'present': return 'guess-cell-present';
+    default: return 'guess-cell-absent';
+  }
+}
+
+function GridRowPreview({ row }: { row: PlayerGridRow }) {
+  return (
+    <div className="gr-grid-row">
+      {row.letters.map((status, i) => (
+        <span key={i} className={`gr-cell ${getCellClass(status)}`}>{row.word[i]}</span>
+      ))}
+    </div>
+  );
+}
+
+/* ---------- main component ---------- */
 
 /**
  * Display the game result when finished.
  * @param props Result props.
  * @returns Result element.
  */
-export function GameResult({ winnerId, winnerName, targetWord, currentPlayerId, playerStates }: GameResultProps) {
+export function GameResult({
+  winnerId, winnerName, targetWord, currentPlayerId,
+  playerStates, finishOrder,
+}: GameResultProps) {
   const isWinner = winnerId === currentPlayerId;
   const hasWinner = winnerId !== null;
 
@@ -47,53 +73,44 @@ export function GameResult({ winnerId, winnerName, targetWord, currentPlayerId, 
         </div>
       )}
 
-      <PlayerSummary playerStates={playerStates} winnerId={winnerId} />
-    </div>
-  );
-}
-
-interface PlayerSummaryProps {
-  playerStates: PlayerGameState[];
-  winnerId: string | null;
-}
-
-/**
- * Summary of all players' performance.
- * @param props Player summary props.
- * @returns Player summary element.
- */
-function PlayerSummary({ playerStates, winnerId }: PlayerSummaryProps) {
-  if (playerStates.length <= 1) return null;
-
-  // Sort by: solved first, then by fewer guesses
-  const sortedStates = [...playerStates].sort((a, b) => {
-    if (a.playerId === winnerId) return -1;
-    if (b.playerId === winnerId) return 1;
-    if (a.solved && !b.solved) return -1;
-    if (!a.solved && b.solved) return 1;
-    return a.grid.length - b.grid.length;
-  });
-
-  return (
-    <div className="game-result-summary">
-      <h4 className="game-result-summary-title">Results</h4>
-      <div className="game-result-players">
-        {sortedStates.map((state, index) => (
-          <div 
-            key={state.playerId} 
-            className={`game-result-player ${state.playerId === winnerId ? 'game-result-player-winner' : ''}`}
-          >
-            <span className="game-result-player-rank">{index + 1}.</span>
-            <span className="game-result-player-name">{state.playerName}</span>
-            <span className="game-result-player-status">
-              {state.solved ? (
-                <span className="game-result-solved">{state.grid.length} guesses</span>
-              ) : (
-                <span className="game-result-failed">Not solved</span>
-              )}
-            </span>
-          </div>
-        ))}
+      <div className="game-result-summary">
+        <h4 className="game-result-summary-title">Leaderboard</h4>
+        <div className="game-result-players">
+          {finishOrder.length > 0 ? finishOrder.map((entry, index) => {
+            const pstate = playerStates.find(s => s.playerId === entry.playerId);
+            return (
+              <div
+                key={entry.playerId}
+                className={`game-result-player ${
+                  entry.playerId === winnerId ? 'game-result-player-winner' : ''
+                } ${entry.playerId === currentPlayerId ? 'game-result-player-me' : ''}`}
+              >
+                <div className="game-result-player-header">
+                  <span className="game-result-player-rank">{index + 1}.</span>
+                  <span className="game-result-player-name">{entry.playerName}</span>
+                  <span className="game-result-player-status">
+                    {entry.solved ? (
+                      <span className="game-result-solved">Solved in {entry.solvedAtRow} guesses</span>
+                    ) : (
+                      <span className="game-result-failed">Not solved</span>
+                    )}
+                  </span>
+                </div>
+                {pstate && pstate.grid.length > 0 && (
+                  <div className="gr-player-grid">
+                    {pstate.grid.map((row, ri) => (
+                      <GridRowPreview key={ri} row={row} />
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          }) : (
+            <div className="game-result-player">
+              <span className="game-result-player-name">No results</span>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

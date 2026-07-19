@@ -236,7 +236,7 @@ describe('fiveletterword', () => {
         game.submitWord(alice, 'APPLE');
         
         const state = game.getState();
-        expect(state.match.state).toBe('finished');
+        expect(state.match.state).toBe('grace');
         expect(state.match.winnerId).toBe(alice);
       });
     });
@@ -453,7 +453,7 @@ describe('fiveletterword', () => {
         expect(result.ok).toBe(true);
         
         const state = game.getState();
-        expect(state.gameSettings).toEqual({ hardMode: 1 });
+        expect(state.gameSettings).toMatchObject({ hardMode: 1 });
       });
     });
 
@@ -463,10 +463,10 @@ describe('fiveletterword', () => {
         const game = createGame({ playerStore: store, validWords: createTestWords(), answerWords: createTestAnswers() });
         
         game.updateSettings({ hardMode: 1 });
-        expect(game.getState().gameSettings).toEqual({ hardMode: 1 });
+        expect(game.getState().gameSettings).toMatchObject({ hardMode: 1 });
 
         game.updateSettings({ hardMode: 0 });
-        expect(game.getState().gameSettings).toEqual({ hardMode: 0 });
+        expect(game.getState().gameSettings).toMatchObject({ hardMode: 0 });
       });
     });
 
@@ -489,7 +489,7 @@ describe('fiveletterword', () => {
         const game = createGame({ playerStore: store, validWords: createTestWords(), answerWords: createTestAnswers() });
         
         const state = game.getState();
-        expect(state.gameSettings).toEqual({ hardMode: 0 });
+        expect(state.gameSettings).toMatchObject({ hardMode: 0, gracePeriodSeconds: 60 });
       });
     });
   });

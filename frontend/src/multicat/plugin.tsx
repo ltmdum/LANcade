@@ -80,7 +80,7 @@ export const plugin: GamePlugin = {
       minutes: '01',
       seconds: '30',
     },
-    roundControlTitle: 'Round Control',
+    roundControlTitle: 'Round Timer',
     joinPanelTitle: 'Join the Round',
     minPlayers: 1,
   },

@@ -76,7 +76,7 @@ export const plugin: GamePlugin = {
       minutes: '00',
       seconds: '20',
     },
-    roundControlTitle: 'Game Control',
+    roundControlTitle: 'Turn Timer',
     joinPanelTitle: 'Join the Game',
     minPlayers: 2,
   },

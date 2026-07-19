@@ -64,19 +64,34 @@ export interface GameSettingOption {
   value: number;
 }
 
-/** A declarative control rendered in the admin game settings panel. */
-export interface GameSettingControl {
-  /** Key used in the settings payload and server state. */
-  key: string;
-  /** Human-readable label. */
-  label: string;
-  /** Control type. */
-  type: 'select';
-  /** Available options. */
-  options: GameSettingOption[];
-  /** Default value. */
-  defaultValue: number;
-}
+/** A control rendered in the admin game settings panel. */
+export type GameSettingControl =
+  | {
+      /** Key used in the settings payload and server state. */
+      key: string;
+      /** Human-readable label. */
+      label: string;
+      /** Control type. */
+      type: 'select';
+      /** Available options. */
+      options: GameSettingOption[];
+      /** Default value. */
+      defaultValue: number;
+    }
+  | {
+      /** Key used in the settings payload and server state. */
+      key: string;
+      /** Human-readable label. */
+      label: string;
+      /** Control type. */
+      type: 'duration';
+      /** Default minutes value (defaults to '00'). */
+      defaultMinutes?: string;
+      /** Default seconds value (defaults to '30'). */
+      defaultSeconds?: string;
+      /** Multiplier to convert total seconds to the stored value. Defaults to 1 (seconds). Use 1000 for milliseconds. */
+      valueMultiplier?: number;
+    };
 
 /**
  * A frontend game plugin that provides configuration and a render function.

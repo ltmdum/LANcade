@@ -21,7 +21,7 @@ export const plugin: GamePlugin = {
     gameSettings: [
       {
         key: 'cardsPerPlayer',
-        label: 'Cards per Player',
+        label: 'Cards Each',
         type: 'select',
         options: Array.from({ length: 13 }, (_, i) => ({
           label: String(i + 1),

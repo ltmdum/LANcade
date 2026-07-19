@@ -1,0 +1,14 @@
+.duration-field {
+}
+
+.duration-label {
+  @apply block text-sm font-medium mb-1;
+  color: var(--text-primary);
+}
+
+.duration-select {
+  @apply input;
+  width: 3.5rem;
+  padding-left: 0.25rem;
+  padding-right: 0.25rem;
+}

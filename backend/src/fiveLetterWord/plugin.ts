@@ -10,6 +10,7 @@ function factory(options: GameFactoryOptions): BaseGame {
   return createGame({
     onStateChange: options.onStateChange,
     playerStore: options.playerStore,
+    clientGraceMs: options.clientGraceMs,
   });
 }
 

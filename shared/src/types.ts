@@ -164,14 +164,23 @@ export interface RowBestResult {
   yellowCount: number;
 }
 
+export interface PlayerFinishInfo {
+  playerId: string;
+  playerName: string;
+  solvedAtRow: number | null;
+  solved: boolean;
+}
+
 export interface FiveLetterWordMatchState {
   id: number;
-  state: 'idle' | 'active' | 'finished';
+  state: 'idle' | 'active' | 'grace' | 'finished';
   playerStates: PlayerGameState[];
   rowBests: RowBestResult[];
   targetWord: string | null;
   winnerId: string | null;
   winnerName: string | null;
+  graceEndsAt: number | null;
+  finishOrder: PlayerFinishInfo[];
 }
 
 export interface FiveLetterWordState {

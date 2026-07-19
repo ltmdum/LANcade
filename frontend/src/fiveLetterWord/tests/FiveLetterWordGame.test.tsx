@@ -47,6 +47,8 @@ function createBaseState(): FiveLetterWordState {
       targetWord: null,
       winnerId: null,
       winnerName: null,
+      graceEndsAt: null,
+      finishOrder: [],
     },
     game: { id: 'fiveletterword', name: '5 Letter Word' },
     games: [{ id: 'fiveletterword', name: '5 Letter Word' }],
@@ -375,11 +377,15 @@ describe('FiveLetterWordGame', () => {
       state.match.playerStates[0].grid = [
         { word: 'APPLE', letters: ['correct', 'correct', 'correct', 'correct', 'correct'] },
       ];
+      state.match.finishOrder = [
+        { playerId: 'player-1', playerName: 'Alice', solvedAtRow: 1, solved: true },
+        { playerId: 'player-2', playerName: 'Bob', solvedAtRow: null, solved: false },
+      ];
 
       render(<FiveLetterWordGame {...createDefaultProps(state)} />);
 
-      expect(screen.getByText('Results')).toBeInTheDocument();
-      expect(screen.getByText('1 guesses')).toBeInTheDocument();
+      expect(screen.getByText('Leaderboard')).toBeInTheDocument();
+      expect(screen.getByText('Solved in 1 guesses')).toBeInTheDocument();
       expect(screen.getByText('Not solved')).toBeInTheDocument();
     });
   });
