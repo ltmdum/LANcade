@@ -22,11 +22,18 @@
     .screenshot { width: 100%; border-radius: 8px; border: 1px solid #334155; }
     .screenshot-caption { color: #94a3b8; font-size: 0.85rem; margin: 0.25rem 0 0; }
     .side-text { width: 64%; flex-shrink: 0; color: #94a3b8; font-size: 0.85rem; margin: 0.25rem 0 0; }
+    .logo-row { text-align: center; margin-bottom: 1.5rem; }
+    .logo { width: 6rem; height: 6rem; border-radius: 0.5rem; }
+    .top-row { position: relative; text-align: center; margin-bottom: 1.5rem; }
+    .back-link { margin: 0; position: absolute; left: 0; top: 50%; transform: translateY(-50%); }
   </style>
 </head>
 <body>
   <div class="container">
-    <p><a href="index.html">&larr; All Games</a></p>
+    <div class="top-row">
+      <p class="back-link"><a href="index.html">&lsaquo; All Games</a></p>
+      <div class="logo-row"><img src="../icon.png" alt="LANcade" class="logo"></div>
+    </div>
     <h1>Trading Exchange</h1>
     <p class="slogan">Buy low, sell high, read the market</p>
 
@@ -170,7 +177,7 @@
       <li><strong>Winner:</strong> All trades settle at the total card value. Most profit wins! Ties are possible.</li>
     </ul>
 
-&larr; All Games</a>
+    <a href="index.html" class="back">&lsaquo; All Games</a>
   </div>
 </body>
 </html>

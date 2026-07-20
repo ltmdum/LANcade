@@ -11,6 +11,7 @@ import { GameInfoModal } from './shared/components/GameInfoModal';
 import { GameSettingsPanel } from './shared/components/GameSettingsPanel';
 import { parseAccess } from './shared/utils/accessMode';
 import { gamePluginRegistry } from './plugins';
+import iconImg from './assets/icon.png';
 import './App.css';
 
 function App() {
@@ -153,7 +154,10 @@ function App() {
         <div className="app-content">
           <div className="card">
             <header className="app-header">
-              <p className="app-header-label">LANcade</p>
+              <p className="app-header-label">
+                <img src={iconImg} alt="" className="app-header-icon" />
+                LANcade
+              </p>
               <h1 className="app-header-title">Open your invite link</h1>
               <p className="app-header-description">
                 Ask the host to share their player link, then tap it from your phone.
@@ -191,7 +195,8 @@ function App() {
             ) : (
               <>
                 <p className="app-header-label">
-                  {isAdmin ? 'Admin Console' : 'LAN Game'}
+                  <img src={iconImg} alt="" className="app-header-icon" />
+                  {isAdmin ? 'Admin Console' : 'LANcade'}
                 </p>
                 <h1 className="app-header-title">{gameName}</h1>
                 {gameSlogan && (

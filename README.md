@@ -1,4 +1,4 @@
-# LANcade (LAN)
+# <img src="docs/icon.png" alt="" width="36" style="vertical-align: middle; margin-right: 8px;"> LANcade
 
 Lightweight LAN-only party game server with a React + TypeScript frontend and Express backend.
 
