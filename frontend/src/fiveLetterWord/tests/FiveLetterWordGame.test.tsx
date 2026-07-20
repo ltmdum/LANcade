@@ -77,15 +77,14 @@ describe('FiveLetterWordGame', () => {
   });
 
   describe('idle state', () => {
-    it('renders nothing when match is idle', () => {
+    it('renders waiting panel and volume notice when match is idle', () => {
       const state = createBaseState();
       state.match.state = 'idle';
 
-      const { container } = render(
-        <FiveLetterWordGame {...createDefaultProps(state)} />
-      );
+      render(<FiveLetterWordGame {...createDefaultProps(state)} />);
 
-      expect(container.firstChild).toBeNull();
+      expect(screen.getByText('Waiting for the game to start...')).toBeInTheDocument();
+      expect(screen.getByText('Sound On!')).toBeInTheDocument();
     });
   });
 

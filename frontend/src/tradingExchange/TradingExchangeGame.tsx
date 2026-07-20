@@ -12,6 +12,8 @@ import { OrderbookLadder } from './components/OrderbookLadder';
 import { TradesList } from './components/TradesList';
 import { AuctionPanel } from './components/AuctionPanel';
 import { Leaderboard } from './components/Leaderboard';
+import { Panel } from '../shared/components/Panel';
+import { VolumeNotice } from '../shared/components/VolumeNotice';
 import './TradingExchangeGame.css';
 
 /**
@@ -121,9 +123,19 @@ export function TradingExchangeGame(props: GameComponentProps) {
     setShowConfig(true);
   }, [setShowConfig]);
 
-  if (ex.state === 'idle') return null;
+  if (ex.state === 'idle') {
+    return (
+      <Panel>
+        <VolumeNotice />
+      </Panel>
+    );
+  }
   if (!isParticipant && !isAdmin) {
-    return <p className="te-waiting">Waiting for next game...</p>;
+    return (
+      <Panel title="Game in Progress">
+        <VolumeNotice />
+      </Panel>
+    );
   }
 
   return (

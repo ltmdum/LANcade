@@ -54,10 +54,11 @@ describe('NineDashGame', () => {
     vi.clearAllMocks();
   });
 
-  it('renders nothing when round is idle', () => {
+  it('renders waiting panel and volume notice when round is idle', () => {
     const state = createBaseState();
-    const { container } = render(<NineDashGame {...createDefaultProps(state)} />);
-    expect(container.firstChild).toBeNull();
+    render(<NineDashGame {...createDefaultProps(state)} />);
+    expect(screen.getByText('Waiting for the game to start...')).toBeInTheDocument();
+    expect(screen.getByText('Sound On!')).toBeInTheDocument();
   });
 
   describe('active state', () => {

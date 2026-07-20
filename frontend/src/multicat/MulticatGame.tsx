@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { PlayAgainPanel } from '../shared/components/PlayAgainPanel';
 import { Panel } from '../shared/components/Panel';
+import { VolumeNotice } from '../shared/components/VolumeNotice';
 import { Leaderboard } from '../categoryclashshared/components/Leaderboard';
 import { PlayerResultsTable } from '../categoryclashshared/components/PlayerResultsTable';
 import { VotingPanel } from '../categoryclashshared/components/VotingPanel';
@@ -17,6 +18,7 @@ import {
   useClearCountdown,
   useNotifyFinish,
 } from '../shared/hooks/useGameUtils';
+import { useCountdownTick } from '../shared/hooks/useCountdownTick';
 import type { GameProps } from '../shared/types/GameProps';
 import type { CategoryClashState } from '@lancade/shared';
 import './MulticatGame.css';
@@ -42,6 +44,7 @@ export function MulticatGame({
   const [wordInputs, setWordInputs] = useState<Record<string, string>>({});
   const [flash, setFlash] = useState('');
   const [countdown, setCountdown] = useState('');
+  const [remainingMs, setRemainingMs] = useState<number | null>(null);
   const [timeUp, setTimeUp] = useState(false);
   const [roundId, setRoundId] = useState<number | null>(null);
   const [voteSet, setVoteSet] = useState<Set<string>>(new Set());
@@ -57,6 +60,8 @@ export function MulticatGame({
   const triggerFlash = useFlashTrigger(flashTimerRef, setFlash);
   const clearCountdown = useClearCountdown(countdownTimerRef, setCountdown);
   const notifyFinish = useNotifyFinish(playerId, accessKey, finishSentRef);
+
+  useCountdownTick(remainingMs);
 
   const round = serverState.round;
   const scoresByPlayer = round.scoresByPlayer || {};
@@ -117,12 +122,14 @@ export function MulticatGame({
         const remaining = endsAt - Date.now();
         if (remaining <= 0) {
           setCountdown('00:00');
+          setRemainingMs(0);
           clearCountdown();
           setTimeUp(true);
           notifyFinish(round.id);
           return;
         }
         setCountdown(formatMs(remaining));
+        setRemainingMs(remaining);
       }, 250);
     }
   }, [round.id, round.state, round.durationMs, playerId, roundId, clearCountdown, notifyFinish, countdownTimerRef]);
@@ -228,7 +235,13 @@ export function MulticatGame({
 
 
   const showView = round.letter && ['active', 'voting', 'results'].includes(round.state);
-  if (!showView) return null;
+  if (!showView) {
+    return (
+      <Panel>
+        <VolumeNotice />
+      </Panel>
+    );
+  }
 
   const statusMessage = status || (timeUp ? 'Time is up.' : '');
 

@@ -45,7 +45,7 @@ export const plugin: GamePlugin = {
         defaultValue: 0,
       },
     ],
-    roundControlTitle: 'Start Trading',
+    roundControlTitle: 'Card Reveal Timer',
     joinPanelTitle: 'Join the Exchange',
     minPlayers: 2,
   },

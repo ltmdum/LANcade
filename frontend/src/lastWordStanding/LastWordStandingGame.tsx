@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Panel } from '../shared/components/Panel';
+import { VolumeNotice } from '../shared/components/VolumeNotice';
 import { PlayAgainPanel } from '../shared/components/PlayAgainPanel';
 import { LastWordStandingActivePanel } from './components/LastWordStandingActivePanel';
 import { LastWordStandingVotingPanel } from './components/LastWordStandingVotingPanel';
@@ -10,6 +11,7 @@ import { handleWordSubmission } from '../shared/utils/wordSubmission';
 import { handleVoteSubmit } from '../shared/utils/voting';
 import { handlePlayAgain } from '../shared/utils/roundActions';
 import { useTimerRefs, useFlashTrigger, useClearCountdown } from '../shared/hooks/useGameUtils';
+import { useCountdownTick } from '../shared/hooks/useCountdownTick';
 import type { GameProps } from '../shared/types/GameProps';
 import type { LastWordStandingState } from '@lancade/shared';
 import './LastWordStandingGame.css';
@@ -38,6 +40,7 @@ export function LastWordStandingGame({
   const [submitStatus, setSubmitStatus] = useState<'success' | 'error' | ''>('');
   const [voteStatus, setVoteStatus] = useState('');
   const [countdown, setCountdown] = useState('');
+  const [remainingMs, setRemainingMs] = useState<number | null>(null);
   const [timeUp, setTimeUp] = useState(false);
   const [flash, setFlash] = useState('');
   const [clockSkewMs, setClockSkewMs] = useState(0);
@@ -47,6 +50,8 @@ export function LastWordStandingGame({
 
   const triggerFlash = useFlashTrigger(flashTimerRef, setFlash);
   const clearCountdown = useClearCountdown(countdownTimerRef, setCountdown);
+
+  useCountdownTick(remainingMs);
 
   const match = serverState.match;
   const players = serverState.players || [];
@@ -77,6 +82,7 @@ export function LastWordStandingGame({
     if (match.state !== 'active' || !match.turnEndsAt) {
       clearCountdown();
       setTimeUp(false);
+      setRemainingMs(null);
       return;
     }
 
@@ -86,16 +92,20 @@ export function LastWordStandingGame({
       clearInterval(countdownTimerRef.current);
       countdownTimerRef.current = null;
     }
-    setCountdown(formatMs(Math.max(0, endsAt - Date.now())));
+    const initial = Math.max(0, endsAt - Date.now());
+    setCountdown(formatMs(initial));
+    setRemainingMs(initial);
     countdownTimerRef.current = setInterval(() => {
       const remaining = endsAt - Date.now();
       if (remaining <= 0) {
         setCountdown('00:00');
+        setRemainingMs(0);
         clearCountdown();
         setTimeUp(true);
         return;
       }
       setCountdown(formatMs(remaining));
+      setRemainingMs(remaining);
     }, 250);
 
     return () => clearCountdown();
@@ -171,12 +181,18 @@ export function LastWordStandingGame({
     }
   }
 
-  if (match.state === 'idle') return null;
+  if (match.state === 'idle') {
+    return (
+      <Panel>
+        <VolumeNotice />
+      </Panel>
+    );
+  }
 
   if (!isInMatch && !isAdmin) {
     return (
       <Panel title="Game in Progress">
-        <p>Waiting for next game...</p>
+        <VolumeNotice />
       </Panel>
     );
   }

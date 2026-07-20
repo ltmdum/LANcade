@@ -3,12 +3,6 @@
   @apply flex flex-col gap-3 w-full max-w-2xl mx-auto px-2;
 }
 
-.te-waiting {
-  text-align: center;
-  color: var(--text-muted);
-  padding: 2rem 0;
-}
-
 /* Player Cards */
 .te-player-cards {
   @apply flex flex-col items-center gap-1;

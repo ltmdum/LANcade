@@ -1,0 +1,14 @@
+.volume-notice {
+  text-align: center;
+  color: var(--accent, #00C6F5);
+  font-size: 18px;
+  font-weight: 700;
+  margin: 12px 0 16px;
+  letter-spacing: 1px;
+}
+
+.idle {
+  text-align: center;
+  color: var(--text-secondary);
+  padding: 16px 0 4px;
+}

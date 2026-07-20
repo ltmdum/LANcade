@@ -13,6 +13,9 @@ import {
   useClearCountdown,
   useNotifyFinish,
 } from '../shared/hooks/useGameUtils';
+import { useCountdownTick } from '../shared/hooks/useCountdownTick';
+import { Panel } from '../shared/components/Panel';
+import { VolumeNotice } from '../shared/components/VolumeNotice';
 import { buildScoreboard } from '../categoryclashshared/utils/scoreboard';
 import type { GameProps } from '../shared/types/GameProps';
 import type { CategoryClashState } from '@lancade/shared';
@@ -33,11 +36,13 @@ function useRoundTimer(
 ) {
   const [timeUp, setTimeUp] = useState(false);
   const [roundId, setRoundId] = useState<number | null>(null);
+  const [remainingMs, setRemainingMs] = useState<number | null>(null);
 
   useEffect(() => {
     if (!playerId || round.state !== 'active' || !round.durationMs) {
       clearCountdown();
       setTimeUp(false);
+      setRemainingMs(null);
       return;
     }
     if (roundId !== round.id) {
@@ -46,21 +51,24 @@ function useRoundTimer(
       const endsAt = Date.now() + round.durationMs;
       clearCountdown();
       setCountdown(formatMs(round.durationMs));
+      setRemainingMs(round.durationMs);
       countdownTimerRef.current = setInterval(() => {
         const remaining = endsAt - Date.now();
         if (remaining <= 0) {
           setCountdown('00:00');
+          setRemainingMs(0);
           clearCountdown();
           setTimeUp(true);
           notifyFinish(round.id);
           return;
         }
         setCountdown(formatMs(remaining));
+        setRemainingMs(remaining);
       }, 250);
     }
   }, [round.id, round.state, round.durationMs, playerId, roundId, clearCountdown, countdownTimerRef, notifyFinish, setCountdown]);
 
-  return { timeUp, setTimeUp };
+  return { timeUp, setTimeUp, remainingMs };
 }
 
 /** Main game component for Nine Dash. */
@@ -91,9 +99,11 @@ export function NineDashGame({
   const clearCountdown = useClearCountdown(countdownTimerRef, setCountdown);
   const notifyFinish = useNotifyFinish(playerId, accessKey, finishSentRef);
 
-  const { timeUp } = useRoundTimer(
+  const { timeUp, remainingMs } = useRoundTimer(
     serverState.round, playerId, clearCountdown, countdownTimerRef, notifyFinish, setCountdown,
   );
+
+  useCountdownTick(remainingMs);
 
   const round = serverState.round;
   const letters = round.letters || [];
@@ -235,7 +245,13 @@ export function NineDashGame({
   }, [playerId, accessKey, voteSet, triggerFlash]);
 
   const showView = letters.length > 0 && ['active', 'voting', 'results'].includes(round.state);
-  if (!showView) return null;
+  if (!showView) {
+    return (
+      <Panel>
+        <VolumeNotice />
+      </Panel>
+    );
+  }
 
   const statusMessage = status || (timeUp ? 'Time is up. Waiting for others...' : '');
 

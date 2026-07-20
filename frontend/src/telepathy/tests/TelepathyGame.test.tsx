@@ -6,6 +6,24 @@ import type { TelepathyState } from '@lancade/shared';
 const mockFetch = vi.fn();
 vi.stubGlobal('fetch', mockFetch);
 
+const mockGainNode = {
+  connect: vi.fn().mockReturnThis(),
+  gain: { setValueAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn() },
+};
+const mockOscNode = {
+  connect: vi.fn().mockReturnValue(mockGainNode),
+  frequency: { value: 0 },
+  type: '',
+  start: vi.fn(),
+  stop: vi.fn(),
+};
+vi.stubGlobal('AudioContext', vi.fn(() => ({
+  createOscillator: vi.fn().mockReturnValue(mockOscNode),
+  createGain: vi.fn().mockReturnValue(mockGainNode),
+  destination: {},
+  currentTime: 0,
+})));
+
 function createBaseState(): TelepathyState {
   return {
     serverTime: Date.now(),

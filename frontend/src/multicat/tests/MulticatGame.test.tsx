@@ -64,15 +64,14 @@ describe('MulticatGame', () => {
   });
 
   describe('idle state', () => {
-    it('renders nothing when round is idle', () => {
+    it('renders waiting panel and volume notice when round is idle', () => {
       const state = createBaseState();
       state.round.state = 'idle';
 
-      const { container } = render(
-        <MulticatGame {...createDefaultProps(state)} />
-      );
+      render(<MulticatGame {...createDefaultProps(state)} />);
 
-      expect(container.firstChild).toBeNull();
+      expect(screen.getByText('Waiting for the game to start...')).toBeInTheDocument();
+      expect(screen.getByText('Sound On!')).toBeInTheDocument();
     });
   });
 

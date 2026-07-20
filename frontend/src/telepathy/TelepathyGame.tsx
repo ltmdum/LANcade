@@ -1,8 +1,15 @@
+import { useEffect, useRef } from 'react';
 import type { TelepathyState } from '@lancade/shared';
 import type { GameProps } from '../shared/types/GameProps';
 import { gameAction } from '../shared/utils/api';
 import { Panel } from '../shared/components/Panel';
+import { VolumeNotice } from '../shared/components/VolumeNotice';
+import { playPopSound, warmupAudio } from '../shared/utils/sounds';
 import './TelepathyGame.css';
+
+function cardToFrequency(card: number): number {
+  return 150 + (Math.log(card) / Math.log(100)) * 750;
+}
 
 interface TelepathyGameProps extends GameProps {
   serverState: TelepathyState;
@@ -11,8 +18,8 @@ interface TelepathyGameProps extends GameProps {
 /** Idle phase — waiting for game to start. */
 function IdlePhase() {
   return (
-    <Panel title="Telepathy">
-      <p className="telepathy-idle">Waiting for the game to start...</p>
+    <Panel>
+      <VolumeNotice />
     </Panel>
   );
 }
@@ -133,6 +140,26 @@ export function TelepathyGame({
 }: TelepathyGameProps) {
   const tp = serverState.telepathy;
 
+  const prevPhaseRef = useRef(tp.phase);
+  const prevLastPlacedRef = useRef(tp.lastPlaced);
+
+  useEffect(() => {
+    const prevPhase = prevPhaseRef.current;
+    prevPhaseRef.current = tp.phase;
+
+    if (prevPhase !== 'playing' && tp.phase === 'playing') {
+      warmupAudio();
+      return;
+    }
+
+    const prevLastPlaced = prevLastPlacedRef.current;
+    prevLastPlacedRef.current = tp.lastPlaced;
+
+    if (prevLastPlaced !== tp.lastPlaced && tp.lastPlaced !== null) {
+      playPopSound(cardToFrequency(tp.lastPlaced));
+    }
+  }, [tp.phase, tp.lastPlaced]);
+
   async function handlePlace() {
     await gameAction(playerId, { type: 'place' }, accessKey);
   }
@@ -197,7 +224,7 @@ function PlayerHand({ cards, onPlace, canPlace, isParticipating }: PlayerHandPro
     <div className="telepathy-hand">
       <div className="telepathy-hand-cards">
         {cards.map((card, i) => (
-          <span key={i} className="telepathy-hand-card">{card}</span>
+          <span key={i} className={`telepathy-hand-card${i === 0 ? ' telepathy-hand-card-next' : ''}`}>{card}</span>
         ))}
       </div>
       <button

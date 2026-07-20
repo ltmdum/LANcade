@@ -54,13 +54,13 @@ describe('Telepathy', () => {
       const { game } = createDefaultGame();
       game.startRound(0);
       const state = getState(game);
-      expect(state.telepathy.round).toBe(1);
-      expect(state.telepathy.totalCardsInRound).toBe(2);
+      expect(state.telepathy.round).toBe(8);
+      expect(state.telepathy.totalCardsInRound).toBe(16);
 
       const hands = state.telepathy.hands!;
       expect(Object.keys(hands)).toHaveLength(2);
       for (const cards of Object.values(hands)) {
-        expect(cards).toHaveLength(1);
+        expect(cards).toHaveLength(8);
       }
     });
 
@@ -101,6 +101,7 @@ describe('Telepathy', () => {
 
     it('transitions to round_complete when all cards placed', () => {
       const { game } = createDefaultGame();
+      game.updateSettings({ startingRound: 1 });
       game.startRound(0);
 
       const state = getState(game);
@@ -228,6 +229,7 @@ describe('Telepathy', () => {
   describe('round_complete', () => {
     it('advances to next round on progress', () => {
       const { game } = createDefaultGame();
+      game.updateSettings({ startingRound: 1 });
       game.startRound(0);
 
       const state = getState(game);
@@ -252,6 +254,7 @@ describe('Telepathy', () => {
 
     it('rejects place action in round_complete', () => {
       const { game } = createDefaultGame();
+      game.updateSettings({ startingRound: 1 });
       game.startRound(0);
 
       const state = getState(game);
@@ -327,6 +330,7 @@ describe('Telepathy', () => {
 
     it('accepts progress in round_complete phase', () => {
       const { game } = createDefaultGame();
+      game.updateSettings({ startingRound: 1 });
       game.startRound(0);
       const state = getState(game);
       game.hands = { [state.players[0].id]: [3], [state.players[1].id]: [7] };
@@ -358,12 +362,12 @@ describe('Telepathy', () => {
       expect(state.telepathy.round).toBe(50);
     });
 
-    it('defaults to round 1 without settings', () => {
+    it('defaults starting round from player count', () => {
       const { game } = createDefaultGame();
       game.startRound(0);
 
       const state = getState(game);
-      expect(state.telepathy.round).toBe(1);
+      expect(state.telepathy.round).toBe(8);
     });
 
     it('notifies state change when setting changes', () => {
@@ -403,6 +407,7 @@ describe('Telepathy', () => {
 
     it('works from any phase', () => {
       const { game } = createDefaultGame();
+      game.updateSettings({ startingRound: 1 });
       game.startRound(0);
       game.endGame();
       expect(getState(game).telepathy.phase).toBe('idle');

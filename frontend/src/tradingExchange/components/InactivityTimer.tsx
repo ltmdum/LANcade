@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useCountdownTick } from '../../shared/hooks/useCountdownTick';
 
 interface InactivityTimerProps {
   roundEndsAt: number | null;
@@ -13,6 +14,8 @@ interface InactivityTimerProps {
  */
 export function InactivityTimer({ roundEndsAt, clockSkewMs }: InactivityTimerProps) {
   const [remainingMs, setRemainingMs] = useState(0);
+
+  useCountdownTick(remainingMs > 0 ? remainingMs : null);
 
   useEffect(() => {
     if (!roundEndsAt) {

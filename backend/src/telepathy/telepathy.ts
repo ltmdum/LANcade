@@ -36,12 +36,22 @@ export function createGame(options: TelepathyOptions) {
   let phase: TelepathyGameState['phase'] = 'idle';
   let round = 1;
   let targetRound = 1;
-  let startingRound = 1;
+  let startingRound: number | null = null;
   let hands: Record<string, number[]> = {};
   let lastPlaced: number | null = null;
   let totalPlaced = 0;
   let totalCardsInRound = 0;
   let lossDetails: LossDetails | null = null;
+
+  function computeDefaultStartingRound(playerCount: number): number {
+    if (playerCount > 50) return 1;
+    return Math.max(2, 10 - playerCount);
+  }
+
+  function getStartingRound(): number {
+    if (startingRound !== null) return startingRound;
+    return computeDefaultStartingRound(base.playerStore.listPlayers().length);
+  }
 
   function notify() {
     onStateChange?.();
@@ -76,7 +86,7 @@ export function createGame(options: TelepathyOptions) {
       serverTime: Date.now(),
       players: base.playerStore.listPlayers(),
       settings: base.categoryManager.getSettings(),
-      gameSettings: { startingRound },
+      gameSettings: { startingRound: getStartingRound() },
       telepathy: {
         phase,
         round,
@@ -126,7 +136,7 @@ export function createGame(options: TelepathyOptions) {
     }
 
     targetRound = Math.floor(TOTAL_CARDS / players.length);
-    round = Math.max(1, Math.min(startingRound, targetRound));
+    round = Math.max(1, Math.min(getStartingRound(), targetRound));
     lossDetails = null;
     lastPlaced = null;
     totalPlaced = 0;

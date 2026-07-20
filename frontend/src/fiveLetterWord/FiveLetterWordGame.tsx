@@ -4,6 +4,9 @@ import { GuessGrid } from './components/GuessGrid';
 import { GameResult } from './components/GameResult';
 import { PlayAgainPanel } from '../shared/components/PlayAgainPanel';
 import { submitWord, startRound } from '../shared/utils/api';
+import { useCountdownTick } from '../shared/hooks/useCountdownTick';
+import { Panel } from '../shared/components/Panel';
+import { VolumeNotice } from '../shared/components/VolumeNotice';
 import type { GameProps } from '../shared/types/GameProps';
 import type { FiveLetterWordState } from '@lancade/shared';
 import './FiveLetterWordGame.css';
@@ -69,6 +72,12 @@ export function FiveLetterWordGame({
 
   const match = serverState.match;
   const hardMode = (serverState as FiveLetterWordState).gameSettings?.hardMode === 1;
+
+  const graceRemaining = match.state === 'grace' && match.graceEndsAt
+    ? Math.max(0, Math.ceil((match.graceEndsAt - now) / 1000))
+    : 0;
+
+  useCountdownTick(graceRemaining > 0 ? graceRemaining * 1000 : null);
 
   const myState = useMemo(() => {
     return match.playerStates.find(s => s.playerId === playerId);
@@ -179,14 +188,16 @@ export function FiveLetterWordGame({
     }
   }
 
-  if (match.state === 'idle') return null;
+  if (match.state === 'idle') {
+    return (
+      <Panel>
+        <VolumeNotice />
+      </Panel>
+    );
+  }
 
   const canType = isParticipating && match.state === 'active' && myState && !myState.solved && myState.grid.length < 6;
   const canTypeGrace = isParticipating && match.state === 'grace' && myState && !myState.solved && myState.grid.length < 6;
-
-  const graceRemaining = match.state === 'grace' && match.graceEndsAt
-    ? Math.max(0, Math.ceil((match.graceEndsAt - now) / 1000))
-    : 0;
 
   const countdownDisplay = match.state === 'grace' ? (
     <div className="game-grace-banner">

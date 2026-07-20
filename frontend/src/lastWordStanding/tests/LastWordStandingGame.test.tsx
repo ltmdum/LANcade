@@ -67,15 +67,13 @@ describe('LastWordStandingGame', () => {
   });
 
   describe('idle state', () => {
-    it('renders nothing when match is idle', () => {
+    it('renders waiting panel and volume notice when match is idle', () => {
       const state = createBaseState();
       state.match.state = 'idle';
 
-      const { container } = render(
-        <LastWordStandingGame {...createDefaultProps(state)} />
-      );
+      render(<LastWordStandingGame {...createDefaultProps(state)} />);
 
-      expect(container.firstChild).toBeNull();
+      expect(screen.getByText('Sound On!')).toBeInTheDocument();
     });
   });
 
@@ -342,7 +340,7 @@ describe('LastWordStandingGame', () => {
 
       render(<LastWordStandingGame {...props} />);
 
-      expect(screen.getByText(/waiting for next game/i)).toBeInTheDocument();
+      expect(screen.getByText('Sound On!')).toBeInTheDocument();
       expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
     });
 
@@ -367,7 +365,7 @@ describe('LastWordStandingGame', () => {
 
       render(<LastWordStandingGame {...props} />);
 
-      expect(screen.getByText(/waiting for next game/i)).toBeInTheDocument();
+      expect(screen.getByText('Sound On!')).toBeInTheDocument();
       expect(screen.queryByRole('button', { name: /accept/i })).not.toBeInTheDocument();
     });
 
@@ -383,7 +381,7 @@ describe('LastWordStandingGame', () => {
 
       render(<LastWordStandingGame {...props} />);
 
-      expect(screen.getByText(/waiting for next game/i)).toBeInTheDocument();
+      expect(screen.getByText('Sound On!')).toBeInTheDocument();
     });
 
     it('only shows match participants in player tag list', () => {
