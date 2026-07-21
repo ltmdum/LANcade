@@ -94,6 +94,10 @@
   @apply text-center;
 }
 
+.alphabet-race-skip-row {
+  @apply flex justify-center mt-4;
+}
+
 .alphabet-progress-count {
   @apply text-sm text-center;
   color: var(--text-muted);

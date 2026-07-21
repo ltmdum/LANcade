@@ -65,11 +65,12 @@ export const plugin: GamePlugin = {
     slogan: "A race around the alphabet!",
     description: "Be the first to submit a word for each letter of the alphabet.",
     instructions: [
-      { heading: "Start", text: "Play starts on a random letter and cycles through the entire alphabet." },
-      { heading: "Race", text: "Be the first to submit a word for each letter." },
+      { heading: "Start", text: "Play starts on a random letter and progresses through the entire alphabet in random order." },
+      { heading: "Race", text: "Be the first to submit a word for the current letter." },
       { heading: "Vote", text: "Players vote to accept or reject whether the word belongs to the category." },
       { heading: "Penalty", text: "If rejected, you sit out this letter AND the next one." },
       { heading: "Score", text: "Accepted words score 1 point, then play moves to the next letter." },
+      { heading: "Skip", text: "The host can skip a letter if the group is stuck." },
       { heading: "Winner", text: "The player with the most points after all 26 letters wins! Ties are possible." },
     ],
     defaultTimer: {

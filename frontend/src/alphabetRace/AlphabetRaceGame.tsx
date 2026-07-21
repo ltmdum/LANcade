@@ -6,7 +6,7 @@ import { AlphabetVotingPanel } from './components/AlphabetVotingPanel';
 import { LetterProgress } from './components/LetterProgress';
 import { AlphabetScoreBoard } from './components/AlphabetScoreBoard';
 import { AlphabetWinnerDisplay } from './components/AlphabetWinnerDisplay';
-import { submitWord } from '../shared/utils/api';
+import { submitWord, gameAction } from '../shared/utils/api';
 import { handleVoteSubmit } from '../shared/utils/voting';
 import { handlePlayAgain } from '../shared/utils/roundActions';
 import { useTimerRefs, useFlashTrigger } from '../shared/hooks/useGameUtils';
@@ -103,6 +103,7 @@ export function AlphabetRaceGame({
       onWordSubmit={buildWordSubmitHandler({ wordInput, playerId, accessKey, setStatus, setWordInput, setSubmitStatus, triggerFlash })}
       onVote={buildVoteHandler({ playerId, accessKey, setVoteStatus, triggerFlash })}
       onRestart={buildRestartHandler({ match, accessKey, setAdminStatus, setShowConfig })}
+      onSkipLetter={buildSkipHandler({ accessKey, setAdminStatus })}
       setShowConfig={setShowConfig}
       isParticipating={isParticipating}
     />
@@ -210,6 +211,25 @@ function buildRestartHandler(config: RestartHandlerConfig) {
   };
 }
 
+/**
+ * Build the skip letter handler for admin.
+ * @param config Configuration for the handler.
+ * @returns Skip handler function.
+ */
+function buildSkipHandler(config: { accessKey: string; setAdminStatus: (s: string) => void }) {
+  return async () => {
+    config.setAdminStatus('');
+    try {
+      const { response, data } = await gameAction('', { type: 'skipLetter' }, config.accessKey);
+      if (!response.ok) {
+        config.setAdminStatus(data.error || 'Could not skip letter.');
+      }
+    } catch {
+      config.setAdminStatus('Could not skip letter.');
+    }
+  };
+}
+
 /** Computed match flags for the current player. */
 interface MatchFlags {
   isParticipant: boolean;
@@ -236,6 +256,7 @@ interface AlphabetRaceLayoutProps {
   onWordSubmit: (e: React.FormEvent) => void;
   onVote: (decision: 'accept' | 'reject') => void;
   onRestart: () => void;
+  onSkipLetter?: () => void;
   setShowConfig: (show: boolean) => void;
 }
 
@@ -258,7 +279,7 @@ function AlphabetRaceLayout(props: AlphabetRaceLayoutProps) {
   return (
     <div className={props.flash ? `flash-${props.flash}` : ''}>
       <div className="alphabet-race-container">
-        <PhasePanel match={match} flags={flags} isParticipating={isParticipating} props={props} />
+        <PhasePanel match={match} flags={flags} isAdmin={isAdmin} isParticipating={isParticipating} props={props} />
         <LetterProgress
           letterSequence={match.letterSequence}
           currentLetterIndex={match.currentLetterIndex}
@@ -287,6 +308,7 @@ function AlphabetRaceLayout(props: AlphabetRaceLayoutProps) {
 interface PhasePanelProps {
   match: AlphabetRaceMatchState;
   flags: MatchFlags;
+  isAdmin: boolean;
   isParticipating: boolean;
   props: AlphabetRaceLayoutProps;
 }
@@ -296,7 +318,7 @@ interface PhasePanelProps {
  * @param params Phase panel params.
  * @returns Phase-specific panel element or null.
  */
-function PhasePanel({ match, flags, isParticipating, props }: PhasePanelProps) {
+function PhasePanel({ match, flags, isAdmin, isParticipating, props }: PhasePanelProps) {
   if (match.state === 'racing') {
     return (
       <RacingPanel
@@ -304,11 +326,13 @@ function PhasePanel({ match, flags, isParticipating, props }: PhasePanelProps) {
         category={match.category}
         isEligible={!flags.isIneligible}
         isParticipating={isParticipating}
+        isAdmin={isAdmin}
         wordInput={props.wordInput}
         statusMessage={props.status}
         submitStatus={props.submitStatus}
         onWordInputChange={props.onWordInputChange}
         onWordSubmit={props.onWordSubmit}
+        onSkipLetter={props.onSkipLetter}
       />
     );
   }

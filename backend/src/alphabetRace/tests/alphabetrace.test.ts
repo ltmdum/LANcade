@@ -1149,7 +1149,7 @@ describe('alphabetrace', () => {
       );
     });
 
-    it('letter sequence starts at random position controlled by stub', async () => {
+    it('letter sequence is a random permutation controlled by stub', async () => {
       await withFakeTimers(() =>
         withStubbedRandom(0, () => {
           const store = createPlayerStore();
@@ -1159,9 +1159,11 @@ describe('alphabetrace', () => {
           game.startRound(10000);
 
           const state = game.getState();
-          // Random value 0 => Math.floor(0 * 26) = 0 => starts at A
-          expect(state.match.letterSequence[0]).toBe('A');
-          expect(state.match.currentLetter).toBe('A');
+          // With Math.random=0, Fisher-Yates produces [B, C, D, ..., Z, A]
+          expect(state.match.letterSequence[0]).toBe('B');
+          expect(state.match.currentLetter).toBe('B');
+          // All 26 letters present
+          expect(new Set(state.match.letterSequence).size).toBe(26);
         })
       );
     });

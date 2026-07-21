@@ -1,5 +1,7 @@
 import '../../alphabetRace/AlphabetRaceGame.css';
 
+const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+
 interface LetterProgressProps {
   letterSequence: string[];
   currentLetterIndex: number;
@@ -7,8 +9,9 @@ interface LetterProgressProps {
 }
 
 /**
- * Visual progress through the alphabet letter sequence.
- * Shows all letters with highlighting for completed and current.
+ * Visual progress through the alphabet.
+ * Shows all 26 letters in A-Z order with completed/current/pending
+ * status derived from the random letter sequence positions.
  * @param props Letter progress display props.
  * @returns Letter progress element.
  */
@@ -17,21 +20,24 @@ export function LetterProgress({
   currentLetterIndex,
   completedCount,
 }: LetterProgressProps) {
+  const seqIndexByLetter = new Map(letterSequence.map((ch, i) => [ch, i]));
+
   return (
     <div>
       <div className="letter-progress">
-        {letterSequence.map((letter, index) => {
-          const isCompleted = index < completedCount;
-          const isCurrent = index === currentLetterIndex;
+        {ALPHABET.map((letter) => {
+          const seqIndex = seqIndexByLetter.get(letter)!;
+          const isUsed = seqIndex < completedCount;
+          const isCurrent = seqIndex === currentLetterIndex;
           const className = [
             'letter-progress-item',
-            isCompleted ? 'letter-progress-item--completed' : '',
+            isUsed ? 'letter-progress-item--completed' : '',
             isCurrent ? 'letter-progress-item--current' : '',
           ]
             .filter(Boolean)
             .join(' ');
           return (
-            <span key={`${letter}-${index}`} className={className}>
+            <span key={letter} className={className}>
               {letter}
             </span>
           );

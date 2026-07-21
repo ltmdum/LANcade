@@ -4,7 +4,6 @@ import {
   type AlphabetRaceMatchState,
 } from '@lancade/shared';
 import { createGameBase } from '../shared/stores/game-base.js';
-import { randomLetter } from '../shared/utils/letters.js';
 import { PlayerStore } from '../shared/stores/player-store.js';
 
 export interface AlphabetRaceGameOptions {
@@ -33,6 +32,11 @@ export interface EndGameResult {
   reason?: string;
 }
 
+export interface HandleActionResult {
+  ok: boolean;
+  reason?: string;
+}
+
 export interface AlphabetRaceGame {
   id: string;
   name: string;
@@ -42,6 +46,7 @@ export interface AlphabetRaceGame {
   startRound(durationMs: number): StartRoundResult;
   submitWord(playerId: string, wordInput: string): SubmitWordResult;
   submitVotes(playerId: string, payload: unknown): SubmitVotesResult;
+  handleAction(playerId: string, action: unknown): HandleActionResult;
   joinPlayer(payload: { name?: string; playerId?: string }): { ok: boolean; playerId?: string; name?: string; error?: string };
   selectCategory(category: string): { ok: boolean; category?: string; reason?: string };
   selectRandomCategory(): { ok: boolean; category?: string; reason?: string };
@@ -67,17 +72,17 @@ interface Match {
   winnerIds: string[];
 }
 
-const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 
 /**
- * Generate a 26-letter sequence starting at a random letter and cycling through the full alphabet.
- * @returns Array of 26 uppercase letters in order, starting from a random position.
+ * Generate a random permutation of the 26 uppercase letters (Fisher-Yates shuffle).
+ * @returns Shuffled array of all 26 uppercase letters.
  */
 function generateLetterSequence(): string[] {
-  const startIndex = ALPHABET.indexOf(randomLetter());
-  const sequence: string[] = [];
-  for (let i = 0; i < 26; i++) {
-    sequence.push(ALPHABET[(startIndex + i) % 26]);
+  const sequence = ALPHABET.slice();
+  for (let i = sequence.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [sequence[i], sequence[j]] = [sequence[j], sequence[i]];
   }
   return sequence;
 }
@@ -538,6 +543,33 @@ export function createGame(options: AlphabetRaceGameOptions = {}): AlphabetRaceG
   }
 
   /**
+   * Handle a game-specific action.
+   * Supports 'skipLetter' to advance to the next letter without scoring (admin-only in UI).
+   * @param _playerId Player identifier (unused for skip).
+   * @param action Action payload.
+   * @returns Result payload.
+   */
+  function handleAction(_playerId: string, action: unknown): HandleActionResult {
+    if (!action || typeof action !== 'object') {
+      return { ok: false, reason: 'invalid_action' };
+    }
+    const { type } = action as { type?: string };
+    if (type === 'skipLetter') {
+      if (match.state !== 'racing' && match.state !== 'voting') {
+        return { ok: false, reason: 'not_active' };
+      }
+      clearVoteTimer();
+      match.submittedWord = null;
+      match.submittedBy = null;
+      match.votesByPlayer = new Map();
+      match.voteEndsAt = null;
+      advanceToNextLetter();
+      return { ok: true };
+    }
+    return { ok: false, reason: 'unknown_action' };
+  }
+
+  /**
    * End the current game early, returning to idle state.
    * @returns Result payload for the end game attempt.
    */
@@ -560,6 +592,7 @@ export function createGame(options: AlphabetRaceGameOptions = {}): AlphabetRaceG
     startRound,
     submitWord,
     submitVotes,
+    handleAction,
     joinPlayer,
     selectCategory: categoryManager.selectCategory,
     selectRandomCategory: categoryManager.selectRandomCategory,
