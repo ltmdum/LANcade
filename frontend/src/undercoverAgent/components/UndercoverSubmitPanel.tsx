@@ -8,8 +8,6 @@ interface UndercoverSubmitPanelProps {
   accessKey: string;
   isMyTurn: boolean;
   currentTurnPlayerName: string;
-  currentRound: number;
-  totalRounds: number;
   hasSubmittedThisRound: boolean;
 }
 
@@ -18,8 +16,6 @@ export function UndercoverSubmitPanel({
   accessKey,
   isMyTurn,
   currentTurnPlayerName,
-  currentRound,
-  totalRounds,
   hasSubmittedThisRound,
 }: UndercoverSubmitPanelProps) {
   const [wordInput, setWordInput] = useState('');
@@ -48,10 +44,6 @@ export function UndercoverSubmitPanel({
 
   return (
     <Panel title="Submit a Clue">
-      <p className="undercover-round-info">
-        Round {currentRound} of {totalRounds}
-      </p>
-
       {hasSubmittedThisRound ? (
         <p className="undercover-turn-info">
           You have submitted your clue this round. Waiting for{' '}

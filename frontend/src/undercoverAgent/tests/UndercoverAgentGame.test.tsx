@@ -5,10 +5,6 @@ import type { UndercoverAgentState } from '@lancade/shared';
 
 vi.stubGlobal('fetch', vi.fn());
 
-/**
- * Create a base server state for Undercover Agent testing.
- * @returns Default UndercoverAgentState in idle mode.
- */
 function createBaseState(): UndercoverAgentState {
   return {
     serverTime: Date.now(),
@@ -28,14 +24,13 @@ function createBaseState(): UndercoverAgentState {
       undercoverPlayerId: null,
       revealedPlayerIds: [],
       readyPlayerIds: [],
-      totalRounds: 2,
-      currentRound: 1,
       turnOrder: [],
       currentTurnIndex: 0,
       currentTurnPlayerId: null,
       submissions: [],
       usedWords: [],
       roundSubmittedPlayerIds: [],
+      discussionReadyPlayerIds: [],
       voteRounds: [],
       currentVoteRound: 0,
       votedPlayerIds: [],
@@ -43,17 +38,17 @@ function createBaseState(): UndercoverAgentState {
       finishReason: null,
       finalGuess: null,
       participants: ['player-1', 'player-2', 'player-3'],
+      scores: {},
+      roundPoints: {},
+      winnerIds: [],
+      winnerNames: [],
+      winningScore: 5,
     },
     game: { id: 'undercoveragent', name: 'Undercover Agent' },
     games: [{ id: 'undercoveragent', name: 'Undercover Agent' }],
   };
 }
 
-/**
- * Create default props for the UndercoverAgentGame component.
- * @param serverState The server state to use.
- * @returns Props object for the game component.
- */
 function createDefaultProps(serverState: UndercoverAgentState) {
   return {
     serverState,
@@ -73,15 +68,15 @@ describe('UndercoverAgentGame', () => {
   });
 
   describe('idle state', () => {
-    it('renders nothing when idle', () => {
+    it('renders scoreboard when idle with scores', () => {
       const state = createBaseState();
       state.match.state = 'idle';
+      state.match.scores = { 'player-1': 2, 'player-2': 0, 'player-3': 0 };
+      state.match.finishReason = 'wrong_vote';
 
-      const { container } = render(
-        <UndercoverAgentGame {...createDefaultProps(state)} />
-      );
+      render(<UndercoverAgentGame {...createDefaultProps(state)} />);
 
-      expect(container.firstChild).toBeNull();
+      expect(screen.getByText(/target: 5/i)).toBeInTheDocument();
     });
   });
 
@@ -106,11 +101,8 @@ describe('UndercoverAgentGame', () => {
       state.match.word = 'banana';
       state.match.revealedPlayerIds = ['player-1'];
 
-      // When revealedPlayerIds already includes the player, the reveal button
-      // should be hidden (the role is tracked in local component state).
       render(<UndercoverAgentGame {...createDefaultProps(state)} />);
 
-      // The reveal button should not be shown when already revealed
       expect(
         screen.queryByRole('button', { name: /reveal your role/i })
       ).not.toBeInTheDocument();
@@ -149,25 +141,10 @@ describe('UndercoverAgentGame', () => {
   });
 
   describe('submitting state', () => {
-    it('shows round progress', () => {
-      const state = createBaseState();
-      state.match.state = 'submitting';
-      state.match.currentRound = 1;
-      state.match.totalRounds = 2;
-      state.match.currentTurnPlayerId = 'player-1';
-      state.match.turnOrder = ['player-1', 'player-2', 'player-3'];
-
-      render(<UndercoverAgentGame {...createDefaultProps(state)} />);
-
-      expect(screen.getByText(/Round 1 of 2/)).toBeInTheDocument();
-    });
-
     it('shows word input when it is the player turn', () => {
       const state = createBaseState();
       state.match.state = 'submitting';
       state.match.currentTurnPlayerId = 'player-1';
-      state.match.currentRound = 1;
-      state.match.totalRounds = 2;
       state.match.turnOrder = ['player-1', 'player-2', 'player-3'];
 
       render(<UndercoverAgentGame {...createDefaultProps(state)} />);
@@ -185,8 +162,6 @@ describe('UndercoverAgentGame', () => {
       const state = createBaseState();
       state.match.state = 'submitting';
       state.match.currentTurnPlayerId = 'player-2';
-      state.match.currentRound = 1;
-      state.match.totalRounds = 2;
       state.match.turnOrder = ['player-2', 'player-1', 'player-3'];
 
       render(<UndercoverAgentGame {...createDefaultProps(state)} />);
@@ -199,8 +174,6 @@ describe('UndercoverAgentGame', () => {
       const state = createBaseState();
       state.match.state = 'submitting';
       state.match.currentTurnPlayerId = 'player-2';
-      state.match.currentRound = 1;
-      state.match.totalRounds = 2;
       state.match.roundSubmittedPlayerIds = ['player-1'];
       state.match.turnOrder = ['player-1', 'player-2', 'player-3'];
 
@@ -215,8 +188,6 @@ describe('UndercoverAgentGame', () => {
       const state = createBaseState();
       state.match.state = 'submitting';
       state.match.currentTurnPlayerId = 'player-2';
-      state.match.currentRound = 1;
-      state.match.totalRounds = 2;
       state.match.turnOrder = ['player-1', 'player-2', 'player-3'];
       state.match.submissions = [
         { playerId: 'player-1', playerName: 'Alice', words: ['apple'] },
@@ -229,13 +200,34 @@ describe('UndercoverAgentGame', () => {
     });
   });
 
+  describe('discussion state', () => {
+    it('shows discussion prompt', () => {
+      const state = createBaseState();
+      state.match.state = 'discussion';
+      state.match.discussionReadyPlayerIds = [];
+      state.match.submissions = [
+        { playerId: 'player-1', playerName: 'Alice', words: ['apple'] },
+        { playerId: 'player-2', playerName: 'Bob', words: ['boat'] },
+        { playerId: 'player-3', playerName: 'Charlie', words: ['car'] },
+      ];
+
+      render(<UndercoverAgentGame {...createDefaultProps(state)} />);
+
+      expect(
+        screen.getByText(/Discuss who you think the Undercover Agent is!/i)
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /ready to vote/i })
+      ).toBeInTheDocument();
+    });
+  });
+
   describe('voting state', () => {
     it('shows vote options excluding self', () => {
       const state = createBaseState();
       state.match.state = 'voting';
-      state.match.currentVoteRound = 0;
+      state.match.currentVoteRound = 1;
       state.match.votedPlayerIds = [];
-      state.match.participants = ['player-1', 'player-2', 'player-3'];
       state.match.submissions = [
         { playerId: 'player-1', playerName: 'Alice', words: ['apple'] },
         { playerId: 'player-2', playerName: 'Bob', words: ['boat'] },
@@ -248,12 +240,10 @@ describe('UndercoverAgentGame', () => {
       expect(
         screen.getByText(/who do you think is the undercover agent/i)
       ).toBeInTheDocument();
-      // Should show selectable cards for Bob and Charlie but not Alice (self)
       const voteButtons = screen.getAllByRole('button').filter(
         (btn) => btn.classList.contains('undercover-vote-card')
       );
       expect(voteButtons.length).toBe(2);
-      // Bob and Charlie appear in both the word list table and vote options
       expect(screen.getAllByText('Bob').length).toBeGreaterThanOrEqual(1);
       expect(screen.getAllByText('Charlie').length).toBeGreaterThanOrEqual(1);
     });
@@ -261,9 +251,8 @@ describe('UndercoverAgentGame', () => {
     it('shows waiting message after voting', () => {
       const state = createBaseState();
       state.match.state = 'voting';
-      state.match.currentVoteRound = 0;
+      state.match.currentVoteRound = 1;
       state.match.votedPlayerIds = ['player-1'];
-      state.match.participants = ['player-1', 'player-2', 'player-3'];
       state.match.submissions = [
         { playerId: 'player-1', playerName: 'Alice', words: ['apple'] },
         { playerId: 'player-2', playerName: 'Bob', words: ['boat'] },
@@ -276,15 +265,13 @@ describe('UndercoverAgentGame', () => {
       expect(
         screen.getByText(/vote submitted.*waiting/i)
       ).toBeInTheDocument();
-      expect(screen.queryByRole('radio')).not.toBeInTheDocument();
     });
 
-    it('shows previous vote tallies if available', () => {
+    it('shows previous vote tallies with tie message', () => {
       const state = createBaseState();
       state.match.state = 'voting';
-      state.match.currentVoteRound = 1;
+      state.match.currentVoteRound = 2;
       state.match.votedPlayerIds = [];
-      state.match.participants = ['player-1', 'player-2', 'player-3'];
       state.match.submissions = [
         { playerId: 'player-1', playerName: 'Alice', words: ['apple'] },
         { playerId: 'player-2', playerName: 'Bob', words: ['boat'] },
@@ -298,53 +285,42 @@ describe('UndercoverAgentGame', () => {
             { playerId: 'player-3', playerName: 'Charlie', count: 1 },
           ],
           votedPlayerIds: ['player-1', 'player-2', 'player-3'],
-          isUnanimous: false,
-          unanimousTargetId: null,
+          isTie: true,
+          targetPlayerId: null,
         },
       ];
 
       render(<UndercoverAgentGame {...createDefaultProps(state)} />);
 
-      expect(screen.getByText(/Previous Vote Rounds/)).toBeInTheDocument();
+      expect(screen.getByText('Previous Votes for this Round')).toBeInTheDocument();
       expect(
-        screen.getByText(/No unanimous vote - another round needed/i)
+        screen.getByText(/Tie! Another round of voting needed/i)
       ).toBeInTheDocument();
     });
 
     it('shows word list in voting phase', () => {
       const state = createBaseState();
       state.match.state = 'voting';
-      state.match.currentVoteRound = 0;
+      state.match.currentVoteRound = 1;
       state.match.votedPlayerIds = [];
-      state.match.participants = ['player-1', 'player-2', 'player-3'];
       state.match.submissions = [
         {
           playerId: 'player-1',
           playerName: 'Alice',
-          words: ['apple', 'ant'],
+          words: ['apple'],
         },
         {
           playerId: 'player-2',
           playerName: 'Bob',
-          words: ['boat', 'bird'],
-        },
-        {
-          playerId: 'player-3',
-          playerName: 'Charlie',
-          words: ['car', 'cat'],
+          words: ['boat'],
         },
       ];
       state.match.voteRounds = [];
 
       render(<UndercoverAgentGame {...createDefaultProps(state)} />);
 
-      // Table headers should show round columns
-      expect(screen.getByText('R1')).toBeInTheDocument();
-      expect(screen.getByText('R2')).toBeInTheDocument();
-      // Player names and words should be visible
       expect(screen.getByText('Alice')).toBeInTheDocument();
       expect(screen.getByText('apple')).toBeInTheDocument();
-      // Bob appears in both the table and vote options
       expect(screen.getAllByText('Bob').length).toBeGreaterThanOrEqual(1);
       expect(screen.getByText('boat')).toBeInTheDocument();
     });
@@ -362,40 +338,44 @@ describe('UndercoverAgentGame', () => {
         { playerId: 'player-2', playerName: 'Bob', words: ['yellow'] },
         { playerId: 'player-3', playerName: 'Charlie', words: ['peel'] },
       ];
+      state.match.finishReason = 'wrong_vote';
 
       render(<UndercoverAgentGame {...createDefaultProps(state)} />);
 
       expect(screen.getByText(/The Undercover Agent was/)).toBeInTheDocument();
-      // Bob appears in both the result reveal and the submissions table
       expect(screen.getAllByText('Bob').length).toBeGreaterThanOrEqual(1);
     });
 
-    it('shows civilians win when undercover is correctly identified', () => {
+    it('shows round result message', () => {
       const state = createBaseState();
       state.match.state = 'finished';
       state.match.undercoverPlayerId = 'player-2';
       state.match.winnerIsUndercover = false;
-      state.match.word = 'banana';
-      state.match.submissions = [];
-
-      render(<UndercoverAgentGame {...createDefaultProps(state)} />);
-
-      expect(screen.getByText(/The Civilians win!/)).toBeInTheDocument();
-    });
-
-    it('shows undercover wins when wrong player is voted out', () => {
-      const state = createBaseState();
-      state.match.state = 'finished';
-      state.match.undercoverPlayerId = 'player-2';
-      state.match.winnerIsUndercover = true;
+      state.match.finishReason = 'agent_final_guess_wrong';
       state.match.word = 'banana';
       state.match.submissions = [];
 
       render(<UndercoverAgentGame {...createDefaultProps(state)} />);
 
       expect(
-        screen.getByText(/The Undercover Agent wins!/)
+        screen.getByText(/Anyone who voted for the Agent earns 2 points/i)
       ).toBeInTheDocument();
+    });
+
+    it('shows winner text when there are winners', () => {
+      const state = createBaseState();
+      state.match.state = 'finished';
+      state.match.undercoverPlayerId = 'player-2';
+      state.match.winnerIsUndercover = false;
+      state.match.word = 'banana';
+      state.match.winnerIds = ['player-1'];
+      state.match.winnerNames = ['Alice'];
+      state.match.submissions = [];
+      state.match.finishReason = 'wrong_vote';
+
+      render(<UndercoverAgentGame {...createDefaultProps(state)} />);
+
+      expect(screen.getByText(/Alice wins the game!/)).toBeInTheDocument();
     });
 
     it('shows the secret word', () => {
@@ -405,6 +385,7 @@ describe('UndercoverAgentGame', () => {
       state.match.winnerIsUndercover = false;
       state.match.word = 'banana';
       state.match.submissions = [];
+      state.match.finishReason = 'wrong_vote';
 
       render(<UndercoverAgentGame {...createDefaultProps(state)} />);
 
@@ -419,6 +400,8 @@ describe('UndercoverAgentGame', () => {
       state.match.winnerIsUndercover = false;
       state.match.word = 'banana';
       state.match.submissions = [];
+      state.match.winnerIds = ['player-1'];
+      state.match.winnerNames = ['Alice'];
 
       const props = createDefaultProps(state);
       props.isAdmin = true;
@@ -496,90 +479,6 @@ describe('UndercoverAgentGame', () => {
     });
   });
 
-  describe('finish reason display', () => {
-    it('shows message when agent found the secret word', () => {
-      const state = createBaseState();
-      state.match.state = 'finished';
-      state.match.undercoverPlayerId = 'player-2';
-      state.match.winnerIsUndercover = true;
-      state.match.finishReason = 'agent_found_word';
-      state.match.word = 'banana';
-      state.match.submissions = [];
-
-      render(<UndercoverAgentGame {...createDefaultProps(state)} />);
-
-      expect(
-        screen.getByText(/discovered the secret word/i)
-      ).toBeInTheDocument();
-    });
-
-    it('shows message when civilian revealed the secret word', () => {
-      const state = createBaseState();
-      state.match.state = 'finished';
-      state.match.undercoverPlayerId = 'player-2';
-      state.match.winnerIsUndercover = true;
-      state.match.finishReason = 'civilian_revealed_word';
-      state.match.word = 'banana';
-      state.match.submissions = [];
-
-      render(<UndercoverAgentGame {...createDefaultProps(state)} />);
-
-      expect(
-        screen.getByText(/civilian accidentally submitted the secret word/i)
-      ).toBeInTheDocument();
-    });
-
-    it('shows message when civilians voted for wrong player', () => {
-      const state = createBaseState();
-      state.match.state = 'finished';
-      state.match.undercoverPlayerId = 'player-2';
-      state.match.winnerIsUndercover = true;
-      state.match.finishReason = 'wrong_vote';
-      state.match.word = 'banana';
-      state.match.submissions = [];
-
-      render(<UndercoverAgentGame {...createDefaultProps(state)} />);
-
-      expect(
-        screen.getByText(/voted for the wrong player/i)
-      ).toBeInTheDocument();
-    });
-
-    it('shows message when agent guessed correctly after being identified', () => {
-      const state = createBaseState();
-      state.match.state = 'finished';
-      state.match.undercoverPlayerId = 'player-2';
-      state.match.winnerIsUndercover = true;
-      state.match.finishReason = 'agent_final_guess_correct';
-      state.match.finalGuess = 'banana';
-      state.match.word = 'banana';
-      state.match.submissions = [];
-
-      render(<UndercoverAgentGame {...createDefaultProps(state)} />);
-
-      expect(
-        screen.getByText(/correctly guessed the word.*banana/i)
-      ).toBeInTheDocument();
-    });
-
-    it('shows message when agent guessed wrong after being identified', () => {
-      const state = createBaseState();
-      state.match.state = 'finished';
-      state.match.undercoverPlayerId = 'player-2';
-      state.match.winnerIsUndercover = false;
-      state.match.finishReason = 'agent_final_guess_wrong';
-      state.match.finalGuess = 'apple';
-      state.match.word = 'banana';
-      state.match.submissions = [];
-
-      render(<UndercoverAgentGame {...createDefaultProps(state)} />);
-
-      expect(
-        screen.getByText(/guessed wrong.*apple/i)
-      ).toBeInTheDocument();
-    });
-  });
-
   describe('non-participating admin', () => {
     it('shows play again panel in finished state', () => {
       const state = createBaseState();
@@ -588,6 +487,8 @@ describe('UndercoverAgentGame', () => {
       state.match.winnerIsUndercover = false;
       state.match.word = 'banana';
       state.match.submissions = [];
+      state.match.winnerIds = ['player-1'];
+      state.match.winnerNames = ['Alice'];
 
       const props = createDefaultProps(state);
       props.playerId = 'non-player-admin';
@@ -601,7 +502,6 @@ describe('UndercoverAgentGame', () => {
       expect(
         screen.getByRole('button', { name: /new game/i })
       ).toBeInTheDocument();
-      // "Game Over" appears both in the result panel title and the play-again panel
       expect(screen.getAllByText('Game Over').length).toBeGreaterThanOrEqual(1);
     });
 
@@ -619,7 +519,6 @@ describe('UndercoverAgentGame', () => {
 
       render(<UndercoverAgentGame {...props} />);
 
-      // Non-participating admin sees no "Your Role" panel and no reveal button
       expect(screen.queryByText('Your Role')).not.toBeInTheDocument();
       expect(
         screen.queryByRole('button', { name: /reveal your role/i })
@@ -641,7 +540,6 @@ describe('UndercoverAgentGame', () => {
 
       render(<UndercoverAgentGame {...props} />);
 
-      // Non-participating admin sees word list but not "it's your turn" / "waiting" UI
       expect(
         screen.queryByPlaceholderText(/your clue word/i)
       ).not.toBeInTheDocument();
@@ -651,7 +549,7 @@ describe('UndercoverAgentGame', () => {
     it('does not render vote panel during voting', () => {
       const state = createBaseState();
       state.match.state = 'voting';
-      state.match.currentVoteRound = 0;
+      state.match.currentVoteRound = 1;
       state.match.votedPlayerIds = [];
       state.match.participants = ['player-1', 'player-2', 'player-3'];
       state.match.submissions = [];
@@ -666,9 +564,26 @@ describe('UndercoverAgentGame', () => {
 
       render(<UndercoverAgentGame {...props} />);
 
-      // Non-participating admin sees no voting cards or vote prompt
       expect(
         screen.queryByText(/who do you think is the undercover agent/i)
+      ).not.toBeInTheDocument();
+    });
+  });
+
+  describe('discussion phase non-participating', () => {
+    it('does not render discussion panel for non-participating admin', () => {
+      const state = createBaseState();
+      state.match.state = 'discussion';
+
+      const props = createDefaultProps(state);
+      props.playerId = 'non-player-admin';
+      props.isAdmin = true;
+      props.isParticipating = false;
+
+      render(<UndercoverAgentGame {...props} />);
+
+      expect(
+        screen.queryByText(/Discuss who you think/i)
       ).not.toBeInTheDocument();
     });
   });

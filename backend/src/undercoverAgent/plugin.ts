@@ -15,6 +15,7 @@ function adaptToBaseGame(game: UndercoverAgentGame): BaseGame {
     submitVotes: (playerId, votes) => game.submitVotes(playerId, votes),
     startRound: (durationMs) => game.startRound(durationMs),
     endGame: () => game.endGame(),
+    updateSettings: (settings) => game.updateSettings(settings),
   };
 }
 

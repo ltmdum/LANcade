@@ -6,6 +6,8 @@ import { UndercoverWordList } from './components/UndercoverWordList';
 import { UndercoverVotePanel } from './components/UndercoverVotePanel';
 import { UndercoverGuessPanel } from './components/UndercoverGuessPanel';
 import { UndercoverResultDisplay } from './components/UndercoverResultDisplay';
+import { DiscussionPanel } from './components/DiscussionPanel';
+import { UndercoverScoreBoard } from './components/UndercoverScoreBoard';
 import { handlePlayAgain } from '../shared/utils/roundActions';
 import type { GameProps } from '../shared/types/GameProps';
 import type { UndercoverAgentState } from '@lancade/shared';
@@ -15,12 +17,6 @@ interface UndercoverAgentGameProps extends GameProps {
   serverState: UndercoverAgentState;
 }
 
-/**
- * Main Undercover Agent game UI component.
- * Renders the appropriate sub-component based on the current match state.
- * @param props Game props from the plugin.
- * @returns Undercover Agent game element.
- */
 export function UndercoverAgentGame({
   serverState,
   playerId,
@@ -31,6 +27,7 @@ export function UndercoverAgentGame({
 }: UndercoverAgentGameProps) {
   const [myRole, setMyRole] = useState<string | null>(null);
   const [adminStatus, setAdminStatus] = useState('');
+  const [serverScores, setServerScores] = useState<Record<string, number> | null>(null);
 
   const match = serverState.match;
 
@@ -42,22 +39,18 @@ export function UndercoverAgentGame({
     return lookup;
   }, [serverState.players]);
 
-  // Reset role when a new match starts
   useEffect(() => {
     setMyRole(null);
   }, [match.id]);
 
-  // Reset admin status when match state changes
   useEffect(() => {
     setAdminStatus('');
+    setServerScores(null);
   }, [match.id, match.state]);
 
-  /**
-   * Handle starting a new game.
-   */
   async function onRestart() {
     setAdminStatus('');
-    const durationMs = match.totalRounds * 1000;
+    const durationMs = 1000;
     const result = await handlePlayAgain(durationMs, accessKey);
     setAdminStatus(result.statusMessage);
     if (result.success) {
@@ -65,12 +58,46 @@ export function UndercoverAgentGame({
     }
   }
 
-  if (match.state === 'idle') {
-    return null;
+  async function onNextWord() {
+    setAdminStatus('');
+    const result = await handlePlayAgain(1000, accessKey);
+    setAdminStatus(result.statusMessage);
   }
+
+  const showScores = serverScores || match.scores;
+
+  const roundOver = match.finishReason !== null && (match.state === 'idle' || match.state === 'finished');
+  const isGameOver = match.state === 'finished' && match.winnerIds.length > 0;
 
   return (
     <div className="undercover-container">
+      {roundOver && (
+        <>
+          {isGameOver && (
+            <div className="undercover-result-winner undercover-result-winner--civilians">
+              {match.winnerIds.length === 1
+                ? `${match.winnerNames[0]} wins the game!`
+                : `${match.winnerNames.join(' and ')} tie for the win!`}
+            </div>
+          )}
+          <UndercoverScoreBoard
+            scores={showScores}
+            roundPoints={match.roundPoints}
+            winningScore={match.winningScore}
+            playerLookup={playerLookup}
+            winnerIds={match.winnerIds}
+          />
+          <UndercoverResultDisplay
+            undercoverPlayerId={match.undercoverPlayerId || ''}
+            undercoverPlayerName={playerLookup[match.undercoverPlayerId || ''] || 'Unknown'}
+            finishReason={match.finishReason}
+            finalGuess={match.finalGuess}
+            submissions={match.submissions}
+            word={match.word}
+          />
+        </>
+      )}
+
       <MatchPhaseContent
         match={match}
         playerId={playerId}
@@ -81,7 +108,16 @@ export function UndercoverAgentGame({
         isParticipating={isParticipating}
       />
 
-      {isAdmin && match.state === 'finished' && (
+      {isAdmin && match.state === 'idle' && match.winnerIds.length === 0 && (
+        <div className="undercover-admin-controls">
+          <button type="button" className="btn btn-primary" onClick={onNextWord}>
+            Next Word
+          </button>
+          {adminStatus && <p className="undercover-turn-info">{adminStatus}</p>}
+        </div>
+      )}
+
+      {isAdmin && isGameOver && (
         <PlayAgainPanel
           onPlayAgain={onRestart}
           onBackToConfig={() => setShowConfig(true)}
@@ -104,11 +140,6 @@ interface MatchPhaseContentProps {
   isParticipating: boolean;
 }
 
-/**
- * Render the correct content panel based on the current match phase.
- * @param props Phase content props.
- * @returns Phase-specific element.
- */
 function MatchPhaseContent({
   match,
   playerId,
@@ -148,9 +179,24 @@ function MatchPhaseContent({
             accessKey={accessKey}
             isMyTurn={match.currentTurnPlayerId === playerId}
             currentTurnPlayerName={currentTurnPlayerName}
-            currentRound={match.currentRound}
-            totalRounds={match.totalRounds}
             hasSubmittedThisRound={match.roundSubmittedPlayerIds.includes(playerId)}
+          />
+        )}
+        <UndercoverWordList submissions={match.submissions} />
+      </>
+    );
+  }
+
+  if (match.state === 'discussion') {
+    return (
+      <>
+        {isParticipating && (
+          <DiscussionPanel
+            playerId={playerId}
+            accessKey={accessKey}
+            isReady={match.discussionReadyPlayerIds.includes(playerId)}
+            readyCount={match.discussionReadyPlayerIds.length}
+            totalCount={match.participants.length}
           />
         )}
         <UndercoverWordList submissions={match.submissions} />
@@ -189,20 +235,6 @@ function MatchPhaseContent({
         )}
         <UndercoverWordList submissions={match.submissions} />
       </>
-    );
-  }
-
-  if (match.state === 'finished' && match.undercoverPlayerId) {
-    return (
-      <UndercoverResultDisplay
-        undercoverPlayerId={match.undercoverPlayerId}
-        undercoverPlayerName={playerLookup[match.undercoverPlayerId] || 'Unknown'}
-        winnerIsUndercover={match.winnerIsUndercover}
-        finishReason={match.finishReason}
-        finalGuess={match.finalGuess}
-        submissions={match.submissions}
-        word={match.word}
-      />
     );
   }
 

@@ -309,25 +309,24 @@ export interface UndercoverVoteTally {
 export interface UndercoverVoteRound {
   tally: UndercoverVoteTally[];
   votedPlayerIds: string[];
-  isUnanimous: boolean;
-  unanimousTargetId: string | null;
+  isTie: boolean;
+  targetPlayerId: string | null;
 }
 
 export interface UndercoverAgentMatchState {
   id: number;
-  state: 'idle' | 'reveal' | 'submitting' | 'voting' | 'guessing' | 'finished';
+  state: 'idle' | 'reveal' | 'submitting' | 'discussion' | 'voting' | 'guessing' | 'finished';
   word: string | null;
   undercoverPlayerId: string | null;
   revealedPlayerIds: string[];
   readyPlayerIds: string[];
-  totalRounds: number;
-  currentRound: number;
   turnOrder: string[];
   currentTurnIndex: number;
   currentTurnPlayerId: string | null;
   submissions: UndercoverSubmission[];
   usedWords: string[];
   roundSubmittedPlayerIds: string[];
+  discussionReadyPlayerIds: string[];
   voteRounds: UndercoverVoteRound[];
   currentVoteRound: number;
   votedPlayerIds: string[];
@@ -335,6 +334,11 @@ export interface UndercoverAgentMatchState {
   finishReason: string | null;
   finalGuess: string | null;
   participants: string[];
+  scores: Record<string, number>;
+  roundPoints: Record<string, number>;
+  winnerIds: string[];
+  winnerNames: string[];
+  winningScore: number;
 }
 
 export interface UndercoverAgentState {

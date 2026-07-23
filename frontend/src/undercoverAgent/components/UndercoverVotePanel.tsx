@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Panel } from '../../shared/components/Panel';
 import { UndercoverWordList } from './UndercoverWordList';
 import type { UndercoverSubmission, UndercoverVoteRound } from '@lancade/shared';
@@ -14,12 +14,6 @@ interface UndercoverVotePanelProps {
   playerLookup: Record<string, string>;
 }
 
-/**
- * Panel for voting on who the undercover agent is.
- * Shows word list, previous vote tallies, and a vote form.
- * @param props Vote panel props.
- * @returns Vote panel element.
- */
 export function UndercoverVotePanel({
   playerId,
   accessKey,
@@ -32,10 +26,17 @@ export function UndercoverVotePanel({
 }: UndercoverVotePanelProps) {
   const [selectedTarget, setSelectedTarget] = useState('');
   const [status, setStatus] = useState('');
+  const voteRoundAtFetch = useRef(currentVoteRound);
 
-  /**
-   * Submit the vote to the server.
-   */
+  useEffect(() => {
+    setStatus('');
+    setSelectedTarget('');
+  }, [currentVoteRound]);
+
+  useEffect(() => {
+    voteRoundAtFetch.current = currentVoteRound;
+  }, [currentVoteRound]);
+
   async function handleVote(e: React.FormEvent) {
     e.preventDefault();
     setStatus('');
@@ -60,14 +61,18 @@ export function UndercoverVotePanel({
         setStatus(data.reason === 'already_voted' ? 'You have already voted.' : 'Could not submit vote.');
         return;
       }
-      setStatus('Vote submitted!');
+      if (voteRoundAtFetch.current === currentVoteRound) {
+        setStatus('Vote submitted!');
+      }
     } catch {
-      setStatus('Could not submit vote.');
+      if (voteRoundAtFetch.current === currentVoteRound) {
+        setStatus('Could not submit vote.');
+      }
     }
   }
 
   return (
-    <Panel title={`Vote - Round ${currentVoteRound + 1}`}>
+    <Panel title={`Vote - Round ${currentVoteRound}`}>
       <UndercoverWordList submissions={submissions} />
       <PreviousTallies voteRounds={voteRounds} playerLookup={playerLookup} />
       {hasVoted ? (
@@ -92,35 +97,50 @@ interface PreviousTalliesProps {
   playerLookup: Record<string, string>;
 }
 
-/**
- * Display tallies from previous vote rounds.
- * @param props Previous tallies props.
- * @returns Tally display element or null if no previous rounds.
- */
 function PreviousTallies({ voteRounds, playerLookup }: PreviousTalliesProps) {
   if (voteRounds.length === 0) {
     return null;
   }
 
+  const lastRound = voteRounds[voteRounds.length - 1];
+  const allPlayers = lastRound.tally.map((e) => e.playerId);
+
   return (
     <div className="undercover-tally">
-      <h4>Previous Vote Rounds</h4>
-      {voteRounds.map((round, index) => (
-        <div key={index}>
-          <strong>Round {index + 1}</strong>
-          {round.tally.map((entry) => (
-            <div key={entry.playerId} className="undercover-tally-bar">
-              <span className="undercover-tally-name">
-                {playerLookup[entry.playerId] || entry.playerName}
-              </span>
-              <span className="undercover-tally-count">{entry.count} votes</span>
-            </div>
-          ))}
-          {!round.isUnanimous && (
-            <p className="undercover-round-info">No unanimous vote - another round needed.</p>
-          )}
-        </div>
-      ))}
+      {lastRound.isTie && (
+        <p className="undercover-turn-info undercover-turn-info--active">
+          Tie! Another round of voting needed.
+        </p>
+      )}
+      <h4>Previous Votes for this Round</h4>
+      <table className="undercover-submissions-table">
+        <thead>
+          <tr>
+            <th>Player</th>
+            {voteRounds.map((_, index) => (
+              <th key={index}>Vote {index + 1}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {allPlayers.map((playerId) => {
+            const playerName = playerLookup[playerId];
+            return (
+              <tr key={playerId}>
+                <td>{playerName}</td>
+                {voteRounds.map((round) => {
+                  const entry = round.tally.find((e) => e.playerId === playerId);
+                  return (
+                    <td key={round === voteRounds[0] ? 0 : voteRounds.indexOf(round)}>
+                      {entry ? `${entry.count} vote${entry.count !== 1 ? 's' : ''}` : '0 votes'}
+                    </td>
+                  );
+                })}
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
     </div>
   );
 }
@@ -134,11 +154,6 @@ interface VoteFormProps {
   onSubmit: (e: React.FormEvent) => void;
 }
 
-/**
- * Form with radio buttons for selecting a player to vote for.
- * @param props Vote form props.
- * @returns Vote form element.
- */
 function VoteForm({
   participants,
   playerId,

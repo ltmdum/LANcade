@@ -10,6 +10,7 @@ import { normalizeWord } from '../shared/utils/normalize-word.js';
 import wordListData from '../shared/data/common-words.json' with { type: 'json' };
 
 const wordList = wordListData as string[];
+const DEFAULT_WINNING_SCORE = 5;
 
 export interface UndercoverAgentGameOptions {
   onStateChange?: () => void;
@@ -53,23 +54,23 @@ export interface UndercoverAgentGame {
     error?: string;
   };
   endGame(): EndGameResult;
+  updateSettings(settings: Record<string, unknown>): { ok: boolean; reason?: string };
 }
 
 interface Match {
   id: number;
-  state: 'idle' | 'reveal' | 'submitting' | 'voting' | 'guessing' | 'finished';
+  state: 'idle' | 'reveal' | 'submitting' | 'discussion' | 'voting' | 'guessing' | 'finished';
   word: string | null;
   undercoverPlayerId: string | null;
   revealedPlayerIds: Set<string>;
   readyPlayerIds: Set<string>;
-  totalRounds: number;
-  currentRound: number;
   turnOrder: string[];
   currentTurnIndex: number;
   currentTurnPlayerId: string | null;
   submissions: Map<string, string[]>;
   usedWords: Set<string>;
   roundSubmittedPlayerIds: Set<string>;
+  discussionReadyPlayerIds: Set<string>;
   voteRounds: UndercoverVoteRound[];
   currentVoteRound: number;
   votedPlayerIds: Set<string>;
@@ -92,14 +93,13 @@ function createEmptyMatch(): Match {
     undercoverPlayerId: null,
     revealedPlayerIds: new Set(),
     readyPlayerIds: new Set(),
-    totalRounds: 2,
-    currentRound: 1,
     turnOrder: [],
     currentTurnIndex: 0,
     currentTurnPlayerId: null,
     submissions: new Map(),
     usedWords: new Set(),
     roundSubmittedPlayerIds: new Set(),
+    discussionReadyPlayerIds: new Set(),
     voteRounds: [],
     currentVoteRound: 0,
     votedPlayerIds: new Set(),
@@ -155,7 +155,10 @@ export function createGame(options: UndercoverAgentGameOptions = {}) {
   const playerStore = options.playerStore;
 
   let match = createEmptyMatch();
-  let totalRoundsSetting = 2;
+  let scores: Record<string, number> = {};
+  let roundPoints: Record<string, number> = {};
+  let winnerIds: string[] = [];
+  let winningScore = DEFAULT_WINNING_SCORE;
 
   /**
    * Notify listeners of state change.
@@ -183,7 +186,7 @@ export function createGame(options: UndercoverAgentGameOptions = {}) {
 
   /**
    * Build the public submissions list from internal state.
-   * @returns Array of submissions showing each player's words across rounds.
+   * @returns Array of submissions showing each player's words.
    */
   function buildPublicSubmissions(): UndercoverSubmission[] {
     const result: UndercoverSubmission[] = [];
@@ -202,6 +205,7 @@ export function createGame(options: UndercoverAgentGameOptions = {}) {
    * @returns Phase string.
    */
   function getPhase(): string {
+    if (winnerIds.length > 0) return 'finished';
     return match.state;
   }
 
@@ -214,22 +218,21 @@ export function createGame(options: UndercoverAgentGameOptions = {}) {
       serverTime: Date.now(),
       players: playerStore ? playerStore.listPlayers() : [],
       settings: { categories: [], selectedCategory: '' },
-      gameSettings: { totalRounds: totalRoundsSetting },
+      gameSettings: { winningScore },
       match: {
         id: match.id,
-        state: match.state,
+        state: winnerIds.length > 0 ? 'finished' : match.state,
         word: match.state === 'guessing' ? null : match.word,
-        undercoverPlayerId: (match.state === 'finished' || match.state === 'guessing') ? match.undercoverPlayerId : null,
+        undercoverPlayerId: (match.state !== 'reveal' && match.state !== 'submitting' && match.state !== 'discussion' && match.state !== 'voting') ? match.undercoverPlayerId : null,
         revealedPlayerIds: [...match.revealedPlayerIds],
         readyPlayerIds: [...match.readyPlayerIds],
-        totalRounds: match.totalRounds,
-        currentRound: match.currentRound,
         turnOrder: match.turnOrder,
         currentTurnIndex: match.currentTurnIndex,
         currentTurnPlayerId: match.currentTurnPlayerId,
         submissions: buildPublicSubmissions(),
         usedWords: [...match.usedWords],
         roundSubmittedPlayerIds: [...match.roundSubmittedPlayerIds],
+        discussionReadyPlayerIds: [...match.discussionReadyPlayerIds],
         voteRounds: match.voteRounds.map(vr => ({ ...vr })),
         currentVoteRound: match.currentVoteRound,
         votedPlayerIds: [...match.votedPlayerIds],
@@ -237,6 +240,11 @@ export function createGame(options: UndercoverAgentGameOptions = {}) {
         finishReason: match.finishReason,
         finalGuess: match.finalGuess,
         participants: match.participants,
+        scores: { ...scores },
+        roundPoints: { ...roundPoints },
+        winnerIds: [...winnerIds],
+        winnerNames: winnerIds.map(id => getPlayerName(id)),
+        winningScore,
       },
     };
   }
@@ -254,14 +262,12 @@ export function createGame(options: UndercoverAgentGameOptions = {}) {
 
   /**
    * Transition from reveal to submitting phase.
-   * Sets up turn order starting at a random player.
    */
   function transitionToSubmitting(): void {
     match.state = 'submitting';
     match.turnOrder = shuffle(match.participants);
     match.currentTurnIndex = 0;
     match.currentTurnPlayerId = match.turnOrder[0];
-    match.currentRound = 1;
     match.roundSubmittedPlayerIds = new Set();
     if (match.word) {
       match.usedWords.add(match.word);
@@ -333,19 +339,36 @@ export function createGame(options: UndercoverAgentGameOptions = {}) {
   }
 
   /**
-   * Advance to the next turn or next round in the submitting phase.
+   * Handle the READY FOR DISCUSSION action during discussion phase.
+   * @param playerId Player identifier.
+   * @returns Result of the ready action.
+   */
+  function handleDiscussionReady(playerId: string, _wordInput: string): SubmitWordResult {
+    if (match.state !== 'discussion') {
+      return { ok: false, reason: 'not_discussion' };
+    }
+    if (!match.participants.includes(playerId)) {
+      return { ok: false, reason: 'not_participant' };
+    }
+    if (match.discussionReadyPlayerIds.has(playerId)) {
+      return { ok: false, reason: 'already_acted' };
+    }
+    match.discussionReadyPlayerIds.add(playerId);
+
+    if (match.discussionReadyPlayerIds.size >= match.participants.length) {
+      transitionToVoting();
+    } else {
+      notifyChange();
+    }
+    return { ok: true };
+  }
+
+  /**
+   * Advance to the next turn in the submitting phase.
    */
   function advanceTurn(): void {
     if (match.roundSubmittedPlayerIds.size >= match.participants.length) {
-      if (match.currentRound >= match.totalRounds) {
-        transitionToVoting();
-        return;
-      }
-      match.currentRound += 1;
-      match.roundSubmittedPlayerIds = new Set();
-      match.currentTurnIndex = 0;
-      match.currentTurnPlayerId = match.turnOrder[0];
-      notifyChange();
+      transitionToDiscussion();
       return;
     }
 
@@ -398,11 +421,19 @@ export function createGame(options: UndercoverAgentGameOptions = {}) {
     match.roundSubmittedPlayerIds.add(playerId);
 
     if (isSecretWord) {
-      match.state = 'finished';
+      roundPoints = {};
+      for (const pid of match.participants) {
+        roundPoints[pid] = 0;
+        scores[pid] = scores[pid] || 0;
+      }
+      scores[match.undercoverPlayerId!] += 2;
+      roundPoints[match.undercoverPlayerId!] = 2;
       match.winnerIsUndercover = true;
       match.finishReason = playerId === match.undercoverPlayerId
         ? 'agent_found_word'
         : 'civilian_revealed_word';
+      checkForWinner();
+      match.state = winnerIds.length > 0 ? 'finished' : 'idle';
       notifyChange();
       return { ok: true };
     }
@@ -412,13 +443,23 @@ export function createGame(options: UndercoverAgentGameOptions = {}) {
   }
 
   /**
-   * Transition from submitting to voting phase.
+   * Transition from submitting to discussion phase.
+   */
+  function transitionToDiscussion(): void {
+    match.state = 'discussion';
+    match.discussionReadyPlayerIds = new Set();
+    notifyChange();
+  }
+
+  /**
+   * Transition from discussion to voting phase.
    */
   function transitionToVoting(): void {
     match.state = 'voting';
     match.currentVoteRound = 1;
     match.votedPlayerIds = new Set();
     match.currentVotes = new Map();
+    match.voteRounds = [];
     notifyChange();
   }
 
@@ -448,73 +489,42 @@ export function createGame(options: UndercoverAgentGameOptions = {}) {
   }
 
   /**
-   * Check if the vote is unanimous (all players except the target voted for the same player).
-   * @param tally The current vote tally.
-   * @returns Object with unanimity status and target ID if unanimous.
-   */
-  function checkUnanimous(tally: UndercoverVoteTally[]): { isUnanimous: boolean; targetId: string | null } {
-    for (const entry of tally) {
-      const otherVoterCount = match.participants.length - 1;
-      const votesFromOthers = countVotesExcluding(entry.playerId);
-      if (votesFromOthers === otherVoterCount) {
-        return { isUnanimous: true, targetId: entry.playerId };
-      }
-    }
-    return { isUnanimous: false, targetId: null };
-  }
-
-  /**
-   * Count how many players (excluding the target) voted for the target.
-   * @param targetId The player being counted against.
-   * @returns Number of votes from other players.
-   */
-  function countVotesExcluding(targetId: string): number {
-    let count = 0;
-    for (const [voterId, votedFor] of match.currentVotes.entries()) {
-      if (voterId !== targetId && votedFor === targetId) {
-        count += 1;
-      }
-    }
-    return count;
-  }
-
-  /**
    * Process the vote results when all players have voted.
+   * Uses plurality: the player with the most votes is the result.
+   * If multiple players are tied for most votes, a re-vote is needed.
    */
   function processVoteResults(): void {
     const tally = buildVoteTally();
-    const { isUnanimous, targetId } = checkUnanimous(tally);
+    const top = tally[0];
+    const second = tally[1];
+    const isTie = second && second.count === top.count;
 
     const voteRound: UndercoverVoteRound = {
       tally,
       votedPlayerIds: [...match.votedPlayerIds],
-      isUnanimous,
-      unanimousTargetId: targetId,
+      isTie,
+      targetPlayerId: isTie ? null : top.playerId,
     };
     match.voteRounds.push(voteRound);
 
-    if (isUnanimous) {
-      resolveUnanimousVote(targetId!);
-    } else {
+    if (isTie) {
       startNewVoteRound();
+    } else {
+      resolveVote(top.playerId);
     }
   }
 
   /**
-   * Resolve a unanimous vote. If the target is the undercover agent, transition
-   * to guessing so the agent gets a final chance to guess the word. Otherwise
-   * the agent wins immediately because civilians voted for the wrong player.
-   * @param unanimousTargetId The player who received the unanimous vote.
+   * Resolve a vote: if the target is the agent → guessing, otherwise → scoring.
+   * @param targetPlayerId The player who received the most votes.
    */
-  function resolveUnanimousVote(unanimousTargetId: string): void {
-    if (unanimousTargetId === match.undercoverPlayerId) {
+  function resolveVote(targetPlayerId: string): void {
+    if (targetPlayerId === match.undercoverPlayerId) {
       match.state = 'guessing';
+      notifyChange();
     } else {
-      match.state = 'finished';
-      match.winnerIsUndercover = true;
-      match.finishReason = 'wrong_vote';
+      resolveRound(false, null);
     }
-    notifyChange();
   }
 
   /**
@@ -535,22 +545,110 @@ export function createGame(options: UndercoverAgentGameOptions = {}) {
 
     match.finalGuess = trimmed;
 
-    if (match.word && normalizeWord(trimmed) === normalizeWord(match.word)) {
-      match.state = 'finished';
-      match.winnerIsUndercover = true;
-      match.finishReason = 'agent_final_guess_correct';
-    } else {
-      match.state = 'finished';
-      match.winnerIsUndercover = false;
-      match.finishReason = 'agent_final_guess_wrong';
-    }
-
-    notifyChange();
+    const guessCorrect = match.word !== null && normalizeWord(trimmed) === normalizeWord(match.word);
+    resolveRound(true, guessCorrect);
     return { ok: true };
   }
 
   /**
-   * Start a new vote round after a non-unanimous result.
+   * Resolve the round with scoring and winner check.
+   * @param agentWasCaught Whether the agent was caught by vote.
+   * @param agentGuessedCorrectly Whether the agent guessed the word (null if no guess phase).
+   */
+  function resolveRound(agentWasCaught: boolean, agentGuessedCorrectly: boolean | null): void {
+    const participants = match.participants;
+    const undercoverId = match.undercoverPlayerId!;
+
+    roundPoints = {};
+    for (const pid of participants) {
+      roundPoints[pid] = 0;
+    }
+
+    if (!agentWasCaught) {
+      for (const pid of participants) {
+        scores[pid] = scores[pid] || 0;
+      }
+      scores[undercoverId] += 3;
+      roundPoints[undercoverId] = 3;
+      for (const [voterId, targetId] of match.currentVotes.entries()) {
+        if (targetId === undercoverId) {
+          scores[voterId] += 1;
+          roundPoints[voterId] += 1;
+        }
+      }
+      match.winnerIsUndercover = true;
+      match.finishReason = 'wrong_vote';
+    } else if (agentGuessedCorrectly) {
+      for (const pid of participants) {
+        scores[pid] = scores[pid] || 0;
+      }
+      scores[undercoverId] += 1;
+      roundPoints[undercoverId] = 1;
+      for (const [voterId, targetId] of match.currentVotes.entries()) {
+        if (targetId === undercoverId) {
+          scores[voterId] += 1;
+          roundPoints[voterId] += 1;
+        }
+      }
+      match.winnerIsUndercover = true;
+      match.finishReason = 'agent_final_guess_correct';
+    } else {
+      for (const pid of participants) {
+        scores[pid] = scores[pid] || 0;
+        if (pid !== undercoverId) {
+          scores[pid] += 1;
+          roundPoints[pid] = 1;
+        }
+      }
+      for (const [voterId, targetId] of match.currentVotes.entries()) {
+        if (targetId === undercoverId) {
+          scores[voterId] += 1;
+          roundPoints[voterId] += 1;
+        }
+      }
+      match.winnerIsUndercover = false;
+      match.finishReason = agentGuessedCorrectly === null ? 'wrong_vote' : 'agent_final_guess_wrong';
+    }
+
+    checkForWinner();
+    if (winnerIds.length > 0) {
+      match.state = 'finished';
+    } else {
+      match.state = 'idle';
+    }
+    notifyChange();
+  }
+
+  /**
+   * Check for a winner after score updates.
+   * Among players at or above winningScore, the highest scorer wins.
+   * If multiple players share the highest score, it's a tie.
+   */
+  function checkForWinner(): void {
+    const qualified: { id: string; score: number }[] = [];
+    for (const [playerId, score] of Object.entries(scores)) {
+      if (score >= winningScore) {
+        qualified.push({ id: playerId, score });
+      }
+    }
+
+    if (qualified.length === 0) {
+      winnerIds = [];
+      return;
+    }
+
+    const maxScore = Math.max(...qualified.map((p) => p.score));
+    const topPlayers = qualified.filter((p) => p.score === maxScore);
+
+    if (topPlayers.length === 1) {
+      winnerIds = [topPlayers[0].id];
+    } else {
+      winnerIds = topPlayers.map((p) => p.id);
+    }
+  }
+
+  /**
+   * Start a new vote round after a tie.
    */
   function startNewVoteRound(): void {
     match.currentVoteRound += 1;
@@ -560,8 +658,8 @@ export function createGame(options: UndercoverAgentGameOptions = {}) {
   }
 
   /**
-   * Start a new round with the configured number of submission rounds.
-   * @param _durationMs Unused (rounds configured via updateSettings).
+   * Start a new word round.
+   * @param _durationMs Unused (rounds are fixed at 1 submission round per word).
    * @returns Start result.
    */
   function startRound(_durationMs: number): StartRoundResult {
@@ -570,14 +668,20 @@ export function createGame(options: UndercoverAgentGameOptions = {}) {
       return { ok: false, reason: 'need_3_players' };
     }
 
-    const totalRounds = totalRoundsSetting;
     const participants = [...playerIds];
 
     match = createEmptyMatch();
     match.id += 1;
     match.state = 'reveal';
-    match.totalRounds = totalRounds;
     match.participants = participants;
+
+    // Carry over scores and winningScore from previous rounds
+    for (const pid of participants) {
+      if (scores[pid] === undefined) {
+        scores[pid] = 0;
+      }
+    }
+    roundPoints = {};
 
     initRevealPhase(participants);
     notifyChange();
@@ -601,11 +705,15 @@ export function createGame(options: UndercoverAgentGameOptions = {}) {
     if (match.state === 'guessing') {
       return handleGuessingPhase(playerId, wordInput);
     }
+    if (match.state === 'discussion') {
+      return handleDiscussionReady(playerId, wordInput);
+    }
     return { ok: false, reason: 'invalid_state' };
   }
 
   /**
    * Submit a vote for who the player thinks is the undercover agent.
+   * Players cannot vote for themselves.
    * @param playerId Voter player ID.
    * @param payload Vote payload containing targetPlayerId.
    * @returns Vote result.
@@ -627,6 +735,9 @@ export function createGame(options: UndercoverAgentGameOptions = {}) {
     }
     if (!match.participants.includes(targetPlayerId)) {
       return { ok: false, reason: 'invalid_target' };
+    }
+    if (targetPlayerId === playerId) {
+      return { ok: false, reason: 'cannot_vote_self' };
     }
 
     match.votedPlayerIds.add(playerId);
@@ -672,6 +783,9 @@ export function createGame(options: UndercoverAgentGameOptions = {}) {
     }
     const result = playerStore.joinPlayer(payload);
     if (result.ok) {
+      if (result.playerId && scores[result.playerId] === undefined) {
+        scores[result.playerId] = 0;
+      }
       notifyChange();
     }
     return result;
@@ -679,21 +793,26 @@ export function createGame(options: UndercoverAgentGameOptions = {}) {
 
   /**
    * Update admin-configurable settings (only when idle).
-   * @param settings Key-value settings to update.
-   * @returns Update result.
+   * @param settings Settings object with winningScore.
+   * @returns Result indicating success or failure.
    */
   function updateSettings(settings: Record<string, unknown>): { ok: boolean; reason?: string } {
-    if (match.state !== 'idle' && match.state !== 'finished') return { ok: false, reason: 'game_active' };
-    if ('totalRounds' in settings) {
-      const val = settings.totalRounds;
-      if (typeof val === 'number' && Number.isInteger(val) && val >= 1 && val <= 10) {
-        totalRoundsSetting = val;
-        notifyChange();
-        return { ok: true };
+    if (match.state !== 'idle') return { ok: false, reason: 'game_active' };
+    let changed = false;
+    for (const key of Object.keys(settings)) {
+      const val = settings[key];
+      if (key === 'winningScore') {
+        if (typeof val !== 'number' || !Number.isInteger(val) || val < 1 || val > 50) {
+          return { ok: false, reason: 'invalid_value' };
+        }
+        winningScore = val;
+        changed = true;
+      } else {
+        return { ok: false, reason: 'unknown_setting' };
       }
-      return { ok: false, reason: 'invalid_value' };
     }
-    return { ok: false, reason: 'unknown_setting' };
+    if (changed) notifyChange();
+    return { ok: true };
   }
 
   /**
@@ -701,10 +820,13 @@ export function createGame(options: UndercoverAgentGameOptions = {}) {
    * @returns End result.
    */
   function endGame(): EndGameResult {
-    if (match.state === 'idle') {
+    if (match.state === 'idle' && winnerIds.length === 0) {
       return { ok: false, reason: 'not_active' };
     }
     match = createEmptyMatch();
+    scores = {};
+    roundPoints = {};
+    winnerIds = [];
     notifyChange();
     return { ok: true };
   }

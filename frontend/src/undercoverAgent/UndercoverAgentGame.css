@@ -115,15 +115,15 @@
 
 .undercover-result-reveal {
   text-align: center;
-  font-size: 1.3rem;
-  margin: 1rem 0;
+  font-size: 1.1rem;
+  margin: 0.5rem 0;
 }
 
 .undercover-result-winner {
   text-align: center;
-  font-size: 1.5rem;
+  font-size: 1.4rem;
   font-weight: bold;
-  margin: 1rem 0;
+  margin: 0.75rem 0;
 }
 
 .undercover-result-winner--undercover {
@@ -144,4 +144,64 @@
   font-size: 0.9rem;
   color: var(--text-secondary);
   margin-bottom: 0.5rem;
+}
+
+.undercover-scoreboard {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.75rem;
+}
+
+.undercover-scoreboard-header {
+  font-weight: bold;
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+  color: var(--text-secondary);
+}
+
+.undercover-score-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+}
+
+.undercover-score-row--winner {
+  background: var(--success-muted);
+  font-weight: bold;
+}
+
+.undercover-score-name {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.undercover-score-crown {
+  color: var(--accent);
+}
+
+.undercover-score-value {
+  font-weight: bold;
+  color: var(--accent);
+}
+
+.undercover-score-round {
+  font-weight: normal;
+  font-size: 0.85rem;
+  color: var(--success);
+  margin-right: 0.3rem;
+}
+
+.undercover-result-panel .panel-title {
+  margin-bottom: 0.5rem;
+}
+
+.undercover-admin-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
 }
