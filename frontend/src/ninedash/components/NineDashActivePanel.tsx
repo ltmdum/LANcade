@@ -58,11 +58,6 @@ export function NineDashActivePanel({
   return (
     <Panel className="ninedash-active-panel">
       {isParticipating && <PlayerScoreTags playerName={playerName} score={myScore} />}
-      <LetterGrid
-        letters={letters}
-        selectedIndices={selectedIndices}
-        onTileClick={isParticipating && !timeUp ? onTileClick : undefined}
-      />
       <div className="ninedash-countdown">{countdown}</div>
       <div className={statusClass}>{statusMessage}</div>
       <div className="ninedash-connection">{connection}</div>
@@ -89,6 +84,11 @@ export function NineDashActivePanel({
             </button>
           </div>
           {inputHint && <div className="ninedash-input-hint">{inputHint}</div>}
+          <LetterGrid
+            letters={letters}
+            selectedIndices={selectedIndices}
+            onTileClick={isParticipating && !timeUp ? onTileClick : undefined}
+          />
           <div className="ninedash-button-row">
             <button
               type="button"
@@ -107,6 +107,13 @@ export function NineDashActivePanel({
             </button>
           </div>
         </form>
+      )}
+      {(!isParticipating || timeUp) && (
+        <LetterGrid
+          letters={letters}
+          selectedIndices={selectedIndices}
+          onTileClick={undefined}
+        />
       )}
       {isParticipating && <AcceptedWordsList words={myWords} />}
     </Panel>
