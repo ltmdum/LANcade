@@ -1,9 +1,10 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { PlayAgainPanel } from '../shared/components/PlayAgainPanel';
 import { PromptDisplay } from './components/PromptDisplay';
 import { SubmitPanel } from './components/SubmitPanel';
 import { ClaimPanel } from './components/ClaimPanel';
 import { VotePanel } from './components/VotePanel';
+import { VoteResultsPanel } from './components/VoteResultsPanel';
 import { ResultsPanel } from './components/ResultsPanel';
 import { ScoreBoard } from './components/ScoreBoard';
 import { WinnerDisplay } from './components/WinnerDisplay';
@@ -46,7 +47,6 @@ export function MindMatchGame({
   const hasSubmitted = round.submittedPlayerIds?.includes(playerId) || false;
   const playerSubmission = round.submissions?.find((s) => s.playerId === playerId);
 
-  // Check if current player can make a claim (has claimable targets from server)
   const claimableTargets = useMemo(() => {
     if (round.state !== 'claiming') return [];
     return round.claimableTargets?.[playerId] || [];
@@ -61,7 +61,6 @@ export function MindMatchGame({
 
   async function onRestart() {
     setAdminStatus('');
-    // Mind Match doesn't use duration (rounds end when all submit), but API requires a value
     const durationMs = round.durationMs ?? 60000;
     const result = await handlePlayAgain(durationMs, accessKey);
     setAdminStatus(result.statusMessage);
@@ -69,6 +68,23 @@ export function MindMatchGame({
       setShowConfig(false);
     }
   }
+
+  const onShowResults = useCallback(async () => {
+    setAdminStatus('');
+    try {
+      const res = await fetch('/api/round/finish', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ playerId, roundId: round.id, key: accessKey }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setAdminStatus(data.reason || 'Could not advance.');
+      }
+    } catch {
+      setAdminStatus('Could not advance.');
+    }
+  }, [playerId, round.id, accessKey]);
 
   if (round.state === 'idle' && serverState.winnerIds.length === 0) {
     return null;
@@ -84,17 +100,23 @@ export function MindMatchGame({
         />
       )}
 
-      {!serverState.winnerIds.length && round.prompt && (
-        <PromptDisplay prompt={round.prompt} />
-      )}
-
-      {round.state === 'submitting' && isParticipating && (
+      {round.state === 'submitting' && isParticipating ? (
         <SubmitPanel
           playerId={playerId}
           accessKey={accessKey}
           hasSubmitted={hasSubmitted}
           playerSubmission={playerSubmission}
+          prompt={round.prompt!}
+          players={serverState.players}
+          submittedPlayerIds={round.submittedPlayerIds}
         />
+      ) : (
+        !serverState.winnerIds.length &&
+          round.prompt &&
+          round.state !== 'results' &&
+          round.state !== 'voting_results' && (
+          <PromptDisplay prompt={round.prompt} />
+        )
       )}
 
       {round.state === 'claiming' && isParticipating && (
@@ -115,7 +137,16 @@ export function MindMatchGame({
           accessKey={accessKey}
           claims={round.claims || []}
           currentClaimIndex={round.currentClaimIndex}
+        />
+      )}
+
+      {round.state === 'voting_results' && (
+        <VoteResultsPanel
+          claims={round.claims || []}
           playerLookup={playerLookup}
+          onShowResults={onShowResults}
+          isAdmin={isAdmin}
+          adminStatus={adminStatus}
         />
       )}
 

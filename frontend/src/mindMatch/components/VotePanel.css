@@ -35,9 +35,49 @@
 }
 
 .vote-panel-tally {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background: var(--bg-input);
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+
+.vote-panel-tally-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem 0;
+  color: var(--text-primary);
   text-align: center;
-  font-size: 0.875rem;
-  color: var(--text-secondary);
+}
+
+.vote-panel-tally-row {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.25rem 0;
+  align-items: baseline;
+}
+
+.vote-panel-tally-label {
+  font-weight: 600;
+  min-width: 85px;
+  flex-shrink: 0;
+}
+
+.vote-panel-tally-label--accept {
+  color: var(--success);
+}
+
+.vote-panel-tally-label--reject {
+  color: var(--danger);
+}
+
+.vote-panel-tally-label--pending {
+  color: var(--text-muted);
+}
+
+.vote-panel-tally-names {
+  color: var(--text-primary);
+  word-break: break-word;
 }
 
 .vote-panel-status {

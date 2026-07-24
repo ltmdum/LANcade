@@ -30,7 +30,7 @@ interface PendingClaim {
 
 interface Round {
   id: number;
-  state: 'idle' | 'submitting' | 'claiming' | 'voting' | 'results';
+  state: 'idle' | 'submitting' | 'claiming' | 'voting' | 'voting_results' | 'results';
   prompt: MindMatchPrompt | null;
   submissions: Map<string, string>;
   durationMs: number | null;
@@ -208,7 +208,7 @@ export function createGame(options: MindMatchGameOptions = {}): MindMatchGame {
   function buildRoundState(): MindMatchRoundState {
     const submissions: MindMatchSubmission[] = [];
     // Only show submissions in claiming/voting/results phases
-    if (round.state === 'claiming' || round.state === 'voting' || round.state === 'results') {
+    if (round.state === 'claiming' || round.state === 'voting' || round.state === 'voting_results' || round.state === 'results') {
       for (const [playerId, word] of round.submissions.entries()) {
         submissions.push({
           playerId,
@@ -287,21 +287,6 @@ export function createGame(options: MindMatchGameOptions = {}): MindMatchGame {
   }
 
   /**
-   * Find players with unique words who can make claims.
-   * @param groups Current word groups.
-   * @returns Array of player IDs with unique words.
-   */
-  function findUniqueWordPlayers(groups: Map<string, string[]>): string[] {
-    const uniquePlayers: string[] = [];
-    for (const [, playerIds] of groups) {
-      if (playerIds.length === 1) {
-        uniquePlayers.push(playerIds[0]);
-      }
-    }
-    return uniquePlayers;
-  }
-
-  /**
    * Find similar words for a given word from all submissions.
    * @param playerWord The player's word (will be normalized internally).
    * @param groups All word groups.
@@ -343,7 +328,7 @@ export function createGame(options: MindMatchGameOptions = {}): MindMatchGame {
   }
 
   /**
-   * Build final results and update scores.
+   * Build final results and score changes.
    * @param groups Word groups after claims are resolved.
    * @returns Round result object.
    */
@@ -363,17 +348,26 @@ export function createGame(options: MindMatchGameOptions = {}): MindMatchGame {
 
       for (const playerId of playerIds) {
         scoreChanges[playerId] = (scoreChanges[playerId] || 0) + points;
-        scores[playerId] = (scores[playerId] || 0) + points;
       }
     }
 
-    // Sort groups by points (highest first), then by player count
     wordGroups.sort((a, b) => {
       if (b.points !== a.points) return b.points - a.points;
       return b.playerIds.length - a.playerIds.length;
     });
 
     return { groups: wordGroups, scoreChanges };
+  }
+
+  /**
+   * Apply score changes to actual scores and check for winner.
+   * @param scoreChanges Score changes to apply.
+   */
+  function applyScoreChanges(scoreChanges: Record<string, number>): void {
+    for (const [playerId, points] of Object.entries(scoreChanges)) {
+      scores[playerId] = (scores[playerId] || 0) + points;
+    }
+    checkForWinner();
   }
 
   /**
@@ -429,22 +423,11 @@ export function createGame(options: MindMatchGameOptions = {}): MindMatchGame {
 
     clearRoundTimer();
     const groups = groupSubmissions();
-    const uniquePlayers = findUniqueWordPlayers(groups);
 
-    if (uniquePlayers.length === 0) {
-      // No unique words, go straight to results
-      finalizeResults();
-      return;
-    }
-
-    // Build claimable targets for each unique player based on similarity
     round.claimableTargets = new Map();
     let anyClaimableTargets = false;
 
-    for (const playerId of uniquePlayers) {
-      const playerWord = round.submissions.get(playerId);
-      if (!playerWord) continue;
-
+    for (const [playerId, playerWord] of round.submissions) {
       const similarWords = findSimilarClaimTargets(playerWord, groups);
       if (similarWords.length > 0) {
         round.claimableTargets.set(playerId, similarWords);
@@ -452,7 +435,6 @@ export function createGame(options: MindMatchGameOptions = {}): MindMatchGame {
       }
     }
 
-    // If no unique player has any similar words to claim, skip to results
     if (!anyClaimableTargets) {
       finalizeResults();
       return;
@@ -467,11 +449,10 @@ export function createGame(options: MindMatchGameOptions = {}): MindMatchGame {
   }
 
   /**
-   * Check if all unique word players (with claimable targets) have claimed or skipped.
-   * @returns True if all eligible unique players have acted.
+   * Check if all players who need to act in the current claiming stage have acted.
+   * @returns True if all eligible players have acted.
    */
-  function allUniquePlayersActed(): boolean {
-    // Only consider players who have claimable targets
+  function allClaimingPlayersActed(): boolean {
     for (const playerId of round.claimableTargets.keys()) {
       if (!round.claimedOrSkippedPlayers.has(playerId)) {
         return false;
@@ -481,31 +462,9 @@ export function createGame(options: MindMatchGameOptions = {}): MindMatchGame {
   }
 
   /**
-   * Determine which players benefit from a claim being accepted.
-   * @param claimantId The player making the claim.
-   * @param targetPlayerIds Players in the target group.
-   * @returns Set of player IDs who benefit.
-   */
-  function getBeneficiaries(claimantId: string, targetPlayerIds: string[]): Set<string> {
-    const beneficiaries = new Set<string>();
-
-    // Claimant always benefits (goes from 0 points to either 3 or 1)
-    beneficiaries.add(claimantId);
-
-    // Target group members benefit only if they currently have a unique word
-    // (going from 0 points to 3 points when paired)
-    if (targetPlayerIds.length === 1) {
-      beneficiaries.add(targetPlayerIds[0]);
-    }
-    // Groups of 2+ don't benefit (they either lose points or stay the same)
-
-    return beneficiaries;
-  }
-
-  /**
    * Process pending claims and move to voting or results.
-   * Claims on unique words are auto-rejected unless mutual.
-   * Mutual claims go to voting but beneficiaries cannot vote.
+   * Each claim equates two word groups; the claim counts as one accept vote.
+   * All claims go to voting with no beneficiary distinction.
    */
   function processPendingClaims(): void {
     if (round.state !== 'claiming') {
@@ -513,82 +472,74 @@ export function createGame(options: MindMatchGameOptions = {}): MindMatchGame {
     }
 
     const groups = groupSubmissions();
-    const validClaims: MindMatchClaim[] = [];
-
-    // Track mutual claims (both players claimed each other)
-    const mutualPairs = new Set<string>();
+    const claimMap = new Map<string, MindMatchClaim>();
 
     for (const pending of round.pendingClaims) {
-      const normalizedTarget = normalizeWord(pending.targetWord);
-      const targetGroup = groups.get(normalizedTarget);
+      const claimantWord = round.submissions.get(pending.claimantId);
+      if (!claimantWord) continue;
+      const normClaimant = normalizeWord(claimantWord);
+      const normTarget = normalizeWord(pending.targetWord);
+      if (normClaimant === normTarget) continue;
 
-      if (!targetGroup) continue;
+      const claimantGroup = groups.get(normClaimant);
+      const targetGroup = groups.get(normTarget);
+      if (!claimantGroup || !targetGroup) continue;
 
-      const playerWord = round.submissions.get(pending.claimantId);
-      if (!playerWord) continue;
+      const key = [normClaimant, normTarget].sort().join('\0');
 
-      // Check if target is a unique word (single player)
-      if (targetGroup.length === 1) {
+      let claim = claimMap.get(key);
+      if (!claim) {
         const targetPlayerId = targetGroup[0];
+        const actualTargetWord = round.submissions.get(targetPlayerId) || pending.targetWord;
 
-        // Check if the target player also claimed this player's word
-        const reverseClaimExists = round.pendingClaims.some(
-          (c) =>
-            c.claimantId === targetPlayerId &&
-            normalizeWord(c.targetWord) === normalizeWord(playerWord)
-        );
-
-        if (reverseClaimExists) {
-          // Mutual claim - goes to voting (but both parties are beneficiaries and can't vote)
-          const pairKey = [pending.claimantId, targetPlayerId].sort().join('|');
-          if (!mutualPairs.has(pairKey)) {
-            mutualPairs.add(pairKey);
-            validClaims.push({
-              claimantId: pending.claimantId,
-              claimantName: getPlayerName(pending.claimantId),
-              claimantWord: playerWord,
-              targetWord: pending.targetWord,
-              targetPlayerIds: [targetPlayerId],
-              votes: {},
-              resolved: false,
-              accepted: false,
-              isMutual: true,
-            });
-          }
-        } else {
-          // Non-mutual claim on unique word - auto-reject
-          validClaims.push({
-            claimantId: pending.claimantId,
-            claimantName: getPlayerName(pending.claimantId),
-            claimantWord: playerWord,
-            targetWord: pending.targetWord,
-            targetPlayerIds: [targetPlayerId],
-            votes: {},
-            resolved: true,
-            accepted: false,
-            isMutual: false,
-          });
+        const involvedPlayers: Record<string, string> = {};
+        for (const pid of claimantGroup) {
+          involvedPlayers[pid] = round.submissions.get(pid) || '(unknown)';
         }
-      } else {
-        // Target is a group (2+ players) - requires voting
-        validClaims.push({
+        for (const pid of targetGroup) {
+          involvedPlayers[pid] = round.submissions.get(pid) || '(unknown)';
+        }
+
+        claim = {
           claimantId: pending.claimantId,
           claimantName: getPlayerName(pending.claimantId),
-          claimantWord: playerWord,
-          targetWord: pending.targetWord,
-          targetPlayerIds: targetGroup,
+          claimantWord,
+          targetWord: actualTargetWord,
+          targetPlayerIds: [...targetGroup],
           votes: {},
           resolved: false,
           accepted: false,
           isMutual: false,
-        });
+          involvedPlayers,
+        };
+        claimMap.set(key, claim);
+      }
+
+      claim.votes[pending.claimantId] = 'accept';
+    }
+
+    round.claims = Array.from(claimMap.values());
+    round.currentClaimIndex = 0;
+
+    // Skipped players = acted but didn't submit a claim → reject on all relevant claims
+    const skippedPlayers = new Set<string>();
+    for (const playerId of round.claimedOrSkippedPlayers) {
+      const hasPendingClaim = round.pendingClaims.some(pc => pc.claimantId === playerId);
+      if (!hasPendingClaim) {
+        skippedPlayers.add(playerId);
       }
     }
 
-    round.claims = validClaims;
-    round.currentClaimIndex = 0;
+    for (const claim of round.claims) {
+      if (claim.resolved) continue;
 
-    // Find first unresolved claim
+      for (const playerId of skippedPlayers) {
+        if (claim.targetPlayerIds.includes(playerId)) {
+          claim.votes[playerId] = 'reject';
+        }
+      }
+    }
+
     while (
       round.currentClaimIndex < round.claims.length &&
       round.claims[round.currentClaimIndex].resolved
@@ -598,111 +549,74 @@ export function createGame(options: MindMatchGameOptions = {}): MindMatchGame {
 
     if (round.currentClaimIndex < round.claims.length) {
       round.state = 'voting';
-      notifyChange();
+      processVoteResult();
     } else {
-      // All claims auto-resolved, go to results
       finalizeResults();
     }
-  }
-
-  /**
-   * Move to voting phase for the current claim.
-   */
-  function moveToVoting(): void {
-    if (round.state !== 'claiming' || round.claims.length === 0) {
-      return;
-    }
-
-    round.state = 'voting';
-    notifyChange();
   }
 
   /**
    * Process the current vote and move to next claim or results.
-   * Only non-benefiting players' votes are counted.
+   * All players vote; no beneficiary distinction.
    */
   function processVoteResult(): void {
-    const claim = round.claims[round.currentClaimIndex];
-    if (!claim) return;
+    while (round.currentClaimIndex < round.claims.length) {
+      const claim = round.claims[round.currentClaimIndex];
+      if (!claim) return;
 
-    // Determine who benefits from this claim
-    const beneficiaries = getBeneficiaries(claim.claimantId, claim.targetPlayerIds);
-
-    // Eligible voters are all players except beneficiaries
-    const eligibleVoters = getPlayerIds().filter((id) => !beneficiaries.has(id));
-
-    // If no eligible voters, auto-accept (no one is harmed)
-    if (eligibleVoters.length === 0) {
-      claim.accepted = true;
-      claim.resolved = true;
-    } else {
-      // Count votes from eligible voters only
-      const eligibleVoteEntries = Object.entries(claim.votes).filter(
-        ([voterId]) => !beneficiaries.has(voterId)
-      );
-      const totalVotes = eligibleVoteEntries.length;
-
-      if (totalVotes < eligibleVoters.length) {
-        return; // Not all votes in yet
+      if (claim.resolved) {
+        round.currentClaimIndex++;
+        continue;
       }
 
-      // Count accepts from eligible voters
-      const accepts = eligibleVoteEntries.filter(([, vote]) => vote === 'accept').length;
+      const eligibleVoters = getPlayerIds();
 
-      // 50% or more of eligible voters must accept
-      claim.accepted = accepts >= eligibleVoters.length / 2;
+      const totalVotes = Object.keys(claim.votes).length;
+
+      if (totalVotes < eligibleVoters.length) {
+        notifyChange();
+        return;
+      }
+
+      const accepts = Object.values(claim.votes).filter((v) => v === 'accept').length;
+
+      claim.accepted = accepts > eligibleVoters.length / 2;
       claim.resolved = true;
-    }
 
-    // If accepted, merge the claimant into the target group
-    if (claim.accepted) {
-      if (claim.isMutual) {
-        // Mutual claim - randomly choose which word both players will share
-        const targetPlayerId = claim.targetPlayerIds[0];
-        const useTargetWord = Math.random() < 0.5;
-        const sharedWord = useTargetWord
-          ? round.submissions.get(targetPlayerId)
-          : round.submissions.get(claim.claimantId);
-        if (sharedWord) {
-          round.submissions.set(claim.claimantId, sharedWord);
-          round.submissions.set(targetPlayerId, sharedWord);
-        }
-      } else {
-        // Non-mutual: claimant adopts target's word
+      // If accepted, merge the claimant's group into the target group
+      if (claim.accepted) {
         const targetPlayerId = claim.targetPlayerIds[0];
         const targetWord = round.submissions.get(targetPlayerId);
         if (targetWord) {
-          round.submissions.set(claim.claimantId, targetWord);
+          const normClaimant = normalizeWord(claim.claimantWord);
+          const currentGroups = groupSubmissions();
+          const claimantGroupIds = currentGroups.get(normClaimant);
+          if (claimantGroupIds) {
+            for (const pid of claimantGroupIds) {
+              round.submissions.set(pid, targetWord);
+            }
+          }
         }
       }
-    }
 
-    // Move to next claim or finalize
-    round.currentClaimIndex++;
-
-    // Find next unresolved claim
-    while (
-      round.currentClaimIndex < round.claims.length &&
-      round.claims[round.currentClaimIndex].resolved
-    ) {
       round.currentClaimIndex++;
     }
 
-    if (round.currentClaimIndex < round.claims.length) {
-      notifyChange();
-    } else {
-      finalizeResults();
-    }
+    finalizeResults();
   }
 
   /**
-   * Finalize results and check for winner.
+   * Finalize results.
    */
   function finalizeResults(): void {
     const groups = groupSubmissions();
     round.result = buildResults(groups);
-    round.state = 'results';
-    checkForWinner();
+    if (round.claims.length > 0) {
+      round.state = 'voting_results';
+    } else {
+      round.state = 'results';
+      applyScoreChanges(round.result.scoreChanges);
+    }
     notifyChange();
   }
 
@@ -724,6 +638,13 @@ export function createGame(options: MindMatchGameOptions = {}): MindMatchGame {
       usedPromptIds.clear();
     }
 
+    // Initialize scores for all players
+    for (const id of playerIds) {
+      if (scores[id] === undefined) {
+        scores[id] = 0;
+      }
+    }
+
     clearRoundTimer();
     const now = Date.now();
     const prompt = selectRandomPrompt(usedPromptIds);
@@ -740,11 +661,11 @@ export function createGame(options: MindMatchGameOptions = {}): MindMatchGame {
       finishDeadline: null,
       pendingClaims: [],
       claimedOrSkippedPlayers: new Set(),
+      claimableTargets: new Map(),
       claims: [],
       currentClaimIndex: 0,
       result: null,
       finishedByPlayer: new Set(),
-      claimableTargets: new Map(),
     };
 
     notifyChange();
@@ -807,43 +728,36 @@ export function createGame(options: MindMatchGameOptions = {}): MindMatchGame {
       return { ok: false, reason: 'not_claiming_phase' };
     }
 
-    // Check if this player has claimable targets
+    if (round.claimedOrSkippedPlayers.has(playerId)) {
+      return { ok: false, reason: 'already_claimed' };
+    }
+
     const allowedTargets = round.claimableTargets.get(playerId);
     if (!allowedTargets || allowedTargets.length === 0) {
       return { ok: false, reason: 'no_claimable_targets' };
     }
 
-    // Check if player already submitted a claim or skipped
-    if (round.claimedOrSkippedPlayers.has(playerId)) {
-      return { ok: false, reason: 'already_claimed' };
-    }
-
-    // Validate the target word is in the player's allowed targets
     const normalizedTarget = normalizeWord(targetWord);
     const isAllowedTarget = allowedTargets.some(
       (allowed) => normalizeWord(allowed) === normalizedTarget
     );
-
     if (!isAllowedTarget) {
       return { ok: false, reason: 'target_not_similar_enough' };
     }
 
-    // Find the target group
     const groups = groupSubmissions();
     const targetGroup = groups.get(normalizedTarget);
     if (!targetGroup) {
       return { ok: false, reason: 'target_not_found' };
     }
 
-    // Add to pending claims
     round.pendingClaims.push({
       claimantId: playerId,
       targetWord,
     });
     round.claimedOrSkippedPlayers.add(playerId);
 
-    // Check if all unique players have acted
-    if (allUniquePlayersActed()) {
+    if (allClaimingPlayersActed()) {
       processPendingClaims();
     } else {
       notifyChange();
@@ -854,7 +768,7 @@ export function createGame(options: MindMatchGameOptions = {}): MindMatchGame {
 
   /**
    * Submit a vote on the current claim.
-   * Only non-benefiting players can vote.
+   * All players can vote on any claim.
    * @param playerId Voter player ID.
    * @param payload Vote payload with decision.
    * @returns Vote result.
@@ -869,15 +783,6 @@ export function createGame(options: MindMatchGameOptions = {}): MindMatchGame {
       return { ok: false, reason: 'no_claim' };
     }
 
-    // Determine beneficiaries
-    const beneficiaries = getBeneficiaries(claim.claimantId, claim.targetPlayerIds);
-
-    // Beneficiaries cannot vote
-    if (beneficiaries.has(playerId)) {
-      return { ok: false, reason: 'beneficiary_cannot_vote' };
-    }
-
-    // Already voted
     if (claim.votes[playerId]) {
       return { ok: false, reason: 'already_voted' };
     }
@@ -906,21 +811,17 @@ export function createGame(options: MindMatchGameOptions = {}): MindMatchGame {
       return { ok: false, reason: 'not_claiming_phase' };
     }
 
-    // Check if player has claimable targets (only they need to act)
     if (!round.claimableTargets.has(playerId)) {
       return { ok: false, reason: 'no_action_required' };
     }
 
-    // Check if player already acted
     if (round.claimedOrSkippedPlayers.has(playerId)) {
       return { ok: false, reason: 'already_acted' };
     }
 
-    // Mark this player as having skipped
     round.claimedOrSkippedPlayers.add(playerId);
 
-    // Check if all unique players have acted
-    if (allUniquePlayersActed()) {
+    if (allClaimingPlayersActed()) {
       processPendingClaims();
     } else {
       notifyChange();
@@ -936,6 +837,15 @@ export function createGame(options: MindMatchGameOptions = {}): MindMatchGame {
    * @returns Finish result.
    */
   function finishRound(playerId: string, roundId: number): FinishRoundResult {
+    if (round.state === 'voting_results') {
+      round.state = 'results';
+      if (round.result) {
+        applyScoreChanges(round.result.scoreChanges);
+      }
+      notifyChange();
+      return { ok: true };
+    }
+
     if (round.state === 'submitting') {
       if (roundId !== round.id) {
         return { ok: false, reason: 'wrong_round' };

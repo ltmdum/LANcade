@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Panel } from '../../shared/components/Panel';
 import { handleVoteSubmit } from '../../shared/utils/voting';
 import type { MindMatchClaim } from '@lancade/shared';
@@ -9,23 +8,14 @@ interface VotePanelProps {
   accessKey: string;
   claims: MindMatchClaim[];
   currentClaimIndex: number;
-  playerLookup: Record<string, string>;
 }
 
-/**
- * Panel for voting on claims.
- * @param props Vote panel props.
- * @returns Vote panel element.
- */
 export function VotePanel({
   playerId,
   accessKey,
   claims,
   currentClaimIndex,
-  playerLookup,
 }: VotePanelProps) {
-  const [status, setStatus] = useState('');
-
   const currentClaim = claims[currentClaimIndex];
   if (!currentClaim) {
     return (
@@ -35,17 +25,10 @@ export function VotePanel({
     );
   }
 
-  const isClaimant = currentClaim.claimantId === playerId;
-  const isTarget = currentClaim.targetPlayerIds.includes(playerId);
-  const isInvolvedInMutual = currentClaim.isMutual && (isClaimant || isTarget);
   const hasVoted = playerId in currentClaim.votes;
-  const targetPlayerNames = currentClaim.targetPlayerIds
-    .map((id) => playerLookup[id] || 'Unknown')
-    .join(', ');
 
   async function onVote(decision: 'accept' | 'reject') {
-    setStatus('');
-    const result = await handleVoteSubmit({
+    await handleVoteSubmit({
       playerId,
       accessKey,
       payload: { decision },
@@ -54,25 +37,11 @@ export function VotePanel({
         alreadyVoted: 'You have already voted.',
         failed: 'Could not submit vote.',
       },
-      successMessage: 'Vote submitted.',
+      successMessage: '',
     });
-    setStatus(result.statusMessage);
   }
 
-  /**
-   * Render the voting controls or status message.
-   */
   function renderVotingSection() {
-    if (isInvolvedInMutual) {
-      return (
-        <p className="vote-panel-waiting">
-          You both claimed each other's words. Waiting for others to vote...
-        </p>
-      );
-    }
-    if (isClaimant) {
-      return <p className="vote-panel-waiting">Waiting for others to vote...</p>;
-    }
     if (hasVoted) {
       return <p className="vote-panel-waiting">Vote submitted. Waiting for others...</p>;
     }
@@ -92,25 +61,13 @@ export function VotePanel({
     <Panel title="Vote on Claim">
       <div className="vote-panel-claim">
         <p className="vote-panel-question">
-          <strong>{currentClaim.claimantName}</strong> answered{' '}
-          <strong>"{currentClaim.claimantWord}"</strong> and claims it means the same as{' '}
-          <strong>"{currentClaim.targetWord}"</strong>
+          A claim has been made that{' '}
+          <strong>"{currentClaim.targetWord}"</strong> is equivalent to{' '}
+          <strong>"{currentClaim.claimantWord}"</strong>
         </p>
-        <p className="vote-panel-target">
-          (submitted by {targetPlayerNames})
-        </p>
-        {currentClaim.isMutual && (
-          <p className="vote-panel-mutual">Both players claimed each other's words!</p>
-        )}
       </div>
 
       {renderVotingSection()}
-
-      <div className="vote-panel-tally">
-        Votes: {Object.keys(currentClaim.votes).length} submitted
-      </div>
-
-      {status && <p className="vote-panel-status">{status}</p>}
     </Panel>
   );
 }

@@ -31,7 +31,6 @@ export function ClaimPanel({
   const [status, setStatus] = useState('');
   const [claimed, setClaimed] = useState(false);
 
-  // Group submissions by word (case-insensitive) to get player counts
   const groups = new Map<string, MindMatchSubmission[]>();
   for (const sub of submissions) {
     const key = sub.word.toLowerCase();
@@ -40,7 +39,6 @@ export function ClaimPanel({
     groups.set(key, existing);
   }
 
-  // Build claimable groups from server-provided targets
   const claimableGroups: MindMatchSubmission[][] = [];
   for (const targetWord of claimableTargets) {
     const key = targetWord.toLowerCase();
@@ -87,10 +85,18 @@ export function ClaimPanel({
         return;
       }
       setClaimed(true);
-      setStatus('Skipped claiming.');
+      setStatus('Skipped.');
     } catch {
       setStatus('Could not skip.');
     }
+  }
+
+  if (claimed) {
+    return (
+      <Panel title="Claim Phase">
+        <p className="claim-panel-info">{status}</p>
+      </Panel>
+    );
   }
 
   if (!canMakeClaim) {
@@ -103,19 +109,10 @@ export function ClaimPanel({
     );
   }
 
-  if (claimed) {
-    return (
-      <Panel title="Claim Phase">
-        <p className="claim-panel-info">{status}</p>
-      </Panel>
-    );
-  }
-
   return (
     <Panel title="Make a Claim">
       <p className="claim-panel-info">
-        Your word "{playerSubmission?.word}" was unique. Select a similar word to claim,
-        or skip if none apply.
+        Claim that your word <strong>"{playerSubmission?.word}"</strong> means the same as
       </p>
       <div className="claim-panel-options">
         {claimableGroups.map((group) => (
@@ -124,7 +121,7 @@ export function ClaimPanel({
             className="btn btn-secondary claim-panel-option"
             onClick={() => handleClaim(group[0].word)}
           >
-            Claim "{group[0].word}" ({group.length} player{group.length !== 1 ? 's' : ''})
+            Claim "{group[0].word}"
           </button>
         ))}
         <button className="btn btn-outline claim-panel-skip" onClick={handleSkip}>

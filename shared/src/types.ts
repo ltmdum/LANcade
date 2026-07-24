@@ -217,6 +217,10 @@ export interface MindMatchClaim {
   accepted: boolean;
   /** True when both unique-word players claimed each other */
   isMutual: boolean;
+  /** Original submission words for all involved players */
+  involvedPlayers?: Record<string, string>;
+  /** True when a mutual claim was abandoned (only one player claimed) */
+  abandonedMutual?: boolean;
 }
 
 export interface MindMatchWordGroup {
@@ -233,7 +237,7 @@ export interface MindMatchRoundResult {
 
 export interface MindMatchRoundState {
   id: number;
-  state: 'idle' | 'submitting' | 'claiming' | 'voting' | 'results';
+  state: 'idle' | 'submitting' | 'claiming' | 'voting' | 'voting_results' | 'results';
   prompt: MindMatchPrompt | null;
   submissions: MindMatchSubmission[];
   submittedPlayerIds: string[];

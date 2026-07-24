@@ -358,7 +358,7 @@ describe('UndercoverAgentGame', () => {
       render(<UndercoverAgentGame {...createDefaultProps(state)} />);
 
       expect(
-        screen.getByText(/Anyone who voted for the Agent earns 2 points/i)
+        screen.getByText(/Civilians who voted for the Agent earn 2 points/i)
       ).toBeInTheDocument();
     });
 

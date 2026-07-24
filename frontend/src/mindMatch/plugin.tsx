@@ -77,8 +77,8 @@ export const plugin: GamePlugin = {
     instructions: [
       { heading: "Prompt", text: "Each round shows a phrase with a blank to fill in." },
       { heading: "Submit", text: "Secretly submit your word hoping to match with other players!" },
-      { heading: "Match", text: "Match with exactly one other player: 3 points each. Match with a group of 3+: 1 point each." },
-      { heading: "Unique", text: "Unique answers score 0 points, but you may claim yours matches another. Other players vote to decide." },
+      { heading: "Match", text: "Match with exactly one other player: 3 points each. Match with a group of 3+: 1 point each. Unique answers score 0." },
+      { heading: "Claims", text: "You may claim your word matches another similar word. Other players vote to decide." },
       { heading: "Winner", text: "First to reach the target score wins! (Default: 25)" },
     ],
     defaultTimer: {

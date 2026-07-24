@@ -21,7 +21,7 @@ export function ResultsPanel({ result, playerLookup }: ResultsPanelProps) {
             key={index}
             className={`results-panel-group ${group.points > 0 ? 'scored' : 'no-score'}`}
           >
-            <div className="results-panel-word">"{group.word}"</div>
+            <div className="results-panel-word">{group.word.toLowerCase()}</div>
             <div className="results-panel-players">
               {group.playerNames.join(', ')}
             </div>

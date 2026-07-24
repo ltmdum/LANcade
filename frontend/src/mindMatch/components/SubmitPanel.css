@@ -40,3 +40,28 @@
 .submit-panel-input-error {
   border-color: var(--danger);
 }
+
+.submit-panel-waiting {
+  margin-top: 1rem;
+  padding: 0.5rem;
+  background: var(--bg-input);
+  border-radius: 4px;
+}
+
+.submit-panel-waiting-label {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.25rem;
+}
+
+.submit-panel-waiting-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.submit-panel-waiting-list li {
+  padding: 0.125rem 0;
+}

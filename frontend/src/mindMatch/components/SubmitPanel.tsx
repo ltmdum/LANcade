@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Panel } from '../../shared/components/Panel';
+import { PromptDisplay } from './PromptDisplay';
 import { submitWord } from '../../shared/utils/api';
-import type { MindMatchSubmission } from '@lancade/shared';
+import type { MindMatchSubmission, MindMatchPrompt, PlayerInfo } from '@lancade/shared';
 import './SubmitPanel.css';
 
 interface SubmitPanelProps {
@@ -9,6 +10,9 @@ interface SubmitPanelProps {
   accessKey: string;
   hasSubmitted: boolean;
   playerSubmission?: MindMatchSubmission;
+  prompt: MindMatchPrompt;
+  players: PlayerInfo[];
+  submittedPlayerIds: string[];
 }
 
 /**
@@ -21,6 +25,9 @@ export function SubmitPanel({
   accessKey,
   hasSubmitted,
   playerSubmission,
+  prompt,
+  players,
+  submittedPlayerIds,
 }: SubmitPanelProps) {
   const [wordInput, setWordInput] = useState('');
   const [submittedWord, setSubmittedWord] = useState('');
@@ -29,6 +36,10 @@ export function SubmitPanel({
 
   // Use server submission if available, otherwise use locally tracked word
   const displayWord = playerSubmission?.word || submittedWord;
+
+  const waitingPlayers = players.filter(
+    (p) => p.id !== playerId && !submittedPlayerIds.includes(p.id)
+  );
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -51,7 +62,6 @@ export function SubmitPanel({
       setSubmittedWord(wordInput.trim());
       setStatus('Submitted!');
       setSubmitStatus('success');
-      setWordInput('');
     } catch {
       setStatus('Could not submit word.');
       setSubmitStatus('error');
@@ -63,30 +73,49 @@ export function SubmitPanel({
     setSubmitStatus('');
   }
 
+  if (hasSubmitted) {
+    return (
+      <Panel title="Your Answer">
+        <PromptDisplay prompt={prompt} word={displayWord} />
+        <p className="submit-panel-hint">Waiting for other players to submit...</p>
+        {waitingPlayers.length > 0 && (
+          <div className="submit-panel-waiting">
+            <p className="submit-panel-waiting-label">Still waiting for:</p>
+            <ul className="submit-panel-waiting-list">
+              {waitingPlayers.map((p) => (
+                <li key={p.id}>{p.name}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </Panel>
+    );
+  }
+
   return (
     <Panel title="Your Answer">
-      {hasSubmitted ? (
-        <div className="submit-panel-submitted">
-          <p>You submitted: <strong>{displayWord}</strong></p>
-          <p className="submit-panel-hint">Waiting for other players to submit...</p>
-        </div>
-      ) : (
-        <p className="submit-panel-hint">Enter a word that completes the phrase.</p>
-      )}
+      <PromptDisplay
+        prompt={prompt}
+        editable
+        word={wordInput}
+        onWordChange={handleInputChange}
+      />
       <form onSubmit={handleSubmit} className="submit-panel-form">
-        <input
-          type="text"
-          value={wordInput}
-          onChange={(e) => handleInputChange(e.target.value)}
-          placeholder="Your word..."
-          className={`submit-panel-input${submitStatus === 'success' ? ' submit-panel-input-success' : ''}${submitStatus === 'error' ? ' submit-panel-input-error' : ''}`}
-          maxLength={100}
-        />
-        <button type="submit" className="btn btn-primary">
-          {hasSubmitted ? 'Update' : 'Submit'}
+        <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>
+          Submit
         </button>
       </form>
       {status && <p className={`submit-panel-status${submitStatus ? ` text-${submitStatus}` : ''}`}>{status}</p>}
+      {waitingPlayers.length > 0 && (
+        <div className="submit-panel-waiting">
+          <p className="submit-panel-waiting-label">Waiting for:</p>
+          <ul className="submit-panel-waiting-list">
+            {waitingPlayers.map((p) => (
+              <li key={p.id}>{p.name}</li>
+            ))}
+          </ul>
+        </div>
+      )}
     </Panel>
   );
 }

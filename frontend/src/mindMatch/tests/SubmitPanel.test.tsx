@@ -1,9 +1,17 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { SubmitPanel } from '../components/SubmitPanel';
+import type { MindMatchPrompt, PlayerInfo } from '@lancade/shared';
 
 // Mock fetch globally
 vi.stubGlobal('fetch', vi.fn());
+
+const testPrompt: MindMatchPrompt = { id: 1, text: 'body', blankPosition: 'before' };
+const testPlayers: PlayerInfo[] = [
+  { id: 'player-1', name: 'Alice' },
+  { id: 'player-2', name: 'Bob' },
+  { id: 'player-3', name: 'Charlie' },
+];
 
 describe('SubmitPanel', () => {
   beforeEach(() => {
@@ -17,12 +25,14 @@ describe('SubmitPanel', () => {
         accessKey="KEY123"
         hasSubmitted={false}
         playerSubmission={undefined}
+        prompt={testPrompt}
+        players={testPlayers}
+        submittedPlayerIds={[]}
       />
     );
 
     expect(screen.getByRole('textbox')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /submit/i })).toBeInTheDocument();
-    expect(screen.getByText(/Enter a word/)).toBeInTheDocument();
   });
 
   it('shows server-provided submission when available', () => {
@@ -32,11 +42,14 @@ describe('SubmitPanel', () => {
         accessKey="KEY123"
         hasSubmitted={true}
         playerSubmission={{ playerId: 'player-1', playerName: 'Alice', word: 'serverWord' }}
+        prompt={testPrompt}
+        players={testPlayers}
+        submittedPlayerIds={['player-1']}
       />
     );
 
-    expect(screen.getByText(/You submitted:/)).toBeInTheDocument();
     expect(screen.getByText('serverWord')).toBeInTheDocument();
+    expect(screen.getByText(/Waiting for other players/)).toBeInTheDocument();
   });
 
   it('shows locally tracked word after successful submission', async () => {
@@ -53,6 +66,9 @@ describe('SubmitPanel', () => {
         accessKey="KEY123"
         hasSubmitted={false}
         playerSubmission={undefined}
+        prompt={testPrompt}
+        players={testPlayers}
+        submittedPlayerIds={[]}
       />
     );
 
@@ -74,6 +90,9 @@ describe('SubmitPanel', () => {
         accessKey="KEY123"
         hasSubmitted={true}
         playerSubmission={{ playerId: 'player-1', playerName: 'Alice', word: 'testWord' }}
+        prompt={testPrompt}
+        players={testPlayers}
+        submittedPlayerIds={['player-1']}
       />
     );
 
@@ -87,6 +106,9 @@ describe('SubmitPanel', () => {
         accessKey="KEY123"
         hasSubmitted={false}
         playerSubmission={undefined}
+        prompt={testPrompt}
+        players={testPlayers}
+        submittedPlayerIds={[]}
       />
     );
 
@@ -98,17 +120,21 @@ describe('SubmitPanel', () => {
     });
   });
 
-  it('allows updating submission when already submitted', () => {
+  it('lists players who have not yet submitted', () => {
     render(
       <SubmitPanel
         playerId="player-1"
         accessKey="KEY123"
-        hasSubmitted={true}
-        playerSubmission={{ playerId: 'player-1', playerName: 'Alice', word: 'firstWord' }}
+        hasSubmitted={false}
+        playerSubmission={undefined}
+        prompt={testPrompt}
+        players={testPlayers}
+        submittedPlayerIds={['player-1']}
       />
     );
 
-    // Should show Update button instead of Submit
-    expect(screen.getByRole('button', { name: /update/i })).toBeInTheDocument();
+    expect(screen.getByText(/Waiting for:/)).toBeInTheDocument();
+    expect(screen.getByText('Bob')).toBeInTheDocument();
+    expect(screen.getByText('Charlie')).toBeInTheDocument();
   });
 });

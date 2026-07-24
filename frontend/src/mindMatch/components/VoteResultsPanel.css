@@ -1,0 +1,134 @@
+.vote-results-players {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.vote-results-players-heading {
+  font-weight: 700;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin-bottom: 0.25rem;
+}
+
+.vote-results-player {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.vote-results-player-name {
+  font-weight: 600;
+  min-width: 70px;
+}
+
+.vote-results-player-word {
+  color: var(--text-secondary);
+  padding: 0.1rem 0.4rem;
+  background: var(--bg-input);
+  border-radius: 4px;
+  font-size: 0.85rem;
+}
+
+.vote-results-claim {
+  margin-bottom: 0.75rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.vote-results-claim.accepted {
+  border-color: var(--success);
+}
+
+.vote-results-claim.rejected {
+  border-color: var(--danger);
+}
+
+.vote-results-verdict-bar {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.vote-results-verdict-bar.accepted {
+  background: var(--success-muted);
+  color: var(--success);
+}
+
+.vote-results-verdict-bar.rejected {
+  background: var(--danger-muted);
+  color: var(--danger);
+}
+
+.vote-results-body {
+  padding: 0.75rem;
+}
+
+.vote-results-equivalence {
+  font-size: 1rem;
+  text-align: center;
+  margin-bottom: 0.75rem;
+  padding: 0.5rem;
+  background: var(--bg-input);
+  border-radius: 6px;
+}
+
+.vote-results-votes {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.vote-results-vote-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: baseline;
+  font-size: 0.9rem;
+}
+
+.vote-results-vote-row-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  min-width: 55px;
+  flex-shrink: 0;
+}
+
+.vote-results-vote-row-label.accept {
+  color: var(--success);
+}
+
+.vote-results-vote-row-label.reject {
+  color: var(--danger);
+}
+
+.vote-results-empty {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.vote-results-admin {
+  margin-top: 1rem;
+  text-align: center;
+}
+
+.vote-results-status {
+  margin-top: 0.5rem;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  text-align: center;
+}

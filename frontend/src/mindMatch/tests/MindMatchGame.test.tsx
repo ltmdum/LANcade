@@ -241,14 +241,42 @@ describe('MindMatchGame', () => {
       expect(screen.getByRole('button', { name: /reject/i })).toBeInTheDocument();
     });
 
-    it('shows waiting message for mutual claim participants', () => {
+    it('does not reveal target player names in claim description', () => {
       const state = createBaseState();
       state.round.state = 'voting';
       state.round.prompt = { id: 1, text: 'body', blankPosition: 'before' };
       state.round.claims = [
         {
-          claimantId: 'player-2',
-          claimantName: 'Bob',
+          claimantId: 'player-3',
+          claimantName: 'Charlie',
+          claimantWord: 'sane',
+          targetWord: 'same',
+          targetPlayerIds: ['player-1', 'player-2'],
+          votes: {},
+          resolved: false,
+          accepted: false,
+          isMutual: false,
+        },
+      ];
+      state.round.currentClaimIndex = 0;
+
+      render(<MindMatchGame {...createDefaultProps(state)} />);
+
+      // Should show claimant word and target word
+      expect(screen.getByText(/sane/)).toBeInTheDocument();
+      expect(screen.getByText(/same/)).toBeInTheDocument();
+      // Should NOT show "(submitted by ...)"
+      expect(screen.queryByText(/submitted by/i)).not.toBeInTheDocument();
+    });
+
+    it('does not show mutual claim info to voters', () => {
+      const state = createBaseState();
+      state.round.state = 'voting';
+      state.round.prompt = { id: 1, text: 'body', blankPosition: 'before' };
+      state.round.claims = [
+        {
+          claimantId: 'player-3',
+          claimantName: 'Charlie',
           claimantWord: 'car',
           targetWord: 'cat',
           targetPlayerIds: ['player-1'],
@@ -262,8 +290,37 @@ describe('MindMatchGame', () => {
 
       render(<MindMatchGame {...createDefaultProps(state)} />);
 
-      expect(screen.getByText(/You both claimed each other's words/)).toBeInTheDocument();
+      // Should NOT reveal mutual claim info
+      expect(screen.queryByText(/both claimed/i)).not.toBeInTheDocument();
+      // Should NOT reveal target player names
+      expect(screen.queryByText(/submitted by/i)).not.toBeInTheDocument();
+    });
+
+    it('shows waiting message for mutual claim participants without revealing info', () => {
+      const state = createBaseState();
+      state.round.state = 'voting';
+      state.round.prompt = { id: 1, text: 'body', blankPosition: 'before' };
+      state.round.claims = [
+        {
+          claimantId: 'player-2',
+          claimantName: 'Bob',
+          claimantWord: 'car',
+          targetWord: 'cat',
+          targetPlayerIds: ['player-1'],
+          votes: { 'player-2': 'accept' },
+          resolved: false,
+          accepted: false,
+          isMutual: true,
+        },
+      ];
+      state.round.currentClaimIndex = 0;
+
+      const props = { ...createDefaultProps(state), playerId: 'player-2', playerName: 'Bob' };
+      render(<MindMatchGame {...props} />);
+
+      expect(screen.getByText(/vote submitted/i)).toBeInTheDocument();
       expect(screen.queryByRole('button', { name: /accept/i })).not.toBeInTheDocument();
+      expect(screen.queryByText(/both claimed/i)).not.toBeInTheDocument();
     });
 
     it('shows waiting message for claimant on non-mutual claim', () => {
@@ -277,7 +334,7 @@ describe('MindMatchGame', () => {
           claimantWord: 'sane',
           targetWord: 'same',
           targetPlayerIds: ['player-2', 'player-3'],
-          votes: {},
+          votes: { 'player-1': 'accept' },
           resolved: false,
           accepted: false,
           isMutual: false,
@@ -287,7 +344,7 @@ describe('MindMatchGame', () => {
 
       render(<MindMatchGame {...createDefaultProps(state)} />);
 
-      expect(screen.getByText(/Waiting for others to vote/)).toBeInTheDocument();
+      expect(screen.getByText(/vote submitted/i)).toBeInTheDocument();
       expect(screen.queryByRole('button', { name: /accept/i })).not.toBeInTheDocument();
     });
   });
@@ -319,7 +376,7 @@ describe('MindMatchGame', () => {
       render(<MindMatchGame {...createDefaultProps(state)} />);
 
       expect(screen.getByText(/Round Results/)).toBeInTheDocument();
-      expect(screen.getByText(/"same"/)).toBeInTheDocument();
+      expect(screen.getByText(/same/)).toBeInTheDocument();
       expect(screen.getByText(/\+3 each/)).toBeInTheDocument();
     });
 
