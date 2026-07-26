@@ -6,12 +6,16 @@ import {
   type LastOutcome,
 } from '@lancade/shared';
 import { createGameBase } from '../shared/stores/game-base.js';
+import type { SessionStore } from '../shared/stores/session-store.js';
 import { randomLetter } from '../shared/utils/letters.js';
 import { PlayerStore } from '../shared/stores/player-store.js';
+
+const SHARED_KEY = 'shared:used-words';
 
 export interface LastWordStandingGameOptions {
   onStateChange?: () => void;
   playerStore?: PlayerStore;
+  sessionStore?: SessionStore;
 }
 
 interface PendingWord {
@@ -117,6 +121,7 @@ function createEmptyMatch(): Match {
  */
 export function createGame(options: LastWordStandingGameOptions = {}): LastWordStandingGame {
   const onStateChange = options.onStateChange || (() => {});
+  const sessionStore = options.sessionStore;
   let match = createEmptyMatch();
   let turnTimeout: ReturnType<typeof setTimeout> | null = null;
   let voteTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -303,6 +308,11 @@ export function createGame(options: LastWordStandingGameOptions = {}): LastWordS
   function acceptWord(wordEntry: PendingWord): void {
     clearVoteTimer();
     match.usedWordKeys.add(wordEntry.key);
+    if (sessionStore) {
+      const shared = sessionStore.get<Set<string>>(SHARED_KEY) || new Set();
+      shared.add(wordEntry.key.toLowerCase());
+      sessionStore.set(SHARED_KEY, shared);
+    }
     match.usedWords.push({
       word: wordEntry.word,
       playerId: wordEntry.playerId,
@@ -452,6 +462,14 @@ export function createGame(options: LastWordStandingGameOptions = {}): LastWordS
     const key = rawWord.toUpperCase();
     if (match.usedWordKeys.has(key)) {
       return { ok: false, reason: 'duplicate' };
+    }
+
+    const reuseEnabled = sessionStore?.get<boolean>('shared:reuse-enabled');
+    if (reuseEnabled !== false) {
+      const shared = sessionStore?.get<Set<string>>(SHARED_KEY);
+      if (shared?.has(key.toLowerCase())) {
+        return { ok: false, reason: 'used_in_previous_game' };
+      }
     }
 
     match.usedWordKeys.add(key);

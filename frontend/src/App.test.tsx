@@ -23,6 +23,7 @@ vi.mock('./plugins', () => ({
     getConfig: () => mockPlugin.config,
     findPluginForState: () => mockPlugin,
     getPlugin: () => mockPlugin,
+    getAllConfigs: () => [mockPlugin.config],
   },
 }));
 

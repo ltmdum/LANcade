@@ -83,6 +83,7 @@ export const plugin: GamePlugin = {
     roundControlTitle: 'Round Timer',
     joinPanelTitle: 'Join the Round',
     minPlayers: 1,
+    sharesWordPool: true,
   },
   canRender,
   getPhase,

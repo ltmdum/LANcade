@@ -6,6 +6,7 @@ import type {
   UndercoverVoteRound,
 } from '@lancade/shared';
 import { PlayerStore } from '../shared/stores/player-store.js';
+import type { SessionStore } from '../shared/stores/session-store.js';
 import { normalizeWord } from '../shared/utils/normalize-word.js';
 import wordListData from '../shared/data/common-words.json' with { type: 'json' };
 
@@ -15,6 +16,7 @@ const DEFAULT_WINNING_SCORE = 5;
 export interface UndercoverAgentGameOptions {
   onStateChange?: () => void;
   playerStore?: PlayerStore;
+  sessionStore?: SessionStore;
 }
 
 export interface StartRoundResult {
@@ -113,12 +115,16 @@ function createEmptyMatch(): Match {
 
 /**
  * Select a random word from the word list, avoiding previously used words.
- * @param usedWords Set of words already used this game.
+ * When the pool is exhausted the used list is cleared (reset) before picking.
+ * @param usedWords Set of words already used this game (session).
  * @returns A randomly selected word.
  */
 function selectRandomWord(usedWords: Set<string>): string {
   const available = wordList.filter(w => !usedWords.has(w));
   const pool = available.length > 0 ? available : wordList;
+  if (pool === wordList && usedWords.size > 0) {
+    usedWords.clear();
+  }
   return pool[Math.floor(Math.random() * pool.length)];
 }
 
@@ -153,12 +159,25 @@ function pickRandom<T>(array: T[]): T {
 export function createGame(options: UndercoverAgentGameOptions = {}) {
   const onStateChange = options.onStateChange || (() => {});
   const playerStore = options.playerStore;
+  const sessionStore = options.sessionStore;
 
   let match = createEmptyMatch();
   let scores: Record<string, number> = {};
   let roundPoints: Record<string, number> = {};
   let winnerIds: string[] = [];
   let winningScore = DEFAULT_WINNING_SCORE;
+  const sessionUsedWords = new Set<string>();
+
+  // Load persisted used words from session store
+  (function initUsedWords(): void {
+    if (!sessionStore) return;
+    const stored = sessionStore.get<string[]>('undercoveragent:used-words');
+    if (stored) {
+      for (const w of stored) {
+        sessionUsedWords.add(w);
+      }
+    }
+  })();
 
   /**
    * Notify listeners of state change.
@@ -254,7 +273,11 @@ export function createGame(options: UndercoverAgentGameOptions = {}) {
    * @param participants Array of player IDs participating.
    */
   function initRevealPhase(participants: string[]): void {
-    match.word = selectRandomWord(match.usedWords);
+    match.word = selectRandomWord(sessionUsedWords);
+    sessionUsedWords.add(match.word!);
+    if (sessionStore) {
+      sessionStore.set('undercoveragent:used-words', Array.from(sessionUsedWords));
+    }
     match.undercoverPlayerId = pickRandom(participants);
     match.revealedPlayerIds = new Set();
     match.readyPlayerIds = new Set();
@@ -269,9 +292,6 @@ export function createGame(options: UndercoverAgentGameOptions = {}) {
     match.currentTurnIndex = 0;
     match.currentTurnPlayerId = match.turnOrder[0];
     match.roundSubmittedPlayerIds = new Set();
-    if (match.word) {
-      match.usedWords.add(match.word);
-    }
     notifyChange();
   }
 

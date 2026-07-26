@@ -80,6 +80,7 @@ export const plugin: GamePlugin = {
     roundControlTitle: 'Voting Timout',
     joinPanelTitle: 'Join the Race',
     minPlayers: 2,
+    sharesWordPool: true,
   },
   canRender,
   getPhase,

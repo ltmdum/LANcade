@@ -8,6 +8,7 @@ import crypto from 'crypto';
 import { fileURLToPath } from 'url';
 import { gameRegistry, initializeGames, BaseGame } from './plugins/index.js';
 import { createPlayerStore, PlayerStore } from './shared/stores/player-store.js';
+import { createSessionStore } from './shared/stores/session-store.js';
 import { createRateLimiter } from './shared/utils/rate-limiter.js';
 import { resolveBindAddress } from './shared/utils/resolve-bind-addresses.js';
 import { validatePlayerName, validateWord, validateCategory } from './shared/utils/input-validation.js';
@@ -53,6 +54,7 @@ const sseClients = new Set<Response>();
 const sseTracker = createConnectionTracker(5, 50);
 const authRateLimiter = createRateLimiter(10, 60_000);
 const sharedPlayerStore = createPlayerStore();
+const sharedSessionStore = createSessionStore();
 
 /**
  * Ensure a game instance is initialized for the given game id.
@@ -72,6 +74,7 @@ function ensureGame(gameId: string): boolean {
     clientGraceMs: CLIENT_GRACE_MS,
     onStateChange: broadcastState,
     playerStore: sharedPlayerStore,
+    sessionStore: sharedSessionStore,
   });
   return true;
 }
@@ -702,6 +705,18 @@ app.post('/api/admin/end', (req: Request, res: Response) => {
     return;
   }
 
+  res.json({ ok: true });
+});
+
+app.get('/api/session/:key', (req: Request, res: Response) => {
+  if (rejectIfUnauthorized(req, res, 'player')) return;
+  const value = sharedSessionStore.get(req.params.key);
+  res.json(value !== undefined ? value : null);
+});
+
+app.put('/api/session/:key', (req: Request, res: Response) => {
+  if (rejectIfUnauthorized(req, res, 'player')) return;
+  sharedSessionStore.set(req.params.key, req.body.value);
   res.json({ ok: true });
 });
 

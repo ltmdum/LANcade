@@ -142,7 +142,11 @@ function buildWordSubmitHandler(config: WordSubmitHandlerConfig) {
         config.setSubmitStatus('success');
       } else {
         config.triggerFlash('error');
-        config.setStatus(data.error || 'Could not submit word.');
+        config.setStatus(
+          data.reason === 'used_in_previous_game'
+            ? 'That word was used in a previous game.'
+            : data.error || 'Could not submit word.'
+        );
         config.setSubmitStatus('error');
       }
     } catch {

@@ -9,6 +9,7 @@ import type {
   PlayerInfo,
 } from '@lancade/shared';
 import { PlayerStore } from '../shared/stores/player-store.js';
+import type { SessionStore } from '../shared/stores/session-store.js';
 import { normalizeWord } from '../shared/utils/normalize-word.js';
 import { calculateSimilarity } from '../shared/utils/word-similarity.js';
 import promptsData from './prompts.json' with { type: 'json' };
@@ -21,6 +22,7 @@ const SIMILARITY_THRESHOLD = 0.6; // Minimum similarity ratio (0-1) for claim el
 export interface MindMatchGameOptions {
   onStateChange?: () => void;
   playerStore?: PlayerStore;
+  sessionStore?: SessionStore;
 }
 
 interface PendingClaim {
@@ -142,6 +144,7 @@ function selectRandomPrompt(usedIds: Set<number>): MindMatchPrompt {
 export function createGame(options: MindMatchGameOptions = {}): MindMatchGame {
   const onStateChange = options.onStateChange || (() => {});
   const playerStore = options.playerStore;
+  const sessionStore = options.sessionStore;
 
   let round = createEmptyRound();
   let scores: Record<string, number> = {};
@@ -149,6 +152,17 @@ export function createGame(options: MindMatchGameOptions = {}): MindMatchGame {
   let winningScore = DEFAULT_WINNING_SCORE;
   let roundEndTimeout: ReturnType<typeof setTimeout> | null = null;
   const usedPromptIds = new Set<number>();
+
+  // Load persisted used prompt IDs from session store
+  (function initUsedPrompts(): void {
+    if (!sessionStore) return;
+    const stored = sessionStore.get<number[]>('mindmatch:used-prompts');
+    if (stored) {
+      for (const id of stored) {
+        usedPromptIds.add(id);
+      }
+    }
+  })();
 
   /**
    * Notify listeners of state change.
@@ -648,7 +662,15 @@ export function createGame(options: MindMatchGameOptions = {}): MindMatchGame {
     clearRoundTimer();
     const now = Date.now();
     const prompt = selectRandomPrompt(usedPromptIds);
+    const totalPrompts = (promptsData as MindMatchPrompt[]).length;
+    if (usedPromptIds.size >= totalPrompts) {
+      usedPromptIds.clear();
+    }
     usedPromptIds.add(prompt.id);
+
+    if (sessionStore) {
+      sessionStore.set('mindmatch:used-prompts', Array.from(usedPromptIds));
+    }
 
     round = {
       id: round.id + 1,

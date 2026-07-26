@@ -205,6 +205,33 @@ export async function gameAction(playerId: string, action: unknown, key: string)
 }
 
 /**
+ * Read session data for a given key.
+ * @param key Session key.
+ * @param accessKey Player or admin access key.
+ * @returns Response and parsed payload.
+ */
+export async function getSessionData(key: string, accessKey: string) {
+  const response = await fetch(`/api/session/${encodeURIComponent(key)}?key=${encodeURIComponent(accessKey)}`);
+  return { response, data: await response.json() };
+}
+
+/**
+ * Write session data for a given key.
+ * @param key Session key.
+ * @param value Arbitrary JSON-serializable value.
+ * @param accessKey Player or admin access key.
+ * @returns Response and parsed payload.
+ */
+export async function setSessionData(key: string, value: unknown, accessKey: string) {
+  const response = await fetch(`/api/session/${encodeURIComponent(key)}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ value, key: accessKey }),
+  });
+  return { response, data: await response.json() };
+}
+
+/**
  * Update game-specific admin settings.
  * @param settings Key-value settings to update.
  * @param key Admin access key.

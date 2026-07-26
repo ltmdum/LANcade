@@ -56,6 +56,8 @@ export interface GamePluginConfig {
   };
   /** Declarative game-specific admin settings (rendered as a settings panel) */
   gameSettings?: GameSettingControl[];
+  /** Whether this game participates in the cross-game shared word pool */
+  sharesWordPool?: boolean;
 }
 
 /** An option within a select-type game setting. */

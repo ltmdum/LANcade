@@ -1,11 +1,13 @@
 import type { PlayerInfo, PlayerFinishInfo } from '@lancade/shared';
 import { createPlayerStore, PlayerStore } from '../shared/stores/player-store.js';
+import type { SessionStore } from '../shared/stores/session-store.js';
 import { loadValidGuesses, loadAnswerWords, pickRandomWord } from './word-list.js';
 import { evaluateGuess, type GuessResult, type LetterStatus } from './scoring.js';
 
 export interface FiveLetterWordGameOptions {
   onStateChange?: () => void;
   playerStore?: PlayerStore;
+  sessionStore?: SessionStore;
   validWords?: Set<string>;
   answerWords?: string[];
 }
@@ -148,12 +150,25 @@ function computeRowBests(playerStates: Map<string, PlayerGameState>): RowBestRes
 export function createGame(options: FiveLetterWordGameOptions = {}) {
   const onStateChange = options.onStateChange || (() => {});
   const playerStore = options.playerStore || createPlayerStore();
+  const sessionStore = options.sessionStore;
   const validWords = options.validWords || loadValidGuesses();
   const answerWords = options.answerWords || loadAnswerWords();
   
   let match = createEmptyMatch();
   let hardMode = false;
   let gracePeriodSeconds = 60;
+  const usedAnswerWords = new Set<string>();
+
+  // Load persisted used answer words from session store
+  (function initUsedAnswers(): void {
+    if (!sessionStore) return;
+    const stored = sessionStore.get<string[]>('fiveletterword:used-words');
+    if (stored) {
+      for (const w of stored) {
+        usedAnswerWords.add(w);
+      }
+    }
+  })();
 
   /**
    * Clear the grace period timeout.
@@ -229,10 +244,24 @@ export function createGame(options: FiveLetterWordGameOptions = {}) {
       });
     }
 
+    const availableAnswers = answerWords.filter((w) => !usedAnswerWords.has(w));
+    const pool = availableAnswers.length > 0 ? availableAnswers : answerWords;
+    const targetWord = pickRandomWord(pool);
+    usedAnswerWords.add(targetWord);
+
+    if (pool === answerWords && usedAnswerWords.size > 0) {
+      usedAnswerWords.clear();
+      usedAnswerWords.add(targetWord);
+    }
+
+    if (sessionStore) {
+      sessionStore.set('fiveletterword:used-words', Array.from(usedAnswerWords));
+    }
+
     match = {
       id: match.id + 1,
       state: 'active',
-      targetWord: pickRandomWord(answerWords),
+      targetWord,
       playerStates,
       winnerId: null,
       graceEndsAt: null,

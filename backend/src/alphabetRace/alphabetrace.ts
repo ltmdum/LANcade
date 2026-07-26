@@ -4,11 +4,15 @@ import {
   type AlphabetRaceMatchState,
 } from '@lancade/shared';
 import { createGameBase } from '../shared/stores/game-base.js';
+import type { SessionStore } from '../shared/stores/session-store.js';
 import { PlayerStore } from '../shared/stores/player-store.js';
+
+const SHARED_KEY = 'shared:used-words';
 
 export interface AlphabetRaceGameOptions {
   onStateChange?: () => void;
   playerStore?: PlayerStore;
+  sessionStore?: SessionStore;
 }
 
 export interface StartRoundResult {
@@ -118,6 +122,7 @@ function createEmptyMatch(): Match {
  */
 export function createGame(options: AlphabetRaceGameOptions = {}): AlphabetRaceGame {
   const onStateChange = options.onStateChange || (() => {});
+  const sessionStore = options.sessionStore;
   let match = createEmptyMatch();
   let voteTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -270,6 +275,11 @@ export function createGame(options: AlphabetRaceGameOptions = {}): AlphabetRaceG
     if (match.submittedBy) {
       match.scores[match.submittedBy] = (match.scores[match.submittedBy] || 0) + 1;
     }
+    if (sessionStore && match.submittedWord) {
+      const shared = sessionStore.get<Set<string>>(SHARED_KEY) || new Set();
+      shared.add(match.submittedWord.toLowerCase());
+      sessionStore.set(SHARED_KEY, shared);
+    }
     match.voteEndsAt = null;
     advanceToNextLetter();
   }
@@ -400,6 +410,14 @@ export function createGame(options: AlphabetRaceGameOptions = {}): AlphabetRaceG
     }
     if (rawWord[0].toUpperCase() !== currentLetter.toUpperCase()) {
       return { ok: false, reason: 'invalid_letter' };
+    }
+
+    const reuseEnabled = sessionStore?.get<boolean>('shared:reuse-enabled');
+    if (reuseEnabled !== false) {
+      const shared = sessionStore?.get<Set<string>>(SHARED_KEY);
+      if (shared?.has(rawWord.toLowerCase())) {
+        return { ok: false, reason: 'used_in_previous_game' };
+      }
     }
 
     match.submittedWord = rawWord;

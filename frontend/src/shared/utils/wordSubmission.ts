@@ -98,6 +98,8 @@ export async function handleWordSubmission(
         ? `Honk! You've already used ${data.blockedWord}${data.blockedCategory ? ` for ${data.blockedCategory}` : ""}, you silly goose!`
         : data.reason === 'duplicate'
             ? `Already used by ${data.blockedByName || 'another player'}.`
+          : data.reason === 'used_in_previous_game'
+            ? `${data.blockedWord ? `"${data.blockedWord}" was ` : 'That word was '}used in a previous game.`
           : data.reason === 'invalid_letter'
             ? `Word must start with ${config.letter}.`
             : data.reason === 'invalid_letters'

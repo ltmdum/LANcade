@@ -1,4 +1,5 @@
 import { PlayerStore } from '../shared/stores/player-store.js';
+import type { SessionStore } from '../shared/stores/session-store.js';
 
 /**
  * Options passed to a game factory when creating a new game instance.
@@ -7,6 +8,7 @@ export interface GameFactoryOptions {
   clientGraceMs: number;
   onStateChange: () => void;
   playerStore: PlayerStore;
+  sessionStore: SessionStore;
 }
 
 /**

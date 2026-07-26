@@ -9,7 +9,9 @@ import { PlayerList } from './shared/components/PlayerList';
 import { EndGameButton } from './shared/components/EndGameButton';
 import { GameInfoModal } from './shared/components/GameInfoModal';
 import { GameSettingsPanel } from './shared/components/GameSettingsPanel';
+import { Panel } from './shared/components/Panel';
 import { parseAccess } from './shared/utils/accessMode';
+import { getSessionData, setSessionData } from './shared/utils/api';
 import { gamePluginRegistry } from './plugins';
 import iconImg from './assets/icon.png';
 import './App.css';
@@ -28,6 +30,32 @@ function App() {
   });
   const [showConfig, setShowConfig] = useState(isAdmin);
   const [showGameInfo, setShowGameInfo] = useState(false);
+  const [reuseEnabled, setReuseEnabled] = useState(true);
+
+  useEffect(() => {
+    if (!isAdmin || !accessKey) return;
+    (async () => {
+      try {
+        const { data } = await getSessionData('shared:reuse-enabled', accessKey);
+        if (typeof data === 'boolean') {
+          setReuseEnabled(data);
+        }
+      } catch {
+        // fallback to default
+      }
+    })();
+  }, [isAdmin, accessKey]);
+
+  async function handleReuseToggle(next: boolean) {
+    setReuseEnabled(next);
+    if (accessKey) {
+      try {
+        await setSessionData('shared:reuse-enabled', next, accessKey);
+      } catch {
+        // revert silently
+      }
+    }
+  }
 
   const handleAdminIsPlaying = useCallback((next: boolean) => {
     setAdminIsPlaying(next);
@@ -67,6 +95,22 @@ function App() {
   const pluginConfig = useMemo(() => {
     return gamePluginRegistry.getConfig(gameId);
   }, [gameId]);
+
+  const sharedWordPoolGames = useMemo(() => {
+    return gamePluginRegistry
+      .getAllConfigs()
+      .filter((c) => c.sharesWordPool)
+      .map((c) => c.name);
+  }, []);
+
+  const isSharedWordPoolGame = gameId
+    ? gamePluginRegistry.getConfig(gameId)?.sharesWordPool ?? false
+    : false;
+
+  const sharedWordPoolLabel = useMemo(() => {
+    if (sharedWordPoolGames.length < 2) return sharedWordPoolGames.join(', ');
+    return sharedWordPoolGames.slice(0, -1).join(', ') + ', and ' + sharedWordPoolGames[sharedWordPoolGames.length - 1];
+  }, [sharedWordPoolGames]);
 
   const activePlugin = useMemo(() => {
     if (!serverState || !gameId) return undefined;
@@ -246,6 +290,26 @@ function App() {
                   accessKey={accessKey}
                   onUnauthorized={handleUnauthorized}
                 />
+              )}
+              {isSharedWordPoolGame && (
+                <Panel title="Cross-Game Word Reuse">
+                  <label className="admin-panel-toggle-row">
+                    <span className="admin-panel-toggle-label">Prevent reusing words</span>
+                    <span className="admin-panel-toggle">
+                      <input
+                        type="checkbox"
+                        checked={reuseEnabled}
+                        onChange={(e) => handleReuseToggle(e.target.checked)}
+                      />
+                      <span className="admin-panel-toggle-track">
+                        <span className="admin-panel-toggle-thumb" />
+                      </span>
+                    </span>
+                  </label>
+                  <p className="admin-panel-status">
+                    {`Words submitted in previous games of ${sharedWordPoolLabel} will be ${reuseEnabled ? 'blocked' : 'allowed'}.`}
+                  </p>
+                </Panel>
               )}
               {gameSettingsControls && (
                 <GameSettingsPanel

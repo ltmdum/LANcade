@@ -1,5 +1,6 @@
 import { canFormWordFromTiles } from '@lancade/shared';
 import { createCategoryManager } from '../shared/stores/category-manager.js';
+import type { SessionStore } from '../shared/stores/session-store.js';
 import {
   createCategoryClashEngine,
   CategoryClashEngine,
@@ -10,12 +11,14 @@ import {
 } from '../categoryclashshared/categoryclash-engine.js';
 import { PlayerStore } from '../shared/stores/player-store.js';
 import { generateGrid, type GenerateGridOptions } from './grid.js';
+import { loadNineLetterWords } from './word-source.js';
 
 /** Options for creating a Nine Dash game instance. */
 export interface NineDashGameOptions {
   onStateChange?: () => void;
   clientGraceMs?: number;
   playerStore?: PlayerStore;
+  sessionStore?: SessionStore;
   gridOptions?: GenerateGridOptions;
 }
 
@@ -63,7 +66,20 @@ function validateGridWord(round: Round, key: string): SubmitWordResult | null {
  * @returns A Nine Dash game conforming to the category-clash engine interface.
  */
 export function createGame(options: NineDashGameOptions = {}): NineDashGame {
+  const sessionStore = options.sessionStore;
   let currentSourceWord: string | null = null;
+  const usedSourceWords = new Set<string>();
+
+  // Load persisted used source words from session store
+  (function initUsedWords(): void {
+    if (!sessionStore) return;
+    const stored = sessionStore.get<string[]>('ninedash:used-words');
+    if (stored) {
+      for (const w of stored) {
+        usedSourceWords.add(w);
+      }
+    }
+  })();
 
   function scoreByLength(word: WordEntry): number {
     const base = word.word.length;
@@ -79,7 +95,23 @@ export function createGame(options: NineDashGameOptions = {}): NineDashGame {
       categoryless: true,
       createCategoryManager: (config) => createCategoryManager({ ...config, categories: [] }),
       generateRoundData: () => {
-        const grid = generateGrid(options.gridOptions);
+        if (options.gridOptions?.word) {
+          const grid = generateGrid(options.gridOptions);
+          currentSourceWord = grid.word;
+          return { letter: null, letters: grid.letters };
+        }
+        const allWords = loadNineLetterWords();
+        const available = allWords.filter((w) => !usedSourceWords.has(w));
+        const pool = available.length > 0 ? available : allWords;
+        if (pool === allWords && usedSourceWords.size > 0) {
+          usedSourceWords.clear();
+        }
+        const word = pool[Math.floor(Math.random() * pool.length)];
+        usedSourceWords.add(word);
+        if (sessionStore) {
+          sessionStore.set('ninedash:used-words', Array.from(usedSourceWords));
+        }
+        const grid = generateGrid({ word });
         currentSourceWord = grid.word;
         return { letter: null, letters: grid.letters };
       },

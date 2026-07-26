@@ -6,6 +6,7 @@ function factory(options: GameFactoryOptions): BaseGame {
     onStateChange: options.onStateChange,
     clientGraceMs: options.clientGraceMs,
     playerStore: options.playerStore,
+    sessionStore: options.sessionStore,
   });
 }
 

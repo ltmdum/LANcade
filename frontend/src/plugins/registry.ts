@@ -49,6 +49,13 @@ class GamePluginRegistry {
   }
 
   /**
+   * Get all registered plugin configs.
+   */
+  getAllConfigs(): GamePluginConfig[] {
+    return Array.from(this.plugins.values()).map((p) => p.config);
+  }
+
+  /**
    * Clear all registrations (useful for testing).
    */
   clear(): void {

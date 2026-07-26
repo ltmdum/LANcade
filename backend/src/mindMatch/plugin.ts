@@ -29,6 +29,7 @@ function factory(options: GameFactoryOptions): BaseGame {
   const game = createGame({
     onStateChange: options.onStateChange,
     playerStore: options.playerStore,
+    sessionStore: options.sessionStore,
   });
   return adaptToBaseGame(game);
 }
