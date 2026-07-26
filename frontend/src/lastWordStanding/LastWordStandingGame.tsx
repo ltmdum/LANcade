@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Panel } from '../shared/components/Panel';
 import { VolumeNotice } from '../shared/components/VolumeNotice';
 import { PlayAgainPanel } from '../shared/components/PlayAgainPanel';
@@ -12,6 +12,7 @@ import { handleVoteSubmit } from '../shared/utils/voting';
 import { handlePlayAgain } from '../shared/utils/roundActions';
 import { useTimerRefs, useFlashTrigger, useClearCountdown } from '../shared/hooks/useGameUtils';
 import { useCountdownTick } from '../shared/hooks/useCountdownTick';
+import { playOkaySound, playWarningSound, warmupAudio } from '../shared/utils/sounds';
 import type { GameProps } from '../shared/types/GameProps';
 import type { LastWordStandingState } from '@lancade/shared';
 import './LastWordStandingGame.css';
@@ -120,6 +121,40 @@ export function LastWordStandingGame({
   }, [match.id, match.state]);
 
   useEffect(() => {
+    warmupAudio();
+  }, []);
+
+  const prevCurrentPlayerIdRef = useRef<string | null>(null);
+  const prevLastOutcomeRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (match.state !== 'active') return;
+
+    const isReturnAfterRejection =
+      match.currentPlayerId === playerId &&
+      match.lastOutcome?.outcome === 'rejected' &&
+      match.lastOutcome?.playerId === playerId &&
+      prevLastOutcomeRef.current !== 'rejected';
+
+    if (isReturnAfterRejection) {
+      playWarningSound();
+    } else if (
+      match.currentPlayerId === playerId &&
+      prevCurrentPlayerIdRef.current !== match.currentPlayerId
+    ) {
+      playOkaySound();
+    }
+
+    prevCurrentPlayerIdRef.current = match.currentPlayerId;
+    prevLastOutcomeRef.current = match.lastOutcome?.outcome ?? null;
+  }, [match.state, match.currentPlayerId, playerId, match.lastOutcome]);
+
+  useEffect(() => {
+    prevCurrentPlayerIdRef.current = null;
+    prevLastOutcomeRef.current = null;
+  }, [match.id]);
+
+  useEffect(() => {
     return () => {
       if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
       clearCountdown();
@@ -142,6 +177,7 @@ export function LastWordStandingGame({
     });
 
     triggerFlash(result.success ? 'success' : 'error');
+    if (!result.success) playWarningSound();
     setStatus(result.success ? 'Submitted. Waiting for votes...' : result.statusMessage);
     setSubmitStatus(result.success ? 'success' : 'error');
     setWordInput('');

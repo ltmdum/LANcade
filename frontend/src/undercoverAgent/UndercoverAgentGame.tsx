@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { PlayAgainPanel } from '../shared/components/PlayAgainPanel';
 import { RevealPanel } from './components/RevealPanel';
 import { UndercoverSubmitPanel } from './components/UndercoverSubmitPanel';
@@ -9,6 +9,7 @@ import { UndercoverResultDisplay } from './components/UndercoverResultDisplay';
 import { DiscussionPanel } from './components/DiscussionPanel';
 import { UndercoverScoreBoard } from './components/UndercoverScoreBoard';
 import { handlePlayAgain } from '../shared/utils/roundActions';
+import { playOkaySound, playWarningSound, warmupAudio } from '../shared/utils/sounds';
 import type { GameProps } from '../shared/types/GameProps';
 import type { UndercoverAgentState } from '@lancade/shared';
 import './UndercoverAgentGame.css';
@@ -47,6 +48,40 @@ export function UndercoverAgentGame({
     setAdminStatus('');
     setServerScores(null);
   }, [match.id, match.state]);
+
+  useEffect(() => {
+    warmupAudio();
+  }, []);
+
+  const prevTurnPlayerIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (match.state !== 'submitting') return;
+    if (
+      match.currentTurnPlayerId === playerId &&
+      prevTurnPlayerIdRef.current !== match.currentTurnPlayerId
+    ) {
+      playOkaySound();
+    }
+    prevTurnPlayerIdRef.current = match.currentTurnPlayerId;
+  }, [match.state, match.currentTurnPlayerId, playerId]);
+
+  useEffect(() => {
+    prevTurnPlayerIdRef.current = null;
+  }, [match.id]);
+
+  const prevStateRef = useRef<UndercoverAgentState['match']['state'] | null>(null);
+
+  useEffect(() => {
+    if (
+      prevStateRef.current !== 'guessing' &&
+      match.state === 'guessing' &&
+      match.undercoverPlayerId === playerId
+    ) {
+      playWarningSound();
+    }
+    prevStateRef.current = match.state;
+  }, [match.state, match.undercoverPlayerId, playerId]);
 
   async function onRestart() {
     setAdminStatus('');

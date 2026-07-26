@@ -14,6 +14,7 @@ import {
   useNotifyFinish,
 } from '../shared/hooks/useGameUtils';
 import { useCountdownTick } from '../shared/hooks/useCountdownTick';
+import { playWarningSound, playOkaySound } from '../shared/utils/sounds';
 import { Panel } from '../shared/components/Panel';
 import { VolumeNotice } from '../shared/components/VolumeNotice';
 import { buildScoreboard } from '../categoryclashshared/utils/scoreboard';
@@ -213,6 +214,7 @@ export function NineDashGame({
     });
 
     triggerFlash(result.success ? 'success' : 'error');
+    result.success ? playOkaySound() : playWarningSound();
     setStatus(result.success ? 'Word accepted.' : result.statusMessage);
     setSubmitStatus(result.success ? 'success' : 'error');
     if (result.success) {

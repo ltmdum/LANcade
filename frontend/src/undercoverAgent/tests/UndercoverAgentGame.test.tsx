@@ -5,6 +5,12 @@ import type { UndercoverAgentState } from '@lancade/shared';
 
 vi.stubGlobal('fetch', vi.fn());
 
+vi.mock('../../shared/utils/sounds', () => ({
+  playOkaySound: vi.fn(),
+  playWarningSound: vi.fn(),
+  warmupAudio: vi.fn(),
+}));
+
 function createBaseState(): UndercoverAgentState {
   return {
     serverTime: Date.now(),

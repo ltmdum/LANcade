@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Panel } from '../shared/components/Panel';
 import { PlayAgainPanel } from '../shared/components/PlayAgainPanel';
 import { RacingPanel } from './components/RacingPanel';
@@ -9,6 +9,7 @@ import { AlphabetWinnerDisplay } from './components/AlphabetWinnerDisplay';
 import { submitWord, gameAction } from '../shared/utils/api';
 import { handleVoteSubmit } from '../shared/utils/voting';
 import { handlePlayAgain } from '../shared/utils/roundActions';
+import { playWarningSound, warmupAudio } from '../shared/utils/sounds';
 import { useTimerRefs, useFlashTrigger } from '../shared/hooks/useGameUtils';
 import type { GameProps } from '../shared/types/GameProps';
 import type { AlphabetRaceState, AlphabetRaceMatchState, PlayerInfo } from '@lancade/shared';
@@ -72,12 +73,49 @@ export function AlphabetRaceGame({
     setClockSkewMs(Date.now() - serverState.serverTime);
   }, [serverState.serverTime]);
 
+  const prevStateRef = useRef<string | null>(null);
+  const prevLetterIndexRef = useRef<number | null>(null);
+  const prevSubmittedByRef = useRef<string | null>(null);
+
   useEffect(() => {
-    setStatus('');
-    setSubmitStatus('');
-    setVoteStatus('');
-    setWordInput('');
-  }, [match.id, match.currentLetter]);
+    prevStateRef.current = null;
+    prevLetterIndexRef.current = null;
+    prevSubmittedByRef.current = null;
+  }, [match.id]);
+
+  useEffect(() => {
+    if (prevStateRef.current === 'voting' && match.state === 'racing') {
+      const letterAdvanced = match.currentLetterIndex !== prevLetterIndexRef.current;
+      if (letterAdvanced) {
+        setStatus('');
+        setSubmitStatus('');
+        setVoteStatus('');
+        setWordInput('');
+      } else if (prevSubmittedByRef.current === playerId) {
+        triggerFlash('error');
+        playWarningSound();
+        setStatus('Your word was rejected. Try again.');
+        setSubmitStatus('error');
+        setVoteStatus('');
+        setWordInput('');
+      } else {
+        setVoteStatus('');
+        setWordInput('');
+      }
+    } else if (match.state !== 'voting') {
+      setStatus('');
+      setSubmitStatus('');
+      setVoteStatus('');
+      setWordInput('');
+    }
+    prevStateRef.current = match.state;
+    prevLetterIndexRef.current = match.currentLetterIndex;
+    prevSubmittedByRef.current = match.submittedBy;
+  }, [match.currentLetterIndex, match.currentLetter, match.state, match.submittedBy]);
+
+  useEffect(() => {
+    warmupAudio();
+  }, []);
 
   useEffect(() => {
     return () => { if (flashTimerRef.current) clearTimeout(flashTimerRef.current); };
@@ -142,6 +180,7 @@ function buildWordSubmitHandler(config: WordSubmitHandlerConfig) {
         config.setSubmitStatus('success');
       } else {
         config.triggerFlash('error');
+        playWarningSound();
         config.setStatus(
           data.reason === 'used_in_previous_game'
             ? 'That word was used in a previous game.'
@@ -151,6 +190,7 @@ function buildWordSubmitHandler(config: WordSubmitHandlerConfig) {
       }
     } catch {
       config.triggerFlash('error');
+      playWarningSound();
       config.setStatus('Could not submit word.');
       config.setSubmitStatus('error');
     }

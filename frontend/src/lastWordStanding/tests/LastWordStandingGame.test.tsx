@@ -6,6 +6,15 @@ import type { LastWordStandingState } from '@lancade/shared';
 // Mock fetch globally to prevent API calls
 vi.stubGlobal('fetch', vi.fn());
 
+// Mock sound functions to prevent AudioContext access in tests
+vi.mock('../../shared/utils/sounds', () => ({
+  playOkaySound: vi.fn(),
+  playWarningSound: vi.fn(),
+  warmupAudio: vi.fn(),
+  playTickSound: vi.fn(),
+  playPopSound: vi.fn(),
+}));
+
 /**
  * Create a base server state for testing.
  */

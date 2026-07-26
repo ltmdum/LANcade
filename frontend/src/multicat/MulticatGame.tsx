@@ -12,6 +12,7 @@ import { formatMs } from '../shared/utils/time';
 import { handleWordSubmission } from '../shared/utils/wordSubmission';
 import { handleVoteSubmit } from '../shared/utils/voting';
 import { handlePlayAgain } from '../shared/utils/roundActions';
+import { playWarningSound, playOkaySound } from '../shared/utils/sounds';
 import {
   useTimerRefs,
   useFlashTrigger,
@@ -196,6 +197,7 @@ export function MulticatGame({
     });
 
     triggerFlash(result.success ? 'success' : 'error');
+    result.success ? playOkaySound() : playWarningSound();
     setStatus(result.success ? 'Word accepted.' : result.statusMessage);
     setSubmitStatus(result.success ? 'success' : 'error');
     if (result.success) {

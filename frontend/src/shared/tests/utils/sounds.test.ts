@@ -1,13 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { playPopSound, playTickSound } from '../../utils/sounds';
+import { playPopSound, playTickSound, playOkaySound, playWarningSound } from '../../utils/sounds';
 
 const mockGainNode = {
   connect: vi.fn().mockReturnThis(),
-  gain: { setValueAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn() },
+  gain: { setValueAtTime: vi.fn(), linearRampToValueAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn() },
 };
 const mockOscNode = {
   connect: vi.fn().mockReturnValue(mockGainNode),
-  frequency: { value: 0 },
+  frequency: { value: 0, setValueAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn() },
   type: '',
   start: vi.fn(),
   stop: vi.fn(),
@@ -31,6 +31,18 @@ describe('playPopSound', () => {
 
   it('accepts a custom duration', () => {
     expect(() => playPopSound(500, 0.3)).not.toThrow();
+  });
+});
+
+describe('playOkaySound', () => {
+  it('does not throw', () => {
+    expect(() => playOkaySound()).not.toThrow();
+  });
+});
+
+describe('playWarningSound', () => {
+  it('does not throw', () => {
+    expect(() => playWarningSound()).not.toThrow();
   });
 });
 

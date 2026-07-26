@@ -53,6 +53,63 @@ export function playPopSound(frequency: number, duration = 0.15): void {
 }
 
 /**
+ * Play a two-tone ascending sound for positive events (turn start, accepted word).
+ */
+export function playOkaySound(): void {
+  const audioCtx = getAudioContext();
+  if (!audioCtx) return;
+
+  const now = audioCtx.currentTime;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain).connect(audioCtx.destination);
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(523, now);
+  osc.frequency.setValueAtTime(659, now + 0.12);
+  gain.gain.setValueAtTime(0.15, now);
+  gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+  osc.start(now);
+  osc.stop(now + 0.3);
+}
+
+/**
+ * Play a descending alarm for urgent danger (e.g. undercover agent was caught).
+ */
+export function playWarningSound(): void {
+  const audioCtx = getAudioContext();
+  if (!audioCtx) return;
+
+  const now = audioCtx.currentTime;
+
+  const startBurst = (freq1: number, freq2: number, startTime: number, duration: number) => {
+    const osc1 = audioCtx.createOscillator();
+    const osc2 = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+
+    osc1.type = 'square';
+    osc1.frequency.setValueAtTime(freq1, startTime);
+    osc2.type = 'sawtooth';
+    osc2.frequency.setValueAtTime(freq2, startTime);
+
+    gain.gain.setValueAtTime(0.25, startTime);
+    gain.gain.setValueAtTime(0.25, startTime + duration - 0.01);
+    gain.gain.linearRampToValueAtTime(0, startTime + duration);
+
+    osc1.connect(gain);
+    osc2.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    osc1.start(startTime);
+    osc2.start(startTime);
+    osc1.stop(startTime + duration);
+    osc2.stop(startTime + duration);
+  };
+
+  startBurst(110, 108, now, 0.18);
+  startBurst(85, 83, now + 0.24, 0.22);
+}
+
+/**
  * Play a short tick for countdown warnings (last 3 seconds).
  */
 export function playTickSound(): void {
