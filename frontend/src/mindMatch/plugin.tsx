@@ -26,6 +26,8 @@ function getPhase(serverState: unknown): string {
   if (state.winnerIds?.length > 0) {
     return 'finished';
   }
+  // Keep EndGameButton visible while showing interim results between rounds
+  if (state.round?.state === 'results') return 'active';
   return state.round?.state || 'idle';
 }
 

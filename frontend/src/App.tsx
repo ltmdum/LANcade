@@ -355,7 +355,7 @@ function App() {
           {/* Game View */}
           {(!showConfig || !isAdmin) && renderGameView()}
 
-          {/* Admin End Game Button - shown during any active game phase (not idle or finished) */}
+          {/* Admin End Game Button - shown during any active game phase (not idle, finished, or results) */}
           {isAdmin && !showConfig && phase !== 'idle' && phase !== 'finished' && phase !== 'results' && (
             <EndGameButton
               accessKey={accessKey}

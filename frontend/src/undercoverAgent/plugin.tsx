@@ -11,7 +11,11 @@ function getPhase(serverState: unknown): string {
   if (!serverState || typeof serverState !== 'object' || !('match' in serverState)) {
     return 'idle';
   }
-  return (serverState as UndercoverAgentState).match.state;
+  const match = (serverState as UndercoverAgentState).match;
+  if (match.winnerIds?.length > 0) return 'finished';
+  // Keep EndGameButton visible while showing round results between rounds
+  if (match.state === 'idle' && match.finishReason !== null) return 'active';
+  return match.state;
 }
 
 function getHeaderCategory(_serverState: unknown): string {
