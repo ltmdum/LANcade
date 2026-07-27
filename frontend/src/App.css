@@ -44,8 +44,8 @@
 
 .app-info-button {
   @apply w-5 h-5 rounded-full flex items-center justify-center cursor-pointer text-sm font-serif italic absolute top-3 right-3;
-  border: 1px solid var(--text-muted);
-  color: var(--text-muted);
+  border: 1px solid var(--accent);
+  color: var(--accent);
 }
 .app-info-button:hover {
   border-color: var(--accent);

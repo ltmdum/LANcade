@@ -9,6 +9,7 @@ import { AlphabetWinnerDisplay } from './components/AlphabetWinnerDisplay';
 import { submitWord, gameAction } from '../shared/utils/api';
 import { handleVoteSubmit } from '../shared/utils/voting';
 import { handlePlayAgain } from '../shared/utils/roundActions';
+import { VolumeNotice } from '../shared/components/VolumeNotice';
 import { playWarningSound, warmupAudio } from '../shared/utils/sounds';
 import { useTimerRefs, useFlashTrigger } from '../shared/hooks/useGameUtils';
 import type { GameProps } from '../shared/types/GameProps';
@@ -121,7 +122,7 @@ export function AlphabetRaceGame({
     return () => { if (flashTimerRef.current) clearTimeout(flashTimerRef.current); };
   }, [flashTimerRef]);
 
-  if (match.state === 'idle') return null;
+  if (match.state === 'idle') return <Panel><VolumeNotice /></Panel>;
 
   return (
     <AlphabetRaceLayout

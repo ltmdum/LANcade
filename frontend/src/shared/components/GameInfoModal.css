@@ -5,14 +5,16 @@
 }
 
 .game-info-modal {
-  @apply max-w-md w-full max-h-[80vh] overflow-y-auto p-6;
+  @apply max-w-md w-full flex flex-col;
+  max-height: 80vh;
   background: var(--bg-card);
   border-radius: 12px;
   border: 1px solid var(--border);
+  overflow: hidden;
 }
 
 .game-info-header {
-  @apply flex items-start justify-between gap-4 mb-3;
+  @apply flex items-start justify-between gap-4 px-6 pt-5 pb-3;
 }
 
 .game-info-title {
@@ -27,6 +29,10 @@
 
 .game-info-close:hover {
   color: var(--text-secondary);
+}
+
+.game-info-scroll {
+  @apply px-6 pb-4 overflow-y-auto;
 }
 
 .game-info-description {
@@ -48,18 +54,18 @@
   color: var(--text-primary);
 }
 
-.game-info-docs-link {
-  margin-top: 1rem;
-  text-align: center;
+.game-info-footer {
+  border-top: 1px solid var(--border);
+  @apply px-6 py-3 text-center;
 }
 
-.game-info-docs-link a {
+.game-info-footer a {
   color: #38bdf8;
   text-decoration: underline;
   font-size: 0.9rem;
 }
 
-.game-info-docs-link a:hover {
+.game-info-footer a:hover {
   color: #7dd3fc;
 }
 

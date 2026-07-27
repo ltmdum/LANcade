@@ -25,8 +25,8 @@
 
 .game-selector-info-button {
   @apply w-5 h-5 rounded-full flex items-center justify-center cursor-pointer text-sm font-serif italic;
-  border: 1px solid var(--text-muted);
-  color: var(--text-muted);
+  border: 1px solid var(--accent);
+  color: var(--accent);
 }
 
 .game-selector-info-button:hover {

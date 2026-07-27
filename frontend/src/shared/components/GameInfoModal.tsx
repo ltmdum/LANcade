@@ -36,20 +36,22 @@ export function GameInfoModal({ name, description, instructions, gameId, onClose
             &times;
           </button>
         </div>
-        <p className="game-info-description">{description}</p>
-        <h3 className="game-info-subtitle">How to Play</h3>
-        <ul className="game-info-instructions">
-          {instructions.map((step, i) => (
-            <li key={i} className="game-info-step">
-              <strong>{step.heading}:</strong> {step.text}
-            </li>
-          ))}
-        </ul>
-        <p className="game-info-docs-link">
+        <div className="game-info-scroll">
+          <p className="game-info-description">{description}</p>
+          <h3 className="game-info-subtitle">How to Play</h3>
+          <ul className="game-info-instructions">
+            {instructions.map((step, i) => (
+              <li key={i} className="game-info-step">
+                <strong>{step.heading}:</strong> {step.text}
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div className="game-info-footer">
           <a href={docsUrl} target="_blank" rel="noopener noreferrer">
             Online Tutorial
           </a>
-        </p>
+        </div>
       </div>
     </div>
   );

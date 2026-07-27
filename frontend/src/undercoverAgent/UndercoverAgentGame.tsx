@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
+import { Panel } from '../shared/components/Panel';
 import { PlayAgainPanel } from '../shared/components/PlayAgainPanel';
 import { RevealPanel } from './components/RevealPanel';
 import { UndercoverSubmitPanel } from './components/UndercoverSubmitPanel';
@@ -9,6 +10,7 @@ import { UndercoverResultDisplay } from './components/UndercoverResultDisplay';
 import { DiscussionPanel } from './components/DiscussionPanel';
 import { UndercoverScoreBoard } from './components/UndercoverScoreBoard';
 import { handlePlayAgain } from '../shared/utils/roundActions';
+import { VolumeNotice } from '../shared/components/VolumeNotice';
 import { playOkaySound, playWarningSound, warmupAudio } from '../shared/utils/sounds';
 import type { GameProps } from '../shared/types/GameProps';
 import type { UndercoverAgentState } from '@lancade/shared';
@@ -132,6 +134,8 @@ export function UndercoverAgentGame({
           />
         </>
       )}
+
+      {!roundOver && match.state === 'idle' && <Panel><VolumeNotice /></Panel>}
 
       <MatchPhaseContent
         match={match}

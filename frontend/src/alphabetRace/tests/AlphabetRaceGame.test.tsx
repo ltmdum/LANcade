@@ -73,15 +73,15 @@ describe('AlphabetRaceGame', () => {
   });
 
   describe('idle state', () => {
-    it('renders nothing when idle', () => {
+    it('renders volume notice when idle', () => {
       const state = createBaseState();
       state.match.state = 'idle';
 
-      const { container } = render(
+      render(
         <AlphabetRaceGame {...createDefaultProps(state)} />
       );
 
-      expect(container.firstChild).toBeNull();
+      expect(screen.getByText('Sound On!')).toBeInTheDocument();
     });
   });
 
