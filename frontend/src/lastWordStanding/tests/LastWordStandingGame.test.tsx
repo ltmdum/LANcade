@@ -286,9 +286,9 @@ describe('LastWordStandingGame', () => {
 
       render(<LastWordStandingGame {...createDefaultProps(state)} />);
 
-      // Winner panel shows winner name
-      expect(screen.getByText(/winner/i)).toBeInTheDocument();
-      // Bob appears in both winner display and player list
+      // Podium panel shows winner name
+      expect(screen.getByText(/Podium/i)).toBeInTheDocument();
+      // Bob appears in both podium display and player list
       expect(screen.getAllByText(/Bob/).length).toBeGreaterThanOrEqual(1);
     });
 

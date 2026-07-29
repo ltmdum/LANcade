@@ -93,6 +93,7 @@ export const plugin: GamePlugin = {
         defaultSeconds: '00',
       },
     ],
+    olympics: true,
   },
   canRender,
   getPhase,

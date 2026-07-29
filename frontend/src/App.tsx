@@ -10,6 +10,7 @@ import { EndGameButton } from './shared/components/EndGameButton';
 import { GameInfoModal } from './shared/components/GameInfoModal';
 import { GameSettingsPanel } from './shared/components/GameSettingsPanel';
 import { Panel } from './shared/components/Panel';
+import { OlympicsMedals } from './shared/components/OlympicsMedals';
 import { parseAccess } from './shared/utils/accessMode';
 import { getSessionData, setSessionData } from './shared/utils/api';
 import { gamePluginRegistry } from './plugins';
@@ -91,6 +92,10 @@ function App() {
   const selectedCategory = settings?.selectedCategory || '';
   const selectedCategories = settings?.selectedCategories || [];
   const categoryMode = settings?.categoryMode || 'single';
+
+  const olympics = serverState
+    ? (serverState as unknown as { olympics?: Record<string, { gold: number; silver: number; bronze: number; total: number }> }).olympics
+    : undefined;
 
   const pluginConfig = useMemo(() => {
     return gamePluginRegistry.getConfig(gameId);
@@ -352,8 +357,18 @@ function App() {
             />
           )}
 
+          {/* Olympics Medal Tally — during idle, shown above game view */}
+          {olympics && phase === 'idle' && (
+            <OlympicsMedals tally={olympics} players={serverState?.players || []} playerName={playerName} />
+          )}
+
           {/* Game View */}
           {(!showConfig || !isAdmin) && renderGameView()}
+
+          {/* Olympics Medal Tally — during results/finished, shown below game view */}
+          {olympics && (phase === 'results' || phase === 'finished') && (
+            <OlympicsMedals tally={olympics} players={serverState?.players || []} playerName={playerName} />
+          )}
 
           {/* Admin End Game Button - shown during any active game phase (not idle, finished, or results) */}
           {isAdmin && !showConfig && phase !== 'idle' && phase !== 'finished' && phase !== 'results' && (

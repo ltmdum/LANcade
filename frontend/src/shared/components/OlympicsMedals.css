@@ -1,0 +1,37 @@
+.olympics-medals-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.olympics-medals-table th,
+.olympics-medals-table td {
+  padding: 0.35rem 0.5rem;
+  text-align: center;
+}
+
+.olympics-medals-table th {
+  color: var(--text-muted, #94a3b8);
+  font-weight: 600;
+  border-bottom: 1px solid var(--border, #334155);
+}
+
+.olympics-medals-table td {
+  color: var(--text, #f1f5f9);
+}
+
+.olympics-player-name {
+  text-align: left;
+  font-weight: 500;
+}
+
+.olympics-medal-count {
+  font-variant-numeric: tabular-nums;
+}
+
+.olympics-current-player {
+  background: var(--accent-muted, rgba(0, 198, 245, 0.15));
+}
+.olympics-current-player .olympics-player-name {
+  color: var(--accent, #00C6F5);
+}

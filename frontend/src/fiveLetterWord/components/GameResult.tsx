@@ -1,4 +1,5 @@
 import type { PlayerGameState, PlayerFinishInfo, PlayerGridRow, LetterStatus } from '@lancade/shared';
+import { medalEmojiForPodium } from '@lancade/shared';
 import './GameResult.css';
 
 interface GameResultProps {
@@ -44,6 +45,21 @@ export function GameResult({
   const isWinner = winnerId === currentPlayerId;
   const hasWinner = winnerId !== null;
 
+  const solvers = finishOrder.filter(e => e.solved);
+  const nonSolvers = finishOrder.filter(e => !e.solved);
+  const podium: string[][] = [];
+  if (solvers.length > 0) {
+    podium.push([solvers[0].playerName]);
+    if (solvers.length === 1) {
+      if (nonSolvers.length > 0) podium.push(nonSolvers.map(e => e.playerName));
+    } else if (solvers.length === 2) {
+      podium.push([solvers[1].playerName]);
+      if (nonSolvers.length > 0) podium.push(nonSolvers.map(e => e.playerName));
+    } else {
+      for (let i = 1; i < 3; i++) podium.push([solvers[i].playerName]);
+    }
+  }
+
   return (
     <div className="game-result">
       {hasWinner ? (
@@ -87,7 +103,7 @@ export function GameResult({
               >
                 <div className="game-result-player-header">
                   <span className="game-result-player-rank">{index + 1}.</span>
-                  <span className="game-result-player-name">{entry.playerName}</span>
+                  <span className="game-result-player-name">{medalEmojiForPodium(podium, finishOrder.length, entry.playerName)} {entry.playerName}</span>
                   <span className="game-result-player-status">
                     {entry.solved ? (
                       <span className="game-result-solved">Solved in {entry.solvedAtRow} guesses</span>

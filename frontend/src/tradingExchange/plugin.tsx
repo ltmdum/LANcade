@@ -48,6 +48,7 @@ export const plugin: GamePlugin = {
     roundControlTitle: 'Card Reveal Timer',
     joinPanelTitle: 'Join the Exchange',
     minPlayers: 2,
+    olympics: true,
   },
 
   canRender: (serverState: unknown, gameId: string): boolean => {

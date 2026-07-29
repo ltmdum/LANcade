@@ -350,7 +350,7 @@ describe('MindMatchGame', () => {
   });
 
   describe('results state', () => {
-    it('renders results panel with score changes', () => {
+    it('renders results panel after round', () => {
       const state = createBaseState();
       state.round.state = 'results';
       state.round.prompt = { id: 1, text: 'body', blankPosition: 'before' };

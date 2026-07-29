@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { Panel } from '../../shared/components/Panel';
 import type { PlayerInfo } from '@lancade/shared';
+import { buildPodiumFromScores, medalEmojiForPodium } from '@lancade/shared';
 import '../../alphabetRace/AlphabetRaceGame.css';
 
 interface AlphabetScoreBoardProps {
@@ -28,6 +29,8 @@ export function AlphabetScoreBoard({
       .sort((a, b) => (scores[b.id] || 0) - (scores[a.id] || 0));
   }, [players, scores, participants]);
 
+  const { podium, playerCount } = buildPodiumFromScores(sortedPlayers.map(p => [p.name, scores[p.id] || 0]));
+
   return (
     <Panel title="Scores">
       <ul className="alphabet-score-list">
@@ -41,7 +44,7 @@ export function AlphabetScoreBoard({
             .join(' ');
           return (
             <li key={player.id} className={className}>
-              <span>{player.name}{isIneligible ? ' (out)' : ''}</span>
+              <span>{medalEmojiForPodium(podium, playerCount, player.name)} {player.name}{isIneligible ? ' (out)' : ''}</span>
               <span>{scores[player.id] || 0}</span>
             </li>
           );

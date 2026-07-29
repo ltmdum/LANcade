@@ -79,6 +79,7 @@ export const plugin: GamePlugin = {
     joinPanelTitle: 'Join the Round',
     minPlayers: 1,
     sharesWordPool: true,
+    olympics: true,
   },
   canRender,
   getPhase,

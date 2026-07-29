@@ -7,6 +7,7 @@ import type {
   PlayerInfo,
   CategorySettings,
 } from '@lancade/shared';
+import { buildPodiumFromScores } from '@lancade/shared';
 import { createGameBase } from '../shared/stores/game-base.js';
 import { randomLetter } from '../shared/utils/letters.js';
 import { PlayerStore } from '../shared/stores/player-store.js';
@@ -170,6 +171,10 @@ export interface CategoryClashEngine {
   selectRandomCategories?: (count?: number) => { ok: boolean; categories?: string[]; reason?: string };
   addCategory?: (name: string) => { ok: boolean; category?: string; reason?: string };
   endGame(): EndGameResult;
+  getOlympicsResult: () => {
+    podium: string[][];
+    playerCount: number;
+  } | null;
 }
 
 /**
@@ -801,6 +806,23 @@ export function createCategoryClashEngine(
   }
 
   /**
+   * Returns olympics result when the round is in results state.
+   */
+  function getOlympicsResult(): {
+    podium: string[][];
+    playerCount: number;
+  } | null {
+    if (round.state !== 'results' || !round.resultsByPlayer) return null;
+    const nameMap = new Map(playerStore.listPlayers().map(p => [p.id, p.name]));
+    const scored: [string, number][] = [];
+    for (const [playerId, result] of round.resultsByPlayer.entries()) {
+      scored.push([nameMap.get(playerId) || playerId, result.finalScore]);
+    }
+    const { podium, playerCount } = buildPodiumFromScores(scored);
+    return { podium, playerCount };
+  }
+
+  /**
    * End the current game/round early, returning to idle state.
    * @returns Result payload for the end game attempt.
    */
@@ -824,6 +846,7 @@ export function createCategoryClashEngine(
     finishRound,
     joinPlayer,
     endGame,
+    getOlympicsResult,
   };
 
   // Add category methods based on what the category manager supports

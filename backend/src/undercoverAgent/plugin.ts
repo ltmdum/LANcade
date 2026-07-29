@@ -1,11 +1,7 @@
 import type { GamePlugin, GameFactoryOptions, BaseGame } from '../plugins/types.js';
 import { createGame, UndercoverAgentGame } from './undercoveragent.js';
+import { buildPodiumFromScores } from '@lancade/shared';
 
-/**
- * Adapt the Undercover Agent game interface to BaseGame.
- * @param game Undercover Agent game instance.
- * @returns BaseGame compatible interface.
- */
 function adaptToBaseGame(game: UndercoverAgentGame): BaseGame {
   return {
     getState: () => game.getState(),
@@ -16,14 +12,18 @@ function adaptToBaseGame(game: UndercoverAgentGame): BaseGame {
     startRound: (durationMs) => game.startRound(durationMs),
     endGame: () => game.endGame(),
     updateSettings: (settings) => game.updateSettings(settings),
+    getOlympicsResult: () => {
+      const state = game.getState();
+      if (state.match.winnerIds.length === 0 && state.match.state !== 'finished') return null;
+      const nameMap = new Map(state.players.map(p => [p.id, p.name]));
+      const scored = Object.entries(state.match.scores)
+        .map(([id, score]) => [nameMap.get(id) || id, score] as [string, number]);
+      const { podium, playerCount } = buildPodiumFromScores(scored);
+      return { podium, playerCount };
+    },
   };
 }
 
-/**
- * Create an Undercover Agent game instance for the registry.
- * @param options Factory options from the server.
- * @returns Game instance implementing the BaseGame interface.
- */
 function factory(options: GameFactoryOptions): BaseGame {
   const game = createGame({
     onStateChange: options.onStateChange,

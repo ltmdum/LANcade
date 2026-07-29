@@ -1,4 +1,5 @@
 import { Panel } from '../../shared/components/Panel';
+import { medalEmojiForPodium } from '@lancade/shared';
 import '../../alphabetRace/AlphabetRaceGame.css';
 
 interface AlphabetWinnerDisplayProps {
@@ -14,14 +15,16 @@ interface AlphabetWinnerDisplayProps {
 export function AlphabetWinnerDisplay({ winnerNames }: AlphabetWinnerDisplayProps) {
   const isTie = winnerNames.length > 1;
   const headline = isTie ? "It's a tie!" : (winnerNames[0] || '-');
+  const podium = [winnerNames];
+  const playerCount = winnerNames.length;
 
   return (
     <Panel title="Winner">
-      <div className="alphabet-winner-name">{headline}</div>
+      <div className="alphabet-winner-name">{isTie ? headline : `${medalEmojiForPodium(podium, playerCount, winnerNames[0])} ${headline}`}</div>
       {isTie && (
         <div className="alphabet-winner-names">
           {winnerNames.map((name) => (
-            <span key={name} className="alphabet-winner-names__name">{name}</span>
+            <span key={name} className="alphabet-winner-names__name">{medalEmojiForPodium(podium, playerCount, name)} {name}</span>
           ))}
         </div>
       )}

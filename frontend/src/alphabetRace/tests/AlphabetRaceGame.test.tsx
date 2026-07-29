@@ -269,7 +269,7 @@ describe('AlphabetRaceGame', () => {
       expect(screen.getByText(/Game Over/)).toBeInTheDocument();
       const winnerEl = container.querySelector('.alphabet-winner-name');
       expect(winnerEl).not.toBeNull();
-      expect(winnerEl!.textContent).toBe('Alice');
+      expect(winnerEl!.textContent).toBe('🥇 Alice');
 
       // Winner name should appear before "Game Over!" in the DOM
       const bodyHtml = container.innerHTML;

@@ -54,6 +54,7 @@ export const plugin: GamePlugin = {
     roundControlTitle: 'Round Control',
     joinPanelTitle: 'Join the Round',
     minPlayers: 1,
+    olympics: true,
   },
   canRender,
   getPhase,

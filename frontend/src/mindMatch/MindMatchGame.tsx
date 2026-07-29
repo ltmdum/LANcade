@@ -151,10 +151,7 @@ export function MindMatchGame({
       )}
 
       {round.state === 'results' && round.result && (
-        <ResultsPanel
-          result={round.result}
-          playerLookup={playerLookup}
-        />
+        <ResultsPanel result={round.result} />
       )}
 
       {!serverState.winnerIds.length && (

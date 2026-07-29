@@ -9,6 +9,7 @@ import { fileURLToPath } from 'url';
 import { gameRegistry, initializeGames, BaseGame } from './plugins/index.js';
 import { createPlayerStore, PlayerStore } from './shared/stores/player-store.js';
 import { createSessionStore } from './shared/stores/session-store.js';
+import { awardMedals, mergeMedalTallies, type MedalTally } from '@lancade/shared';
 import { createRateLimiter } from './shared/utils/rate-limiter.js';
 import { resolveBindAddress } from './shared/utils/resolve-bind-addresses.js';
 import { validatePlayerName, validateWord, validateCategory } from './shared/utils/input-validation.js';
@@ -254,6 +255,7 @@ interface PublicState {
   match?: unknown;
   game: { id: string; name: string };
   games: { id: string; name: string }[];
+  olympics?: MedalTally;
 }
 
 /**
@@ -273,6 +275,7 @@ function buildPublicState(): PublicState {
       name: currentGame?.name || 'Unknown',
     },
     games: gameRegistry.listEnabledGames(),
+    olympics: sharedSessionStore.get<MedalTally>('olympics:tally') || undefined,
   };
 }
 
@@ -289,10 +292,29 @@ function isGameInProgress(game: BaseGame | null): boolean {
   return false;
 }
 
+let lastRecordedOlympics = '';
+
+/**
+ * Record olympics result from the current game if new.
+ */
+function recordOlympicsResult(): void {
+  if (!gameInstance || !gameInstance.getOlympicsResult) return;
+  const result = gameInstance.getOlympicsResult();
+  if (!result) return;
+  const key = `${selectedGameId}:${JSON.stringify(result.podium)}`;
+  if (key === lastRecordedOlympics) return;
+  lastRecordedOlympics = key;
+  const newMedals = awardMedals(result.podium, result.playerCount);
+  const existing = sharedSessionStore.get<MedalTally>('olympics:tally') || {};
+  const merged = mergeMedalTallies(existing, newMedals);
+  sharedSessionStore.set('olympics:tally', merged);
+}
+
 /**
  * Broadcast the latest state to all SSE clients.
  */
 function broadcastState(): void {
+  recordOlympicsResult();
   const payload = JSON.stringify(buildPublicState());
   for (const client of sseClients) {
     try {

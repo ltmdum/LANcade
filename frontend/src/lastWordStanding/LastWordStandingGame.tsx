@@ -234,7 +234,16 @@ export function LastWordStandingGame({
   }
 
   const statusMessage = status || (timeUp ? 'Time is up. Waiting for update...' : '');
-  const winnerName = match.winnerId ? playerLookup[match.winnerId] || 'Unknown' : '-';
+  const podiumGold = match.winnerId
+    ? { name: playerLookup[match.winnerId] || 'Unknown', medal: '🥇' as const }
+    : null;
+  const elims = match.eliminatedPlayerIds || [];
+  const podiumSilver = elims.length > 0
+    ? { name: playerLookup[elims[elims.length - 1]] || 'Unknown', medal: '🥈' as const }
+    : undefined;
+  const podiumBronze = elims.length > 1
+    ? { name: playerLookup[elims[elims.length - 2]] || 'Unknown', medal: '🥉' as const }
+    : undefined;
 
   return (
     <div className={flash ? `flash-${flash}` : ''}>
@@ -271,7 +280,9 @@ export function LastWordStandingGame({
         />
       )}
 
-      {match.state === 'finished' && <WinnerDisplay winnerName={winnerName} />}
+      {match.state === 'finished' && podiumGold && (
+        <WinnerDisplay gold={podiumGold} silver={podiumSilver} bronze={podiumBronze} />
+      )}
 
       <PlayerTagList players={players.filter((p) => match.order.includes(p.id))} eliminatedIds={eliminatedIds} />
 

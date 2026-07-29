@@ -108,6 +108,18 @@ export interface BaseGame {
     reason?: string;
   };
 
+  /**
+   * Returns the olympics podium if the game is in a finished state, or null.
+   *
+   * The podium is a list of groups: [[1st place names], [2nd place names], [3rd place names]].
+   * Each inner array holds tied players. Only players who scored > 0 (or solved for 5LW)
+   * should be included. Return null if the game has not finished or does not support olympics.
+   */
+  getOlympicsResult?: () => {
+    podium: string[][];
+    playerCount: number;
+  } | null;
+
   /** Clean up timers and resources when the game instance is being replaced */
   dispose?: () => void;
 }

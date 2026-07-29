@@ -1,4 +1,5 @@
 import type { TradingExchangeLeaderboardEntry } from '@lancade/shared';
+import { buildPodiumFromScores, medalEmojiForPodium } from '@lancade/shared';
 
 interface LeaderboardProps {
   leaderboard: TradingExchangeLeaderboardEntry[];
@@ -13,6 +14,8 @@ interface LeaderboardProps {
  * @returns Leaderboard element.
  */
 export function Leaderboard({ leaderboard, winnerIds, trueValue, playerColours }: LeaderboardProps) {
+  const { podium, playerCount } = buildPodiumFromScores(leaderboard.map(e => [e.playerName, e.pnl]));
+
   return (
     <div className="te-leaderboard">
       <h3 className="te-leaderboard__title">Final Results</h3>
@@ -32,6 +35,7 @@ export function Leaderboard({ leaderboard, winnerIds, trueValue, playerColours }
             entry={entry}
             colour={playerColours[entry.playerId] || 'inherit'}
             isWinner={winnerIds.includes(entry.playerId)}
+            medalEmoji={medalEmojiForPodium(podium, playerCount, entry.playerName)}
           />
         ))}
       </div>
@@ -44,9 +48,10 @@ interface LeaderboardRowProps {
   entry: TradingExchangeLeaderboardEntry;
   colour: string;
   isWinner: boolean;
+  medalEmoji: string;
 }
 
-function LeaderboardRow({ rank, entry, colour, isWinner }: LeaderboardRowProps) {
+function LeaderboardRow({ rank, entry, colour, isWinner, medalEmoji }: LeaderboardRowProps) {
   const pnlClass = entry.pnl > 0
     ? 'te-pnl--positive'
     : entry.pnl < 0 ? 'te-pnl--negative' : '';
@@ -55,7 +60,7 @@ function LeaderboardRow({ rank, entry, colour, isWinner }: LeaderboardRowProps) 
     <div className={`te-leaderboard__row ${isWinner ? 'te-leaderboard__row--winner' : ''}`}>
       <span className="te-leaderboard__rank">{rank}.</span>
       <span className="te-leaderboard__name" style={{ color: colour }}>
-        {entry.playerName}
+        {medalEmoji} {entry.playerName}
       </span>
       <span className={`te-leaderboard__pnl ${pnlClass}`}>
         {entry.pnl > 0 ? '+' : ''}{entry.pnl.toFixed(1)}

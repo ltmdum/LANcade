@@ -131,7 +131,7 @@
 }
 
 .undercover-result-winner--civilians {
-  color: var(--success);
+  color: var(--accent);
 }
 
 .undercover-finish-reason {
@@ -177,10 +177,6 @@
   display: flex;
   align-items: center;
   gap: 0.25rem;
-}
-
-.undercover-score-crown {
-  color: var(--accent);
 }
 
 .undercover-score-value {

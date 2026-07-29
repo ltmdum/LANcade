@@ -81,6 +81,7 @@ export const plugin: GamePlugin = {
     joinPanelTitle: 'Join the Race',
     minPlayers: 2,
     sharesWordPool: true,
+    olympics: true,
   },
   canRender,
   getPhase,

@@ -395,7 +395,7 @@ describe('MulticatGame', () => {
       // Alice should still see the leaderboard with Bob's result, not the
       // "nobody submitted" fallback.
       expect(screen.getByText('Leaderboard')).toBeInTheDocument();
-      expect(screen.getByText('Bob')).toBeInTheDocument();
+      expect(screen.getByText(/Bob/)).toBeInTheDocument();
       expect(screen.queryByText(/nobody submitted any words/i)).not.toBeInTheDocument();
     });
 

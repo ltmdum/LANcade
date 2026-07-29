@@ -113,7 +113,10 @@ export function FiveLetterWordGame({
   }, [match.state]);
 
   async function handleSubmit() {
-    if (submittingRef.current) return;
+    if (submittingRef.current) {
+      setStatus('Still processing previous guess...');
+      return;
+    }
     const nonGreenCount = greenLetters.filter(l => !l).length;
     if (wordInput.length !== nonGreenCount) {
       setStatus('Enter a 5-letter word');
@@ -146,8 +149,12 @@ export function FiveLetterWordGame({
 
     setStatus('');
     submittingRef.current = true;
+    const safetyTimer = setTimeout(() => {
+      submittingRef.current = false;
+    }, 10000);
     try {
       const { response, data } = await submitWord(playerId, fullWord, accessKey);
+      clearTimeout(safetyTimer);
       submittingRef.current = false;
       
       if (!response.ok) {
@@ -167,6 +174,7 @@ export function FiveLetterWordGame({
       setWordInput('');
       setStatus('');
     } catch {
+      clearTimeout(safetyTimer);
       setStatus('Could not submit word');
       submittingRef.current = false;
     }

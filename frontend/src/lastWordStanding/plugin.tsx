@@ -80,6 +80,7 @@ export const plugin: GamePlugin = {
     joinPanelTitle: 'Join the Game',
     minPlayers: 2,
     sharesWordPool: true,
+    olympics: true,
   },
   canRender,
   getPhase,

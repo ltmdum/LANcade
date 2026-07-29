@@ -179,13 +179,16 @@ Create your game in `backend/src/yourgame/`:
 
 ```typescript
 // backend/src/yourgame/yourgame.ts
+import { PlayerStore } from '../shared/stores/player-store.js';
+import { SessionStore } from '../shared/stores/session-store.js';
+
 export interface YourGameOptions {
   onStateChange?: () => void;
   playerStore?: PlayerStore;
+  sessionStore?: SessionStore;
 }
 
 export function createGame(options: YourGameOptions) {
-  // Implement game logic
   return {
     getState: () => ({ /* game state */ }),
     getPhase: () => 'idle',
@@ -193,9 +196,17 @@ export function createGame(options: YourGameOptions) {
     submitWord: (playerId, word) => ({ ok: true }),
     submitVotes: (playerId, votes) => ({ ok: true }),
     startRound: (durationMs) => ({ ok: true }),
+    updateSettings: (settings) => ({ ok: true }),
+    getOlympicsResult: () => null,
   };
 }
 ```
+
+The game engine must implement `BaseGame` methods. Optional interfaces include:
+- `selectCategory(category)`, `addCategory(category)`, `selectRandomCategory()` — for category-based games
+- `updateSettings(settings)` — for games with admin-configurable options
+- `getOlympicsResult()` — for session olympics support
+- `dispose()` — for games with timers that need cleanup
 
 ### 2. Create the Backend Plugin
 
@@ -208,6 +219,7 @@ function factory(options: GameFactoryOptions): BaseGame {
   return createGame({
     onStateChange: options.onStateChange,
     playerStore: options.playerStore,
+    sessionStore: options.sessionStore,
   });
 }
 
@@ -219,6 +231,8 @@ export const plugin: GamePlugin = {
   },
 };
 ```
+
+If your game supports categories (selecting / adding categories) you must also forward those methods from the game instance to the server route handler. See existing category-based plugins for the pattern used in the factory function. Categories are managed via the `/api/admin/category` route in `server.ts` which calls `selectCategory`, `selectRandomCategory`, and `addCategory` on the active game.
 
 ### 3. Register the Backend Plugin
 
@@ -262,13 +276,27 @@ export const plugin: GamePlugin = {
     defaultTimer: { minutes: '01', seconds: '00' },
     roundControlTitle: 'Round Control',
     joinPanelTitle: 'Join the Game',
+    olympics: true,
+    sharesWordPool: false,
+    gameSettings: [
+      { key: 'rounds', label: 'Number of Rounds', type: 'select', options: [...], defaultValue: 3 },
+    ],
   },
   canRender: (serverState, gameId) => {
     return gameId === 'yourgame' && /* check state shape */;
   },
+  getPhase: (serverState) => /* extract phase from state */,
   render: (props) => <YourGame {...props} />,
 };
 ```
+
+The `config` object supports these optional fields:
+- `olympics` (`boolean`) — set `true` for games that participate in the session-wide medal tally
+- `sharesWordPool` (`boolean`) — set `true` if the game contributes to / reads from the shared word pool
+- `gameSettings` — declarative admin controls rendered as a settings panel; handled on the backend via `updateSettings()`
+- `minPlayers` — minimum players required to start (defaults to 1)
+- `hideTimer` — hide the timer config in the admin panel
+- `customDuration` — custom duration selector replacing minutes/seconds dropdowns
 
 ### 6. Register the Frontend Plugin
 
@@ -325,6 +353,84 @@ The page should follow the same structure as existing game pages:
 - **Rules section** summarising the game rules in a bulleted list
 
 Use the existing pages (e.g. `docs/games/quickfire.html`) as a template. Screenshots go in `docs/games/screenshots/<gameid>/`.
+
+## Olympics Medal System
+
+Games can participate in a session-wide medal tally by implementing the olympics contract.
+
+### Backend Contract
+
+Implement `getOlympicsResult()` on the game engine. It must return `{ podium: string[][], playerCount: number } | null`:
+
+- `podium` — array of up to 3 groups: `[[1st place names], [2nd place names], [3rd place names]]`. Tied players share a group.
+- `playerCount` — total number of players who participated (including those with 0 score).
+- Return `null` if the game has not finished or does not support olympics.
+
+Use `buildPodiumFromScores(scores)` from `shared/src/olympics.ts` to build a podium from a `Record<string, number>` of player scores. This function includes all players regardless of score (no score filtering).
+
+### Tie Rules
+
+Medals follow standard Olympic tie rules:
+- 2+ tied for 1st → skip silver, bronze goes to the 3rd-place group (if any)
+- 3+ tied for 1st → skip silver and bronze
+- 2+ tied for 2nd → skip bronze
+- Single group → only gold
+
+Use `awardMedals(podium, playerCount)` from `shared/src/olympics.ts` to apply these rules and get the medal groups.
+
+### Medal Emoji Placement
+
+Display the medal emoji **before** the player name: `🥇 Alice`. Use `medalEmojiForPodium(podium, playerCount, playerName)` — a 3-argument function that internally calls `awardMedals` and returns the emoji for the given player name, or an empty string if the player did not medal.
+
+### Medal Tally
+
+The `OlympicsMedals` component in `frontend/src/shared/components/OlympicsMedals.tsx` displays the session-wide medal tally. It is rendered in `App.tsx`:
+- During idle phase: above the game view
+- During results/finished: below the game view
+
+The tally is wrapped in a `<Panel title="Medal Tally">` and shows all session players.
+
+### Frontend Config
+
+Set `olympics: true` on the frontend game plugin config to signal that the game participates in the medal system. Telepathy is the only game currently opted out.
+
+### Utilities
+
+All olympics utilities live in `shared/src/olympics.ts` and are re-exported from `shared/src/index.ts`:
+
+| Function | Description |
+|---|---|
+| `buildPodiumFromScores(scores)` | Build podium from score map (no score filter) |
+| `awardMedals(podium, playerCount)` | Assign medals with Olympic tie rules |
+| `medalEmojiForPodium(podium, playerCount, playerName)` | Get emoji string for a player (3-arg) |
+| `mergeMedalTallies(tallies)` | Merge multiple tallies into one |
+
+## Cross-Game Shared Word Pool
+
+Games can opt into a shared word pool that prevents the same word from being used across different game types in the same session.
+
+### Frontend Config
+
+Set `sharesWordPool: true` on the frontend game plugin config. This shows a "Prevent reusing words" toggle in the admin panel, labeled with all participating game names.
+
+### Backend Contract
+
+Use `sessionStore` with these reserved keys:
+
+- **`shared:reuse-enabled`** (`boolean`, default `true`) — whether reuse prevention is active. Read before accepting a word.
+- **`shared:used-words`** (`Set<string>`) — the set of lowercased words already used across all participating games. Read to check; write new words after accepting.
+
+The typical pattern on `submitWord`:
+1. Before accepting a word, check `shared:reuse-enabled`. If not `false`, check whether the word exists in `shared:used-words` and reject with `reason: 'used_in_previous_game'` if found.
+2. After accepting a word, add it (lowercased) to `shared:used-words`.
+
+See `backend/src/quickFire/quickfire.ts`, `backend/src/multicat/multicat.ts`, `backend/src/lastWordStanding/lastwordstanding.ts`, or `backend/src/alphabetRace/alphabetrace.ts` for reference implementations.
+
+### Important Notes
+
+- Words are stored lowercased. Normalize before checking / inserting.
+- The `Set` type in sessionStore is serialized as an array. Access it with `sessionStore.get<Set<string>>(SHARED_KEY)` — the store handles deserialization.
+- The toggle defaults to "prevent reuse" (checked). Respect its value even if your game doesn't have its own word-pool logic — it may be reusing a shared engine that handles it for you.
 
 ## Code Standards
 

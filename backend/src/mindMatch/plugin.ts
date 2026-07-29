@@ -1,11 +1,7 @@
 import type { GamePlugin, GameFactoryOptions, BaseGame } from '../plugins/types.js';
 import { createGame, MindMatchGame } from './mindmatch.js';
+import { buildPodiumFromScores } from '@lancade/shared';
 
-/**
- * Adapt the Mind Match game interface to the BaseGame interface.
- * @param game Mind Match game instance.
- * @returns BaseGame compatible interface.
- */
 function adaptToBaseGame(game: MindMatchGame): BaseGame {
   return {
     getState: () => game.getState(),
@@ -17,14 +13,18 @@ function adaptToBaseGame(game: MindMatchGame): BaseGame {
     finishRound: (playerId, roundId) => game.finishRound(playerId, roundId),
     endGame: () => game.endGame(),
     updateSettings: (settings) => game.updateSettings(settings),
+    getOlympicsResult: () => {
+      const state = game.getState();
+      if (state.winnerIds.length === 0) return null;
+      const nameMap = new Map(state.players.map(p => [p.id, p.name]));
+      const scored = Object.entries(state.scores)
+        .map(([id, score]) => [nameMap.get(id) || id, score] as [string, number]);
+      const { podium, playerCount } = buildPodiumFromScores(scored);
+      return { podium, playerCount };
+    },
   };
 }
 
-/**
- * Create a Mind Match game instance for the registry.
- * @param options Factory options from the server.
- * @returns Game instance implementing the BaseGame interface.
- */
 function factory(options: GameFactoryOptions): BaseGame {
   const game = createGame({
     onStateChange: options.onStateChange,

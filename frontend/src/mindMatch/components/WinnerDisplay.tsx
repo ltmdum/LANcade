@@ -1,4 +1,5 @@
 import { Panel } from '../../shared/components/Panel';
+import { buildPodiumFromScores, medalEmojiForPodium } from '@lancade/shared';
 import './WinnerDisplay.css';
 
 interface WinnerDisplayProps {
@@ -16,6 +17,8 @@ export function WinnerDisplay({ winnerNames, scores, playerLookup }: WinnerDispl
   const sortedScores = Object.entries(scores)
     .map(([id, score]) => ({ id, name: playerLookup[id] || 'Unknown', score }))
     .sort((a, b) => b.score - a.score);
+
+  const { podium, playerCount } = buildPodiumFromScores(sortedScores.map(s => [s.name, s.score]));
 
   const isTie = winnerNames.length > 1;
   const headline = isTie ? "It's a tie!" : `${winnerNames[0]} wins!`;
@@ -39,7 +42,7 @@ export function WinnerDisplay({ winnerNames, scores, playerLookup }: WinnerDispl
               className={`final-score ${winnerNames.includes(name) ? 'winner' : ''}`}
             >
               <span className="final-score-rank">{index + 1}. </span>
-              <span className="final-score-name">{name}</span>
+              <span className="final-score-name">{medalEmojiForPodium(podium, playerCount, name)} {name}</span>
               <span className="final-score-value">{score}</span>
             </div>
           ))}
