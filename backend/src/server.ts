@@ -52,6 +52,7 @@ const PLAYER_KEY = randomKey(KEY_LENGTH);
 let selectedGameId = gameRegistry.getDefaultGameId() || '';
 let gameInstance: BaseGame | null = null;
 const sseClients = new Set<Response>();
+let currentAdminClient: Response | null = null;
 const sseTracker = createConnectionTracker(5, 50);
 const authRateLimiter = createRateLimiter(10, 60_000);
 const sharedPlayerStore = createPlayerStore();
@@ -334,6 +335,9 @@ function removeSseClient(client: Response): void {
   const ip = (client as Response & { sseIp?: string }).sseIp || 'unknown';
   sseClients.delete(client);
   sseTracker.remove(ip);
+  if ((client as Response & { isAdmin?: boolean }).isAdmin) {
+    currentAdminClient = null;
+  }
 }
 
 // Create Express app
@@ -434,6 +438,10 @@ app.get('/health', (req: Request, res: Response) => {
 // API routes
 app.get('/api/state', (req: Request, res: Response) => {
   if (rejectIfUnauthorized(req, res, 'player')) return;
+  if (currentAdminClient && classifyRequest(req) === 'admin') {
+    res.status(409).json({ error: 'admin_already_connected', message: 'Only one admin can connect at a time.' });
+    return;
+  }
   res.json(buildPublicState());
 });
 
@@ -447,9 +455,15 @@ app.get('/api/games', (req: Request, res: Response) => {
 
 app.get('/api/events', (req: Request, res: Response) => {
   if (isRateLimited(req, res)) return;
-  if (!classifyRequest(req)) {
+  const accessLevel = classifyRequest(req);
+  if (!accessLevel) {
     recordAuthFailure(req);
     res.status(401).send('Unauthorized');
+    return;
+  }
+
+  if (accessLevel === 'admin' && currentAdminClient) {
+    res.status(409).json({ error: 'admin_already_connected', message: 'Only one admin can connect at a time. The current admin must disconnect first.' });
     return;
   }
 
@@ -468,6 +482,10 @@ app.get('/api/events', (req: Request, res: Response) => {
   res.write('\n');
 
   (res as Response & { sseIp?: string }).sseIp = clientIp;
+  if (accessLevel === 'admin') {
+    (res as Response & { isAdmin?: boolean }).isAdmin = true;
+    currentAdminClient = res;
+  }
   sseClients.add(res);
   sseTracker.add(clientIp);
 

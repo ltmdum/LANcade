@@ -218,6 +218,27 @@ function App() {
     );
   }
 
+  if (isAdmin && connection === 'Admin already connected. Only one admin at a time.') {
+    return (
+      <div className="app-container">
+        <div className="app-content">
+          <div className="card">
+            <header className="app-header">
+              <p className="app-header-label">
+                <img src={iconImg} alt="" className="app-header-icon" />
+                LANcade
+              </p>
+              <h1 className="app-header-title">Admin Already Connected</h1>
+              <p className="app-header-description">
+                Another admin is currently connected. Only one admin at a time is allowed.
+              </p>
+            </header>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="app-container">
       <div className="app-content">

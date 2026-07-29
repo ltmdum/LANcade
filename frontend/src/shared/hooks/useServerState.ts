@@ -83,6 +83,11 @@ export function useServerState(options: UseServerStateOptions): UseServerStateRe
           return;
         }
 
+        if (response.status === 409) {
+          setConnection('Admin already connected. Only one admin at a time.');
+          return;
+        }
+
         if (!response.ok) {
           setConnection('Unable to connect.');
           return;
