@@ -9,7 +9,7 @@ import { fileURLToPath } from 'url';
 import { gameRegistry, initializeGames, BaseGame } from './plugins/index.js';
 import { createPlayerStore, PlayerStore } from './shared/stores/player-store.js';
 import { createSessionStore } from './shared/stores/session-store.js';
-import { awardMedals, mergeMedalTallies, type MedalTally } from '@lancade/shared';
+import { awardMedals, mergeMedalTallies, type MedalTally, type PlayerInfo } from '@lancade/shared';
 import { createRateLimiter } from './shared/utils/rate-limiter.js';
 import { resolveBindAddress } from './shared/utils/resolve-bind-addresses.js';
 import { validatePlayerName, validateWord, validateCategory } from './shared/utils/input-validation.js';
@@ -251,7 +251,7 @@ function classifyRequest(req: Request): AccessLevel | null {
 }
 
 interface PublicState {
-  players: unknown[];
+  players: PlayerInfo[];
   round?: unknown;
   match?: unknown;
   game: { id: string; name: string };
@@ -267,7 +267,7 @@ function buildPublicState(): PublicState {
   const games = gameRegistry.getEnabledGames();
   const currentGame = games[selectedGameId];
   const gameState = gameInstance
-    ? (gameInstance.getState() as { players: unknown[]; round?: unknown; match?: unknown })
+    ? (gameInstance.getState() as { players: PlayerInfo[]; round?: unknown; match?: unknown })
     : { players: [], round: {} };
   return {
     ...gameState,

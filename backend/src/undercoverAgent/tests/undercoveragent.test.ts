@@ -136,7 +136,7 @@ describe('undercoverAgent', () => {
     it('broadcasts winningScore default in state', () => {
       const { game } = setupThreePlayerGame();
       const state = game.getState();
-      expect((state as Record<string, unknown>).gameSettings).toEqual({ winningScore: 5 });
+      expect(state.gameSettings).toEqual({ winningScore: 5 });
     });
   });
 
@@ -166,7 +166,7 @@ describe('undercoverAgent', () => {
     it('broadcasts updated gameSettings', () => {
       const { game } = setupThreePlayerGame();
       game.updateSettings({ winningScore: 10 });
-      expect((game.getState() as Record<string, unknown>).gameSettings).toEqual({ winningScore: 10 });
+      expect(game.getState().gameSettings).toEqual({ winningScore: 10 });
     });
   });
 

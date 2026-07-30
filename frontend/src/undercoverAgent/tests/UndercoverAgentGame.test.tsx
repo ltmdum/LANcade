@@ -50,6 +50,7 @@ function createBaseState(): UndercoverAgentState {
       winnerNames: [],
       winningScore: 5,
     },
+    gameSettings: { winningScore: 5 },
     game: { id: 'undercoveragent', name: 'Undercover Agent' },
     games: [{ id: 'undercoveragent', name: 'Undercover Agent' }],
   };

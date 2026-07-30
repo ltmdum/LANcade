@@ -1,11 +1,12 @@
 import type { ReactNode } from 'react';
+import type { GameState } from '@lancade/shared';
 
 /**
  * Props passed to every game component.
  */
 export interface GameComponentProps {
-  /** Current server state (cast to game-specific type in component) */
-  serverState: unknown;
+  /** Current server state */
+  serverState: GameState;
   /** Connection status message */
   connection: string;
   /** Current player's ID */
@@ -108,20 +109,20 @@ export interface GamePlugin {
    * Check if this plugin can render for the given server state.
    * Used to match the correct game plugin to the current game state.
    */
-  canRender: (serverState: unknown, gameId: string) => boolean;
+  canRender: (serverState: GameState, gameId: string) => boolean;
   
   /**
    * Get the current game phase from the server state.
    * Returns 'idle', 'active', 'voting', 'results', 'finished', etc.
    */
-  getPhase: (serverState: unknown) => string;
+  getPhase: (serverState: GameState) => string;
   
   /**
    * Get the header category text to display during active play.
    * For single-category games, returns the category name.
    * For multi-category games, may return formatted list of categories.
    */
-  getHeaderCategory: (serverState: unknown) => string;
+  getHeaderCategory: (serverState: GameState) => string;
   
   /**
    * Render the game component.

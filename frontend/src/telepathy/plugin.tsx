@@ -1,20 +1,20 @@
 import type { GamePlugin, GameComponentProps } from '../plugins/types';
-import type { TelepathyState } from '@lancade/shared';
+import type { TelepathyState, GameState } from '@lancade/shared';
 import { TelepathyGame } from './TelepathyGame';
 
-function canRender(serverState: unknown, gameId: string): boolean {
+function canRender(serverState: GameState, gameId: string): boolean {
   if (gameId !== 'telepathy') return false;
-  return serverState !== null && typeof serverState === 'object' && 'telepathy' in (serverState as Record<string, unknown>);
+  return serverState !== null && typeof serverState === 'object' && 'telepathy' in serverState;
 }
 
-function getPhase(serverState: unknown): string {
-  if (!serverState || typeof serverState !== 'object' || !('telepathy' in (serverState as Record<string, unknown>))) {
+function getPhase(serverState: GameState): string {
+  if (!serverState || typeof serverState !== 'object' || !('telepathy' in serverState)) {
     return 'idle';
   }
   return (serverState as TelepathyState).telepathy.phase;
 }
 
-function getHeaderCategory(serverState: unknown): string {
+function getHeaderCategory(serverState: GameState): string {
   if (!serverState || typeof serverState !== 'object') return '';
   const tp = (serverState as TelepathyState).telepathy;
   if (tp.phase === 'playing') {

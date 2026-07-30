@@ -452,7 +452,7 @@ describe('multicat', () => {
 
       const game = createGame({ playerStore: store });
 
-      const result = (game as unknown as { addCategory: (name: string) => { ok: boolean; category?: string; reason?: string } }).addCategory('My Custom');
+      const result = game.addCategory!('My Custom');
       expect(result.ok).toBe(true);
       expect(result.category).toBe('My Custom');
 

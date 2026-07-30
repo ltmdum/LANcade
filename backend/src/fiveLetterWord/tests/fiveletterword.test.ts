@@ -388,7 +388,7 @@ describe('fiveletterword', () => {
         const player = store.joinPlayer({ name: 'Alice' }).playerId!;
         const words = new Set(['ALPHA', 'APPLE', 'AMPLE', 'MAPLE']);
         const game = createGame({ playerStore: store, validWords: words, answerWords: ['APPLE'] });
-        game.updateSettings({ hardMode: true });
+        game.updateSettings({ hardMode: 1 });
         game.startRound(0);
 
         // First guess: ALPHA
@@ -414,7 +414,7 @@ describe('fiveletterword', () => {
         const player = store.joinPlayer({ name: 'Alice' }).playerId!;
         const words = new Set(['ALPHA', 'APPLE', 'AMPLE']);
         const game = createGame({ playerStore: store, validWords: words, answerWords: ['APPLE'] });
-        game.updateSettings({ hardMode: true });
+        game.updateSettings({ hardMode: 1 });
         game.startRound(0);
 
         // First guess: ALPHA (A at pos 0 = correct)

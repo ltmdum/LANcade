@@ -1,4 +1,5 @@
 import type { GamePlugin, GamePluginConfig } from './types';
+import type { GameState } from '@lancade/shared';
 
 /**
  * Registry for frontend game plugins.
@@ -33,7 +34,7 @@ class GamePluginRegistry {
   /**
    * Find a plugin that can render the given state.
    */
-  findPluginForState(serverState: unknown, gameId: string): GamePlugin | undefined {
+  findPluginForState(serverState: GameState, gameId: string): GamePlugin | undefined {
     const plugin = this.plugins.get(gameId);
     if (plugin && plugin.canRender(serverState, gameId)) {
       return plugin;

@@ -56,7 +56,7 @@ export interface FiveLetterWordState {
     categories: string[];
     selectedCategory: string;
   };
-  gameSettings: Record<string, unknown>;
+  gameSettings: Record<string, number>;
   match: FiveLetterWordMatchState;
 }
 
@@ -460,13 +460,13 @@ export function createGame(options: FiveLetterWordGameOptions = {}) {
    * @param settings Settings object.
    * @returns Result payload.
    */
-  function updateSettings(settings: Record<string, unknown>) {
+  function updateSettings(settings: Record<string, number>) {
     if (match.state === 'active' || match.state === 'grace') {
       return { ok: false, reason: 'game_active' };
     }
-    if (settings.hardMode === true || settings.hardMode === 1) {
+    if (settings.hardMode === 1) {
       hardMode = true;
-    } else if (settings.hardMode === false || settings.hardMode === 0) {
+    } else if (settings.hardMode === 0) {
       hardMode = false;
     }
     if (typeof settings.gracePeriodSeconds === 'number') {

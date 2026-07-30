@@ -1,5 +1,5 @@
 import type { GamePlugin, GameComponentProps } from '../plugins/types';
-import type { TradingExchangeState } from '@lancade/shared';
+import type { TradingExchangeState, GameState } from '@lancade/shared';
 import { TradingExchangeGame } from './TradingExchangeGame';
 
 export const plugin: GamePlugin = {
@@ -51,19 +51,19 @@ export const plugin: GamePlugin = {
     olympics: true,
   },
 
-  canRender: (serverState: unknown, gameId: string): boolean => {
+  canRender: (serverState: GameState, gameId: string): boolean => {
     return gameId === 'tradingexchange' && !!serverState &&
       typeof serverState === 'object' && 'exchange' in serverState;
   },
 
-  getPhase: (serverState: unknown): string => {
+  getPhase: (serverState: GameState): string => {
     const state = serverState as TradingExchangeState;
     const phase = state.exchange.state;
     if (phase === 'auction' || phase === 'trading') return 'active';
     return phase;
   },
 
-  getHeaderCategory: (serverState: unknown): string => {
+  getHeaderCategory: (serverState: GameState): string => {
     const state = serverState as TradingExchangeState;
     const ex = state.exchange;
     if (ex.state === 'auction') return 'Auction';

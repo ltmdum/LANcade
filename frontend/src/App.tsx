@@ -14,6 +14,7 @@ import { OlympicsMedals } from './shared/components/OlympicsMedals';
 import { parseAccess } from './shared/utils/accessMode';
 import { getSessionData, setSessionData } from './shared/utils/api';
 import { gamePluginRegistry } from './plugins';
+import type { GameState, MedalCounts } from '@lancade/shared';
 import iconImg from './assets/icon.png';
 import './App.css';
 
@@ -93,9 +94,7 @@ function App() {
   const selectedCategories = settings?.selectedCategories || [];
   const categoryMode = settings?.categoryMode || 'single';
 
-  const olympics = serverState
-    ? (serverState as unknown as { olympics?: Record<string, { gold: number; silver: number; bronze: number; total: number }> }).olympics
-    : undefined;
+  const olympics = (serverState as GameState & { olympics?: Record<string, MedalCounts> })?.olympics;
 
   const pluginConfig = useMemo(() => {
     return gamePluginRegistry.getConfig(gameId);
@@ -175,7 +174,7 @@ function App() {
   const hideTimer = pluginConfig?.hideTimer || false;
   const customDuration = pluginConfig?.customDuration;
   const gameSettingsControls = pluginConfig?.gameSettings;
-  const gameSettingsValues = (serverState as unknown as Record<string, unknown> | undefined)?.gameSettings as Record<string, unknown> | undefined;
+  const gameSettingsValues = (serverState as GameState & { gameSettings?: Record<string, number> })?.gameSettings;
   const playerCount = serverState?.players?.length || 0;
 
   const getGameDescription = useCallback((id: string) => {

@@ -103,7 +103,7 @@ export interface BaseGame {
   };
 
   /** Update game-specific settings from the admin panel */
-  updateSettings?: (settings: Record<string, unknown>) => {
+  updateSettings?: (settings: Record<string, number>) => {
     ok: boolean;
     reason?: string;
   };

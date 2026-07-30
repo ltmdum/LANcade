@@ -149,7 +149,7 @@ export function createGame(options: TelepathyOptions) {
   }
 
   function handleAction(playerId: string, action: unknown) {
-    if (!action || typeof action !== 'object' || !('type' in (action as Record<string, unknown>))) {
+    if (!action || typeof action !== 'object' || !('type' in action)) {
       return { ok: false as const, reason: 'unknown_action' };
     }
 
@@ -225,7 +225,7 @@ export function createGame(options: TelepathyOptions) {
     return { ok: false as const, reason: 'unknown_action' };
   }
 
-  function updateSettings(settings: Record<string, unknown>) {
+  function updateSettings(settings: Record<string, number>) {
     if (typeof settings.startingRound === 'number') {
       startingRound = Math.max(1, settings.startingRound);
       notify();

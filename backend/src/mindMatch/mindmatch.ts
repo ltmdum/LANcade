@@ -96,7 +96,7 @@ export interface MindMatchGame {
     error?: string;
   };
   endGame(): EndGameResult;
-  updateSettings(settings: Record<string, unknown>): { ok: boolean; reason?: string };
+  updateSettings(settings: Record<string, number>): { ok: boolean; reason?: string };
 }
 
 /**
@@ -937,7 +937,7 @@ export function createGame(options: MindMatchGameOptions = {}): MindMatchGame {
    * @param settings Settings object with winningScore.
    * @returns Result indicating success or failure.
    */
-  function updateSettings(settings: Record<string, unknown>) {
+  function updateSettings(settings: Record<string, number>) {
     if (round.state !== 'idle') {
       return { ok: false, reason: 'game_active' };
     }

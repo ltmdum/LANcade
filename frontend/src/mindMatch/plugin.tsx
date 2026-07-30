@@ -1,5 +1,5 @@
 import type { GamePlugin, GameComponentProps } from '../plugins/types';
-import type { MindMatchState } from '@lancade/shared';
+import type { MindMatchState, GameState } from '@lancade/shared';
 import { MindMatchGame } from './MindMatchGame';
 
 /**
@@ -8,7 +8,7 @@ import { MindMatchGame } from './MindMatchGame';
  * @param gameId Current game id.
  * @returns True when the plugin can render.
  */
-function canRender(serverState: unknown, gameId: string): boolean {
+function canRender(serverState: GameState, gameId: string): boolean {
   if (gameId !== 'mindmatch') return false;
   return serverState !== null && typeof serverState === 'object' && 'round' in serverState && 'scores' in serverState;
 }
@@ -18,7 +18,7 @@ function canRender(serverState: unknown, gameId: string): boolean {
  * @param serverState Current server state.
  * @returns Phase string.
  */
-function getPhase(serverState: unknown): string {
+function getPhase(serverState: GameState): string {
   if (!serverState || typeof serverState !== 'object') {
     return 'idle';
   }
@@ -36,7 +36,7 @@ function getPhase(serverState: unknown): string {
  * @param serverState Current server state.
  * @returns Header category label.
  */
-function getHeaderCategory(serverState: unknown): string {
+function getHeaderCategory(serverState: GameState): string {
   if (!serverState || typeof serverState !== 'object' || !('round' in serverState)) {
     return 'Mind Match';
   }

@@ -24,7 +24,7 @@ describe('multi-category manager', () => {
 
   it('adds a custom category', () => {
     const manager = createMultiCategoryManager({ categories: ['A', 'B', 'C'] });
-    const result = (manager as unknown as { addCategory: (name: string) => { ok: boolean; category?: string; reason?: string } }).addCategory('Custom');
+    const result = manager.addCategory('Custom');
     expect(result.ok).toBe(true);
     expect(result.category).toBe('Custom');
     expect(manager.getSettings().categories).toContain('Custom');
@@ -32,8 +32,8 @@ describe('multi-category manager', () => {
 
   it('rejects duplicate custom category', () => {
     const manager = createMultiCategoryManager({ categories: ['A', 'B'] });
-    (manager as unknown as { addCategory: (name: string) => { ok: boolean; reason?: string } }).addCategory('New');
-    const duplicate = (manager as unknown as { addCategory: (name: string) => { ok: boolean; reason?: string } }).addCategory('New');
+    manager.addCategory('New');
+    const duplicate = manager.addCategory('New');
     expect(duplicate.ok).toBe(false);
     expect(duplicate.reason).toBe('duplicate');
   });
@@ -43,7 +43,7 @@ describe('multi-category manager', () => {
       categories: ['A', 'B'],
       canChange: () => false,
     });
-    const result = (manager as unknown as { addCategory: (name: string) => { ok: boolean; reason?: string } }).addCategory('Custom');
+    const result = manager.addCategory('Custom');
     expect(result.ok).toBe(false);
     expect(result.reason).toBe('round_active');
   });

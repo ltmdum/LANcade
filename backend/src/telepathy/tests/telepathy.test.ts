@@ -136,8 +136,7 @@ describe('Telepathy', () => {
       const bobId = state.players[1].id;
 
       // Override hands to create a loss scenario
-      const gameAny = game as unknown as { hands: Record<string, number[]> };
-      gameAny.hands = {
+      game.hands = {
         [aliceId]: [5],
         [bobId]: [3],
       };
@@ -166,8 +165,7 @@ describe('Telepathy', () => {
       const aliceId = state.players[0].id;
       const bobId = state.players[1].id;
 
-      const gameAny = game as unknown as { hands: Record<string, number[]> };
-      gameAny.hands = {
+      game.hands = {
         [aliceId]: [3],
         [bobId]: [5],
       };
@@ -186,11 +184,10 @@ describe('Telepathy', () => {
 
       // Reach round 3 first
       const state = getState(game);
-      const gameAny = game as unknown as { round: number; hands: Record<string, number[]>; totalCardsInRound: number; totalPlaced: number };
-      gameAny.round = 3;
-      gameAny.hands = { [state.players[0].id]: [10], [state.players[1].id]: [5] };
-      gameAny.totalCardsInRound = 6;
-      gameAny.totalPlaced = 4;
+      game.round = 3;
+      game.hands = { [state.players[0].id]: [10], [state.players[1].id]: [5] };
+      game.totalCardsInRound = 6;
+      game.totalPlaced = 4;
 
       // Cause a loss
       const result = game.handleAction(state.players[0].id, { type: 'place' });
@@ -211,12 +208,11 @@ describe('Telepathy', () => {
       game.joinPlayer({ name: 'Alice' });
       game.joinPlayer({ name: 'Bob' });
 
-      const gameAny = game as unknown as { round: number; hands: Record<string, number[]>; totalCardsInRound: number; totalPlaced: number; phase: string; lossDetails: null };
-      gameAny.round = 1;
-      gameAny.hands = { 'a': [10], 'b': [5] };
-      gameAny.totalCardsInRound = 2;
-      gameAny.totalPlaced = 0;
-      gameAny.phase = 'lost';
+      game.round = 1;
+      game.hands = { 'a': [10], 'b': [5] };
+      game.totalCardsInRound = 2;
+      game.totalPlaced = 0;
+      game.phase = 'lost';
 
       const result = game.handleAction('a', { type: 'progress' });
       expect(result.ok).toBe(true);
@@ -274,19 +270,18 @@ describe('Telepathy', () => {
       game.joinPlayer({ name: 'Alice' });
       game.joinPlayer({ name: 'Bob' });
 
-      const gameAny = game as unknown as { round: number; targetRound: number; hands: Record<string, number[]>; totalCardsInRound: number; totalPlaced: number; phase: string };
-      gameAny.targetRound = 2;
-      gameAny.round = 2;
-      gameAny.phase = 'playing';
-      gameAny.hands = { 'a': [10], 'b': [5] };
-      gameAny.totalCardsInRound = 4;
-      gameAny.totalPlaced = 2;
+      game.targetRound = 2;
+      game.round = 2;
+      game.phase = 'playing';
+      game.hands = { 'a': [10], 'b': [5] };
+      game.totalCardsInRound = 4;
+      game.totalPlaced = 2;
 
       // Place Alice's card (10 > 5 would be loss, so set hands appropriately)
       // Actually let's make hands where order works: a: [1], b: [2]
-      gameAny.hands = { 'a': [1], 'b': [2] };
-      gameAny.totalPlaced = 2;
-      gameAny.totalCardsInRound = 4;
+      game.hands = { 'a': [1], 'b': [2] };
+      game.totalPlaced = 2;
+      game.totalCardsInRound = 4;
 
       game.handleAction('a', { type: 'place' });
       game.handleAction('b', { type: 'place' });

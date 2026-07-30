@@ -56,7 +56,7 @@ export interface UndercoverAgentGame {
     error?: string;
   };
   endGame(): EndGameResult;
-  updateSettings(settings: Record<string, unknown>): { ok: boolean; reason?: string };
+  updateSettings(settings: Record<string, number>): { ok: boolean; reason?: string };
 }
 
 interface Match {
@@ -816,7 +816,7 @@ export function createGame(options: UndercoverAgentGameOptions = {}) {
    * @param settings Settings object with winningScore.
    * @returns Result indicating success or failure.
    */
-  function updateSettings(settings: Record<string, unknown>): { ok: boolean; reason?: string } {
+  function updateSettings(settings: Record<string, number>): { ok: boolean; reason?: string } {
     if (match.state !== 'idle') return { ok: false, reason: 'game_active' };
     let changed = false;
     for (const key of Object.keys(settings)) {

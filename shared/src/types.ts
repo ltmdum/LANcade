@@ -187,7 +187,7 @@ export interface FiveLetterWordState {
   serverTime: number;
   players: PlayerInfo[];
   settings: CategorySettings;
-  gameSettings: Record<string, unknown>;
+  gameSettings: Record<string, number>;
   match: FiveLetterWordMatchState;
   game: GameInfo;
   games: GameInfo[];
@@ -254,7 +254,7 @@ export interface MindMatchState {
   serverTime: number;
   players: PlayerInfo[];
   settings: CategorySettings;
-  gameSettings: Record<string, unknown>;
+  gameSettings: Record<string, number>;
   round: MindMatchRoundState;
   scores: Record<string, number>;
   winnerIds: string[];
@@ -349,7 +349,7 @@ export interface UndercoverAgentState {
   serverTime: number;
   players: PlayerInfo[];
   settings: CategorySettings;
-  gameSettings?: Record<string, unknown>;
+  gameSettings: Record<string, number>;
   match: UndercoverAgentMatchState;
   game: GameInfo;
   games: GameInfo[];
@@ -407,7 +407,7 @@ export interface TradingExchangeState {
   serverTime: number;
   players: PlayerInfo[];
   settings: CategorySettings;
-  gameSettings: Record<string, unknown>;
+  gameSettings: Record<string, number>;
   exchange: TradingExchangeMatchState;
   game: GameInfo;
   games: GameInfo[];
@@ -438,7 +438,7 @@ export interface TelepathyState {
   serverTime: number;
   players: PlayerInfo[];
   settings: CategorySettings;
-  gameSettings: Record<string, unknown>;
+  gameSettings: Record<string, number>;
   telepathy: TelepathyGameState;
   game: GameInfo;
   games: GameInfo[];

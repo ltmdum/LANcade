@@ -145,12 +145,7 @@ export async function finishRound(playerId: string, roundId: number, key: string
  * @returns Response and parsed payload.
  */
 export async function submitVotes(playerId: string, votes: string[] | { decision: string }, key: string) {
-  const body: Record<string, unknown> = { playerId, key };
-  if (Array.isArray(votes)) {
-    body.downvotedWordIds = votes;
-  } else {
-    body.decision = votes.decision;
-  }
+  const body = { playerId, key, ...(Array.isArray(votes) ? { downvotedWordIds: votes } : { decision: votes.decision }) };
   const response = await fetch('/api/round/votes', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -237,7 +232,7 @@ export async function setSessionData(key: string, value: unknown, accessKey: str
  * @param key Admin access key.
  * @returns Response and parsed payload.
  */
-export async function updateGameSettings(settings: Record<string, unknown>, key: string) {
+export async function updateGameSettings(settings: Record<string, number>, key: string) {
   const response = await fetch('/api/admin/settings', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

@@ -613,7 +613,7 @@ export function createGame(options: TradingExchangeGameOptions = {}) {
   }
 
   /** Update admin-configurable settings (only when idle). */
-  function updateSettings(settings: Record<string, unknown>) {
+  function updateSettings(settings: Record<string, number>) {
     if (match.state === 'auction' || match.state === 'trading') {
       return { ok: false, reason: 'game_active' };
     }

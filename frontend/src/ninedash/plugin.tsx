@@ -1,13 +1,13 @@
 import type { GamePlugin, GameComponentProps } from '../plugins/types';
-import type { CategoryClashState } from '@lancade/shared';
+import type { CategoryClashState, GameState } from '@lancade/shared';
 import { NineDashGame } from './NineDashGame';
 
-function canRender(serverState: unknown, gameId: string): boolean {
+function canRender(serverState: GameState, gameId: string): boolean {
   if (gameId !== 'ninedash') return false;
   return serverState !== null && typeof serverState === 'object' && 'round' in serverState;
 }
 
-function getPhase(serverState: unknown): string {
+function getPhase(serverState: GameState): string {
   if (!serverState || typeof serverState !== 'object' || !('round' in serverState)) {
     return 'idle';
   }

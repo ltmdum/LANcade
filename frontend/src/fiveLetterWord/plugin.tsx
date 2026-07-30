@@ -1,5 +1,5 @@
 import type { GamePlugin, GameComponentProps } from '../plugins/types';
-import type { FiveLetterWordState } from '@lancade/shared';
+import type { FiveLetterWordState, GameState } from '@lancade/shared';
 import { FiveLetterWordGame } from './FiveLetterWordGame';
 
 /**
@@ -8,7 +8,7 @@ import { FiveLetterWordGame } from './FiveLetterWordGame';
  * @param gameId Current game id.
  * @returns True when the plugin can render.
  */
-function canRender(serverState: unknown, gameId: string): boolean {
+function canRender(serverState: GameState, gameId: string): boolean {
   if (gameId !== 'fiveletterword') return false;
   return serverState !== null && typeof serverState === 'object' && 'match' in serverState;
 }
@@ -18,7 +18,7 @@ function canRender(serverState: unknown, gameId: string): boolean {
  * @param serverState Current server state.
  * @returns Phase string.
  */
-function getPhase(serverState: unknown): string {
+function getPhase(serverState: GameState): string {
   if (!serverState || typeof serverState !== 'object' || !('match' in serverState)) {
     return 'idle';
   }
@@ -30,7 +30,7 @@ function getPhase(serverState: unknown): string {
  * @param _serverState Current server state.
  * @returns Header category label.
  */
-function getHeaderCategory(_serverState: unknown): string {
+function getHeaderCategory(_serverState: GameState): string {
   return 'Guess the Word';
 }
 

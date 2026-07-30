@@ -7,7 +7,7 @@ import './GameSettingsPanel.css';
 
 interface GameSettingsPanelProps {
   controls: GameSettingControl[];
-  values: Record<string, unknown>;
+  values: Record<string, number>;
   accessKey: string;
   onUnauthorized: () => void;
 }

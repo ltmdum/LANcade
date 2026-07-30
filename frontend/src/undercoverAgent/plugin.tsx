@@ -1,13 +1,13 @@
 import type { GamePlugin, GameComponentProps } from '../plugins/types';
-import type { UndercoverAgentState } from '@lancade/shared';
+import type { UndercoverAgentState, GameState } from '@lancade/shared';
 import { UndercoverAgentGame } from './UndercoverAgentGame';
 
-function canRender(serverState: unknown, gameId: string): boolean {
+function canRender(serverState: GameState, gameId: string): boolean {
   if (gameId !== 'undercoveragent') return false;
   return serverState !== null && typeof serverState === 'object' && 'match' in serverState;
 }
 
-function getPhase(serverState: unknown): string {
+function getPhase(serverState: GameState): string {
   if (!serverState || typeof serverState !== 'object' || !('match' in serverState)) {
     return 'idle';
   }
@@ -18,7 +18,7 @@ function getPhase(serverState: unknown): string {
   return match.state;
 }
 
-function getHeaderCategory(_serverState: unknown): string {
+function getHeaderCategory(_serverState: GameState): string {
   return 'Undercover Agent';
 }
 

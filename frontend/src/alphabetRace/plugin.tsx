@@ -1,5 +1,5 @@
 import type { GamePlugin, GameComponentProps } from '../plugins/types';
-import type { AlphabetRaceState } from '@lancade/shared';
+import type { AlphabetRaceState, GameState } from '@lancade/shared';
 import { AlphabetRaceGame } from './AlphabetRaceGame';
 
 /**
@@ -8,7 +8,7 @@ import { AlphabetRaceGame } from './AlphabetRaceGame';
  * @param gameId Current game id.
  * @returns True when the plugin can render.
  */
-function canRender(serverState: unknown, gameId: string): boolean {
+function canRender(serverState: GameState, gameId: string): boolean {
   if (gameId !== 'alphabetrace') return false;
   return serverState !== null && typeof serverState === 'object' && 'match' in serverState;
 }
@@ -18,7 +18,7 @@ function canRender(serverState: unknown, gameId: string): boolean {
  * @param serverState Current server state.
  * @returns Phase string.
  */
-function getPhase(serverState: unknown): string {
+function getPhase(serverState: GameState): string {
   if (!serverState || typeof serverState !== 'object' || !('match' in serverState)) {
     return 'idle';
   }
@@ -30,7 +30,7 @@ function getPhase(serverState: unknown): string {
  * @param serverState Current server state.
  * @returns Header category label.
  */
-function getHeaderCategory(serverState: unknown): string {
+function getHeaderCategory(serverState: GameState): string {
   if (!serverState || typeof serverState !== 'object' || !('settings' in serverState)) {
     return 'Category';
   }
