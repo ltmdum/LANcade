@@ -209,6 +209,46 @@ describe('FiveLetterWordGame', () => {
     });
   });
 
+  describe('grace state', () => {
+    it('renders the countdown banner for a solved player', () => {
+      const state = createBaseState();
+      state.match.state = 'grace';
+      state.match.graceEndsAt = Date.now() + 60000;
+      state.match.playerStates[0].solved = true;
+
+      render(<FiveLetterWordGame {...createDefaultProps(state)} />);
+
+      expect(screen.getByText('60s')).toBeInTheDocument();
+      expect(screen.getByText('You solved it! Waiting for others...')).toBeInTheDocument();
+    });
+
+    it('renders the countdown banner for an unsolved player', () => {
+      const state = createBaseState();
+      state.match.state = 'grace';
+      state.match.graceEndsAt = Date.now() + 60000;
+
+      render(<FiveLetterWordGame {...createDefaultProps(state)} />);
+
+      expect(screen.getByText('60s')).toBeInTheDocument();
+      expect(screen.getByText('Someone solved it! Solve before the countdown finishes!')).toBeInTheDocument();
+    });
+
+    it('does not render the countdown banner for non-participants', () => {
+      const state = createBaseState();
+      state.match.state = 'grace';
+      state.match.graceEndsAt = Date.now() + 60000;
+
+      const props = createDefaultProps(state);
+      props.playerId = '';
+      props.playerName = '';
+      props.isParticipating = false;
+
+      render(<FiveLetterWordGame {...props} />);
+
+      expect(screen.queryByText(/\d+s/)).not.toBeInTheDocument();
+    });
+  });
+
   describe('finished state', () => {
     it('renders winner display when there is a winner', () => {
       const state = createBaseState();

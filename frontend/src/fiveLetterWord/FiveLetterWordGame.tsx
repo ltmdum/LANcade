@@ -1,10 +1,10 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { PlayerGuess } from './components/PlayerGuess';
 import { GuessGrid } from './components/GuessGrid';
+import { GraceCountdown } from './components/GraceCountdown';
 import { GameResult } from './components/GameResult';
 import { PlayAgainPanel } from '../shared/components/PlayAgainPanel';
 import { submitWord, startRound } from '../shared/utils/api';
-import { useCountdownTick } from '../shared/hooks/useCountdownTick';
 import { Panel } from '../shared/components/Panel';
 import { VolumeNotice } from '../shared/components/VolumeNotice';
 import confetti from 'canvas-confetti';
@@ -70,16 +70,9 @@ export function FiveLetterWordGame({
   const [status, setStatus] = useState('');
   const [adminStatus, setAdminStatus] = useState('');
   const submittingRef = useRef(false);
-  const [now, setNow] = useState(Date.now());
 
   const match = serverState.match;
   const hardMode = (serverState as FiveLetterWordState).gameSettings?.hardMode === 1;
-
-  const graceRemaining = match.state === 'grace' && match.graceEndsAt
-    ? Math.max(0, Math.ceil((match.graceEndsAt - now) / 1000))
-    : 0;
-
-  useCountdownTick(graceRemaining > 0 ? graceRemaining * 1000 : null);
 
   const myState = useMemo(() => {
     return match.playerStates.find(s => s.playerId === playerId);
@@ -122,14 +115,6 @@ export function FiveLetterWordGame({
       playedWinRef.current = true;
     }
   }, [match.state, match.winnerId, playerId]);
-
-  // Tick clock for the grace period countdown
-  useEffect(() => {
-    if (match.state !== 'grace') return;
-    setNow(Date.now());
-    const interval = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(interval);
-  }, [match.state]);
 
   async function handleSubmit() {
     if (submittingRef.current) {
@@ -226,13 +211,6 @@ export function FiveLetterWordGame({
   const canType = isParticipating && match.state === 'active' && myState && !myState.solved && myState.grid.length < 6;
   const canTypeGrace = isParticipating && match.state === 'grace' && myState && !myState.solved && myState.grid.length < 6;
 
-  const countdownDisplay = match.state === 'grace' ? (
-    <div className="game-grace-banner">
-      <span className="game-grace-timer">{graceRemaining}s</span>
-      <span>{myState?.solved ? 'You solved it! Waiting for others...' : 'Someone solved it! Solve before the countdown finishes!'}</span>
-    </div>
-  ) : null;
-
   return (
     <div className="wordsprint-game">
       {/* Active state — normal play */}
@@ -264,7 +242,7 @@ export function FiveLetterWordGame({
       {/* Grace state — someone solved */}
       {match.state === 'grace' && isParticipating && myState?.solved && (
         <>
-          {countdownDisplay}
+          <GraceCountdown graceEndsAt={match.graceEndsAt ?? 0} solved />
           <GuessGrid
             grid={myState.grid}
             currentRow={myState.grid.length}
@@ -277,7 +255,7 @@ export function FiveLetterWordGame({
       )}
       {match.state === 'grace' && isParticipating && !myState?.solved && (
         <>
-          {countdownDisplay}
+          <GraceCountdown graceEndsAt={match.graceEndsAt ?? 0} solved={false} />
           <PlayerGuess
             playerState={myState}
             rowBests={match.rowBests}
