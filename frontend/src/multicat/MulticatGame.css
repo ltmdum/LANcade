@@ -1,2 +1,10 @@
 /* CategoryClash2Game component styles */
 /* Flash classes defined in index.css */
+
+.game-result-winner {
+  text-align: center;
+  font-size: 1.4rem;
+  font-weight: bold;
+  margin: 0.75rem 0;
+  color: var(--accent);
+}

@@ -140,7 +140,7 @@ describe('AlphabetRaceGame', () => {
 
       render(<AlphabetRaceGame {...createDefaultProps(state)} />);
 
-      expect(screen.getByText('Scores')).toBeInTheDocument();
+      expect(screen.getByText('Live Scores')).toBeInTheDocument();
       expect(screen.getByText('5')).toBeInTheDocument();
       expect(screen.getByText('3')).toBeInTheDocument();
       expect(screen.getByText('1')).toBeInTheDocument();
@@ -257,23 +257,17 @@ describe('AlphabetRaceGame', () => {
   });
 
   describe('finished state', () => {
-    it('shows winner name before game over text', () => {
+    it('shows winner message', () => {
       const state = createBaseState();
       state.match.state = 'finished';
       state.match.winnerIds = ['player-1'];
       state.match.winnerNames = ['Alice'];
       state.match.completedCount = 26;
 
-      const { container } = render(<AlphabetRaceGame {...createDefaultProps(state)} />);
+      render(<AlphabetRaceGame {...createDefaultProps(state)} />);
 
-      expect(screen.getByText(/Game Over/)).toBeInTheDocument();
-      const winnerEl = container.querySelector('.alphabet-winner-name');
-      expect(winnerEl).not.toBeNull();
-      expect(winnerEl!.textContent).toBe('🥇 Alice');
-
-      // Winner name should appear before "Game Over!" in the DOM
-      const bodyHtml = container.innerHTML;
-      expect(bodyHtml.indexOf('alphabet-winner-name')).toBeLessThan(bodyHtml.indexOf('alphabet-game-over'));
+      expect(screen.getByText(/You won!/)).toBeInTheDocument();
+      expect(screen.getByText('Final Scores')).toBeInTheDocument();
     });
 
     it('shows final scores', () => {
@@ -286,7 +280,7 @@ describe('AlphabetRaceGame', () => {
 
       render(<AlphabetRaceGame {...createDefaultProps(state)} />);
 
-      expect(screen.getByText('Scores')).toBeInTheDocument();
+      expect(screen.getByText('Final Scores')).toBeInTheDocument();
       expect(screen.getByText('15')).toBeInTheDocument();
       expect(screen.getByText('8')).toBeInTheDocument();
       expect(screen.getByText('3')).toBeInTheDocument();
@@ -397,18 +391,18 @@ describe('AlphabetRaceGame', () => {
 
       render(<AlphabetRaceGame {...createDefaultProps(state)} />);
 
-      expect(screen.getByText('Scores')).toBeInTheDocument();
+      expect(screen.getByText('Live Scores')).toBeInTheDocument();
 
       const listItems = screen.getAllByRole('listitem');
       expect(listItems).toHaveLength(3);
 
       // Bob (5) should be first, then Alice (2), then Charlie (1)
-      expect(listItems[0]).toHaveTextContent('Bob');
-      expect(listItems[0]).toHaveTextContent('5');
-      expect(listItems[1]).toHaveTextContent('Alice');
-      expect(listItems[1]).toHaveTextContent('2');
-      expect(listItems[2]).toHaveTextContent('Charlie');
-      expect(listItems[2]).toHaveTextContent('1');
+      expect(listItems[0]).toHaveTextContent(/Bob/);
+      expect(listItems[0]).toHaveTextContent(/5/);
+      expect(listItems[1]).toHaveTextContent(/Alice/);
+      expect(listItems[1]).toHaveTextContent(/2/);
+      expect(listItems[2]).toHaveTextContent(/Charlie/);
+      expect(listItems[2]).toHaveTextContent(/1/);
     });
 
     it('shows ineligible players with out indicator', () => {

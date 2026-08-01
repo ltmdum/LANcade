@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import type { TradingExchangeState } from '@lancade/shared';
 import type { GameComponentProps } from '../plugins/types';
 import { startRound, gameAction } from '../shared/utils/api';
@@ -14,6 +14,9 @@ import { AuctionPanel } from './components/AuctionPanel';
 import { Leaderboard } from './components/Leaderboard';
 import { Panel } from '../shared/components/Panel';
 import { VolumeNotice } from '../shared/components/VolumeNotice';
+import confetti from 'canvas-confetti';
+import { playWinSound } from '../shared/utils/sounds';
+import { buildWinnerMessage } from '../shared/utils/winnerMessage';
 import './TradingExchangeGame.css';
 
 /**
@@ -68,13 +71,33 @@ function computeOrderTradingState(
  * @returns Trading exchange game element.
  */
 export function TradingExchangeGame(props: GameComponentProps) {
-  const { playerId, accessKey, isAdmin, isParticipating, setShowConfig } = props;
+  const { playerId, playerName, accessKey, isAdmin, isParticipating, setShowConfig } = props;
   const state = props.serverState as TradingExchangeState;
   const ex = state.exchange;
 
   const isParticipant = isParticipating && ex.participants.includes(playerId);
   const clockSkewMs = Date.now() - state.serverTime;
   const [orderStatus, setOrderStatus] = useState('');
+
+  const playedWinRef = useRef(false);
+
+  useEffect(() => {
+    playedWinRef.current = false;
+  }, [ex.id]);
+
+  useEffect(() => {
+    if (
+      ex.state === 'finished' &&
+      ex.winnerIds.length > 0 &&
+      ex.winnerIds.includes(playerId) &&
+      !playedWinRef.current
+    ) {
+      playWinSound();
+      confetti({ particleCount: 100, spread: 80, origin: { y: 0.6 } });
+      confetti({ particleCount: 100, spread: 80, origin: { x: 1, y: 0.6 } });
+      playedWinRef.current = true;
+    }
+  }, [ex.state, ex.winnerIds, playerId]);
 
   const playerNames = useMemo(() => {
     const map: Record<string, string> = {};
@@ -195,6 +218,7 @@ export function TradingExchangeGame(props: GameComponentProps) {
           ex={ex}
           liveTrades={liveTrades}
           isAdmin={isAdmin}
+          currentPlayerName={playerName}
           onPlayAgain={handlePlayAgain}
           onBackToConfig={handleBackToConfig}
         />
@@ -282,22 +306,28 @@ interface FinishedSectionProps {
   ex: TradingExchangeState['exchange'];
   liveTrades: import('@lancade/shared').TradingExchangeTrade[];
   isAdmin: boolean;
+  currentPlayerName: string;
   onPlayAgain: () => void;
   onBackToConfig: () => void;
 }
 
 function FinishedSection({
-  ex, liveTrades, isAdmin, onPlayAgain, onBackToConfig,
+  ex, liveTrades, isAdmin, currentPlayerName, onPlayAgain, onBackToConfig,
 }: FinishedSectionProps) {
   return (
     <>
       {ex.leaderboard && (
-        <Leaderboard
-          leaderboard={ex.leaderboard}
-          winnerIds={ex.winnerIds}
-          trueValue={ex.trueValue}
-          playerColours={ex.playerColours}
-        />
+        <>
+          <div className="game-result-winner">
+            {buildWinnerMessage(ex.winnerNames, currentPlayerName || null)}
+          </div>
+          <Leaderboard
+            leaderboard={ex.leaderboard}
+            winnerIds={ex.winnerIds}
+            trueValue={ex.trueValue}
+            playerColours={ex.playerColours}
+          />
+        </>
       )}
       <TradesList trades={liveTrades} playerColours={ex.playerColours} title="Market Trades" />
       {isAdmin && (

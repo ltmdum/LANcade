@@ -4,13 +4,14 @@ import { PlayAgainPanel } from '../shared/components/PlayAgainPanel';
 import { RacingPanel } from './components/RacingPanel';
 import { AlphabetVotingPanel } from './components/AlphabetVotingPanel';
 import { LetterProgress } from './components/LetterProgress';
-import { AlphabetScoreBoard } from './components/AlphabetScoreBoard';
-import { AlphabetWinnerDisplay } from './components/AlphabetWinnerDisplay';
+import { ScoreBoard } from '../shared/components/ScoreBoard';
 import { submitWord, gameAction } from '../shared/utils/api';
 import { handleVoteSubmit } from '../shared/utils/voting';
 import { handlePlayAgain } from '../shared/utils/roundActions';
 import { VolumeNotice } from '../shared/components/VolumeNotice';
-import { playWarningSound, warmupAudio } from '../shared/utils/sounds';
+import confetti from 'canvas-confetti';
+import { playWarningSound, playWinSound, warmupAudio } from '../shared/utils/sounds';
+import { buildWinnerMessage } from '../shared/utils/winnerMessage';
 import { useTimerRefs, useFlashTrigger } from '../shared/hooks/useGameUtils';
 import type { GameProps } from '../shared/types/GameProps';
 import type { AlphabetRaceState, AlphabetRaceMatchState, PlayerInfo } from '@lancade/shared';
@@ -44,6 +45,7 @@ function deriveMatchFlags(match: AlphabetRaceState['match'], playerId: string) {
 export function AlphabetRaceGame({
   serverState,
   playerId,
+  playerName,
   accessKey,
   isAdmin,
   isParticipating,
@@ -82,6 +84,7 @@ export function AlphabetRaceGame({
     prevStateRef.current = null;
     prevLetterIndexRef.current = null;
     prevSubmittedByRef.current = null;
+    playedWinRef.current = false;
   }, [match.id]);
 
   useEffect(() => {
@@ -114,6 +117,22 @@ export function AlphabetRaceGame({
     prevSubmittedByRef.current = match.submittedBy;
   }, [match.currentLetterIndex, match.currentLetter, match.state, match.submittedBy]);
 
+  const playedWinRef = useRef(false);
+
+  useEffect(() => {
+    if (
+      match.state === 'finished' &&
+      match.winnerIds.length > 0 &&
+      match.winnerIds.includes(playerId) &&
+      !playedWinRef.current
+    ) {
+      playWinSound();
+      confetti({ particleCount: 100, spread: 80, origin: { y: 0.6 } });
+      confetti({ particleCount: 100, spread: 80, origin: { x: 1, y: 0.6 } });
+      playedWinRef.current = true;
+    }
+  }, [match.state, match.winnerIds, playerId]);
+
   useEffect(() => {
     warmupAudio();
   }, []);
@@ -129,6 +148,7 @@ export function AlphabetRaceGame({
       match={match}
       players={players}
       playerId={playerId}
+      playerName={playerName}
       isAdmin={isAdmin}
       flags={flags}
       flash={flash}
@@ -287,6 +307,7 @@ interface AlphabetRaceLayoutProps {
   match: AlphabetRaceMatchState;
   players: PlayerInfo[];
   playerId: string;
+  playerName: string;
   isAdmin: boolean;
   isParticipating: boolean;
   flags: MatchFlags;
@@ -312,7 +333,6 @@ interface AlphabetRaceLayoutProps {
  */
 function AlphabetRaceLayout(props: AlphabetRaceLayoutProps) {
   const { match, players, isAdmin, isParticipating, flags } = props;
-
   if (!flags.isParticipant && !isAdmin) {
     return (
       <Panel title="Game in Progress">
@@ -321,22 +341,36 @@ function AlphabetRaceLayout(props: AlphabetRaceLayoutProps) {
     );
   }
 
+  const isFinished = match.state === 'finished';
+
   return (
     <div className={props.flash ? `flash-${props.flash}` : ''}>
       <div className="alphabet-race-container">
         <PhasePanel match={match} flags={flags} isAdmin={isAdmin} isParticipating={isParticipating} props={props} />
-        <LetterProgress
-          letterSequence={match.letterSequence}
-          currentLetterIndex={match.currentLetterIndex}
-          completedCount={match.completedCount}
-        />
-        <AlphabetScoreBoard
-          players={players}
+
+        {isFinished && (
+          <div className="game-result-winner">
+            {buildWinnerMessage(match.winnerNames, props.playerName || null)}
+          </div>
+        )}
+
+        {!isFinished && (
+          <LetterProgress
+            letterSequence={match.letterSequence}
+            currentLetterIndex={match.currentLetterIndex}
+            completedCount={match.completedCount}
+          />
+        )}
+
+        <ScoreBoard
+          title={isFinished ? 'Final Scores' : 'Live Scores'}
+          players={players.filter((p) => match.participants.includes(p.id))}
           scores={match.scores}
           ineligiblePlayerIds={match.ineligiblePlayerIds}
-          participants={match.participants}
+          winnerIds={isFinished ? match.winnerIds : undefined}
         />
-        {isAdmin && match.state === 'finished' && (
+
+        {isAdmin && isFinished && (
           <PlayAgainPanel
             onPlayAgain={props.onRestart}
             onBackToConfig={() => props.setShowConfig(true)}
@@ -403,7 +437,7 @@ function PhasePanel({ match, flags, isAdmin, isParticipating, props }: PhasePane
   }
 
   if (match.state === 'finished') {
-    return <AlphabetWinnerDisplay winnerNames={match.winnerNames} />;
+    return null;
   }
 
   return null;

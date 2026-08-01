@@ -11,18 +11,11 @@
   font-size: 1.5rem;
   font-weight: bold;
   margin-bottom: 0.5rem;
+  color: var(--accent);
 }
 
 .game-result-emoji {
   font-size: 2rem;
-}
-
-.game-result-win {
-  color: var(--letter-guess-correct);
-}
-
-.game-result-lose {
-  color: var(--letter-guess-absent);
 }
 
 .game-result-word {

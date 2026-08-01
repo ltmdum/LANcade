@@ -1,0 +1,48 @@
+.live-scoreboard-target {
+  margin-bottom: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.live-scoreboard-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.live-scoreboard-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.25rem 0;
+  align-items: center;
+}
+
+.live-scoreboard-row--ineligible {
+  opacity: 0.5;
+}
+
+.live-scoreboard-row--winner {
+  background: var(--success-muted);
+  font-weight: bold;
+  margin: 0 -0.75rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 4px;
+}
+
+.live-scoreboard-name {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.live-scoreboard-value {
+  font-weight: bold;
+  color: var(--accent);
+}
+
+.live-scoreboard-round {
+  font-weight: normal;
+  font-size: 0.85rem;
+  color: var(--success);
+  margin-right: 0.3rem;
+}

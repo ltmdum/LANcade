@@ -34,6 +34,43 @@ function eliminatePlayer(
   }
 }
 
+let wordSeq = 0;
+
+/**
+ * Accept the current player's word with unanimous accept votes.
+ * @param game Last Word Standing game instance.
+ */
+function acceptCurrentTurn(game: ReturnType<typeof createGame>): void {
+  const state = game.getState();
+  const submitter = state.match.currentPlayerId!;
+  const voters = state.match.order.filter((id) => id !== submitter);
+  const word = `${state.match.currentLetter}ok${wordSeq}`;
+  wordSeq += 1;
+  game.submitWord(submitter, word);
+  for (const voter of voters) {
+    game.submitVotes(voter, 'accept');
+  }
+}
+
+/**
+ * Reject the current player's word twice to eliminate them.
+ * @param game Last Word Standing game instance.
+ */
+function eliminateCurrentPlayer(game: ReturnType<typeof createGame>): void {
+  const state = game.getState();
+  const target = state.match.currentPlayerId!;
+  const voters = state.match.order.filter((id) => id !== target);
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    const current = game.getState();
+    const word = `${current.match.currentLetter}bad${wordSeq}`;
+    wordSeq += 1;
+    game.submitWord(target, word);
+    for (const voter of voters) {
+      game.submitVotes(voter, 'reject');
+    }
+  }
+}
+
 describe('lastwordstanding', () => {
   it('validates round start requirements', async () => {
     await withFakeTimers((_timers) => {
@@ -421,6 +458,260 @@ describe('lastwordstanding', () => {
       // because the turn timer should have been cleared
       timers.advance(10000);
       expect(changeCount).toBe(beforeEnd + 1); // Only the endGame change
+    });
+  });
+
+  describe('new elimination rules', () => {
+    it('tracks accepted word counts in match scores', async () => {
+      await withFakeTimers((_timers) =>
+        withStubbedRandom(0, () => {
+          const store = createPlayerStore();
+          const p0 = store.joinPlayer({ name: 'P0' }).playerId!;
+          const p1 = store.joinPlayer({ name: 'P1' }).playerId!;
+          const p2 = store.joinPlayer({ name: 'P2' }).playerId!;
+
+          const game = createGame({ playerStore: store });
+          game.startRound(5000);
+
+          acceptCurrentTurn(game);
+          acceptCurrentTurn(game);
+
+          const state = game.getState();
+          expect(state.match.scores).toEqual({ [p0]: 0, [p1]: 1, [p2]: 1 });
+        })
+      );
+    });
+
+    it('declares the last player winner immediately when strictly ahead', async () => {
+      await withFakeTimers((_timers) =>
+        withStubbedRandom(0, () => {
+          const store = createPlayerStore();
+          const p0 = store.joinPlayer({ name: 'P0' }).playerId!;
+          const p1 = store.joinPlayer({ name: 'P1' }).playerId!;
+          const p2 = store.joinPlayer({ name: 'P2' }).playerId!;
+
+          const game = createGame({ playerStore: store });
+          game.startRound(5000);
+
+          for (let round = 0; round < 3; round += 1) {
+            for (let i = 0; i < 3; i += 1) acceptCurrentTurn(game);
+          }
+          eliminateCurrentPlayer(game); // P1 out at 3
+          acceptCurrentTurn(game); // P2 to 4
+          acceptCurrentTurn(game); // P0 to 4
+          acceptCurrentTurn(game); // P2 to 5
+          eliminateCurrentPlayer(game); // P0 out at 4 — P2 is strictly ahead
+
+          const state = game.getState();
+          expect(state.match.state).toBe('finished');
+          expect(state.match.activePlayerIds.length).toBe(1);
+          expect(state.match.winnerIds).toEqual([p2]);
+          expect(state.match.winnerNames).toEqual(['P2']);
+          expect(state.match.winnerId).toBe(p2);
+          expect(state.match.scores[p2]).toBe(5);
+        })
+      );
+    });
+
+    it('requires the tied last player to accept a word to win', async () => {
+      await withFakeTimers((_timers) =>
+        withStubbedRandom(0, () => {
+          const store = createPlayerStore();
+          const p0 = store.joinPlayer({ name: 'P0' }).playerId!;
+          const p1 = store.joinPlayer({ name: 'P1' }).playerId!;
+          const p2 = store.joinPlayer({ name: 'P2' }).playerId!;
+
+          const game = createGame({ playerStore: store });
+          game.startRound(5000);
+
+          for (let round = 0; round < 3; round += 1) {
+            for (let i = 0; i < 3; i += 1) acceptCurrentTurn(game);
+          }
+          eliminateCurrentPlayer(game); // P1 out at 3
+          acceptCurrentTurn(game); // P2 to 4
+          acceptCurrentTurn(game); // P0 to 4
+          eliminateCurrentPlayer(game); // P2 out at 4 — P0 is tied, game continues
+
+          let state = game.getState();
+          expect(state.match.state).toBe('active');
+          expect(state.match.currentPlayerId).toBe(p0);
+          expect(state.match.winnerId).toBeNull();
+          expect(state.match.activePlayerIds).toEqual([p0]);
+          expect(state.match.lastRevival).toBeNull();
+
+          acceptCurrentTurn(game); // P0 to 5 — the winning word
+
+          state = game.getState();
+          expect(state.match.state).toBe('finished');
+          expect(state.match.winnerIds).toEqual([p0]);
+          expect(state.match.winnerNames).toEqual(['P0']);
+        })
+      );
+    });
+
+    it('revives everyone tied on the score when the last remaining player is rejected', async () => {
+      await withFakeTimers((_timers) =>
+        withStubbedRandom(0, () => {
+          const store = createPlayerStore();
+          const p0 = store.joinPlayer({ name: 'P0' }).playerId!;
+          const p1 = store.joinPlayer({ name: 'P1' }).playerId!;
+          const p2 = store.joinPlayer({ name: 'P2' }).playerId!;
+
+          const game = createGame({ playerStore: store });
+          game.startRound(5000);
+
+          for (let round = 0; round < 3; round += 1) {
+            for (let i = 0; i < 3; i += 1) acceptCurrentTurn(game);
+          }
+          eliminateCurrentPlayer(game); // P1 out at 3
+          acceptCurrentTurn(game); // P2 to 4
+          acceptCurrentTurn(game); // P0 to 4
+          eliminateCurrentPlayer(game); // P2 out at 4 — P0 is tied and must play
+          eliminateCurrentPlayer(game); // P0 out at 4 — no one made it through, all at 4 come back
+
+          let state = game.getState();
+          expect(state.match.state).toBe('revival-ready');
+          expect(state.match.activePlayerIds).toEqual([p2, p0]);
+          expect(state.match.eliminatedPlayerIds).toEqual([p1]);
+          expect(state.match.currentPlayerId).toBeNull();
+          expect(state.match.currentLetter).toBeNull();
+          expect(state.match.winnerId).toBeNull();
+          expect(state.match.revivalReadyPlayerIds).toEqual([]);
+          expect(state.match.lastRevival).toEqual({
+            id: expect.any(Number),
+            wordNumber: 5,
+            revivedPlayerIds: [p2, p0],
+          });
+
+          const notRevived = game.submitWord(p1, 'READY');
+          expect(notRevived.ok).toBe(false);
+          expect(notRevived.reason).toBe('not_revived');
+
+          const invalidCommand = game.submitWord(p2, 'APPLE');
+          expect(invalidCommand.ok).toBe(false);
+          expect(invalidCommand.reason).toBe('invalid_command');
+
+          const readyP2 = game.submitWord(p2, 'READY');
+          expect(readyP2.ok).toBe(true);
+
+          state = game.getState();
+          expect(state.match.state).toBe('revival-ready');
+          expect(state.match.revivalReadyPlayerIds).toEqual([p2]);
+
+          const readyAgain = game.submitWord(p2, 'READY');
+          expect(readyAgain.ok).toBe(false);
+          expect(readyAgain.reason).toBe('already_ready');
+
+          const readyP0 = game.submitWord(p0, 'READY');
+          expect(readyP0.ok).toBe(true);
+
+          state = game.getState();
+          expect(state.match.state).toBe('active');
+          expect(state.match.currentPlayerId).toBe(p2);
+          expect(state.match.currentLetter).not.toBeNull();
+          expect(state.match.revivalReadyPlayerIds).toEqual([p2, p0]);
+
+          acceptCurrentTurn(game); // P2 to 5 — P0 is still in the round behind
+
+          state = game.getState();
+          expect(state.match.state).toBe('active');
+          expect(state.match.currentPlayerId).toBe(p0);
+
+          eliminateCurrentPlayer(game); // P0 out at 4 — P2 made it through alone
+
+          state = game.getState();
+          expect(state.match.state).toBe('finished');
+          expect(state.match.winnerIds).toEqual([p2]);
+          expect(state.match.winnerNames).toEqual(['P2']);
+        })
+      );
+    });
+
+    it('revives everyone tied on the score when the last remaining player times out', async () => {
+      await withFakeTimers((timers) =>
+        withStubbedRandom(0, () => {
+          const store = createPlayerStore();
+          const p0 = store.joinPlayer({ name: 'P0' }).playerId!;
+          const p1 = store.joinPlayer({ name: 'P1' }).playerId!;
+          const p2 = store.joinPlayer({ name: 'P2' }).playerId!;
+
+          const game = createGame({ playerStore: store });
+          game.startRound(5000);
+
+          for (let round = 0; round < 3; round += 1) {
+            for (let i = 0; i < 3; i += 1) acceptCurrentTurn(game);
+          }
+          eliminateCurrentPlayer(game); // P1 out at 3
+          acceptCurrentTurn(game); // P2 to 4
+          acceptCurrentTurn(game); // P0 to 4
+          eliminateCurrentPlayer(game); // P2 out at 4 — P0 is tied and must play
+
+          // P0 times out instead of submitting
+          timers.advance(6000);
+
+          const state = game.getState();
+          expect(state.match.state).toBe('revival-ready');
+          expect(state.match.activePlayerIds).toEqual([p2, p0]);
+          expect(state.match.eliminatedPlayerIds).toEqual([p1]);
+          expect(state.match.currentPlayerId).toBeNull();
+          expect(state.match.revivalReadyPlayerIds).toEqual([]);
+          expect(state.match.winnerId).toBeNull();
+          expect(state.match.lastRevival).toEqual({
+            id: expect.any(Number),
+            wordNumber: 5,
+            revivedPlayerIds: [p2, p0],
+          });
+
+          const readyP2 = game.submitWord(p2, 'READY');
+          expect(readyP2.ok).toBe(true);
+
+          let afterP2 = game.getState();
+          expect(afterP2.match.state).toBe('revival-ready');
+          expect(afterP2.match.revivalReadyPlayerIds).toEqual([p2]);
+
+          const readyP0 = game.submitWord(p0, 'READY');
+          expect(readyP0.ok).toBe(true);
+
+          afterP2 = game.getState();
+          expect(afterP2.match.state).toBe('active');
+          expect(afterP2.match.currentPlayerId).toBe(p2);
+        })
+      );
+    });
+
+    it('rejects ready when the round is not in the revival-ready phase', async () => {
+      await withFakeTimers((_timers) =>
+        withStubbedRandom(0, () => {
+          const store = createPlayerStore();
+          store.joinPlayer({ name: 'P0' });
+          store.joinPlayer({ name: 'P1' });
+
+          const game = createGame({ playerStore: store });
+          game.startRound(5000);
+
+          const result = game.submitWord(store.getPlayerIds()[0], 'READY');
+          expect(result.ok).toBe(false);
+          expect(result.reason).toBe('not_turn');
+        })
+      );
+    });
+
+    it('finishes a solo round immediately', async () => {
+      await withFakeTimers((_timers) =>
+        withStubbedRandom(0, () => {
+          const store = createPlayerStore();
+          const solo = store.joinPlayer({ name: 'Solo' }).playerId!;
+
+          const game = createGame({ playerStore: store });
+          const start = game.startRound(5000);
+          expect(start.ok).toBe(true);
+
+          const state = game.getState();
+          expect(state.match.state).toBe('finished');
+          expect(state.match.winnerIds).toEqual([solo]);
+          expect(state.match.winnerNames).toEqual(['Solo']);
+        })
+      );
     });
   });
 });

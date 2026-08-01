@@ -8,10 +8,12 @@ import { UndercoverVotePanel } from './components/UndercoverVotePanel';
 import { UndercoverGuessPanel } from './components/UndercoverGuessPanel';
 import { UndercoverResultDisplay } from './components/UndercoverResultDisplay';
 import { DiscussionPanel } from './components/DiscussionPanel';
-import { UndercoverScoreBoard } from './components/UndercoverScoreBoard';
+import { ScoreBoard } from '../shared/components/ScoreBoard';
 import { handlePlayAgain } from '../shared/utils/roundActions';
 import { VolumeNotice } from '../shared/components/VolumeNotice';
-import { playOkaySound, playWarningSound, warmupAudio } from '../shared/utils/sounds';
+import confetti from 'canvas-confetti';
+import { playOkaySound, playWarningSound, playWinSound, warmupAudio } from '../shared/utils/sounds';
+import { buildWinnerMessage } from '../shared/utils/winnerMessage';
 import type { GameProps } from '../shared/types/GameProps';
 import type { UndercoverAgentState } from '@lancade/shared';
 import './UndercoverAgentGame.css';
@@ -23,6 +25,7 @@ interface UndercoverAgentGameProps extends GameProps {
 export function UndercoverAgentGame({
   serverState,
   playerId,
+  playerName,
   accessKey,
   isAdmin,
   isParticipating,
@@ -44,6 +47,7 @@ export function UndercoverAgentGame({
 
   useEffect(() => {
     setMyRole(null);
+    playedWinRef.current = false;
   }, [match.id]);
 
   useEffect(() => {
@@ -73,6 +77,20 @@ export function UndercoverAgentGame({
   }, [match.id]);
 
   const prevStateRef = useRef<UndercoverAgentState['match']['state'] | null>(null);
+  const playedWinRef = useRef(false);
+  useEffect(() => {
+    if (
+      match.state === 'finished' &&
+      match.winnerIds.length > 0 &&
+      match.winnerIds.includes(playerId) &&
+      !playedWinRef.current
+    ) {
+      playWinSound();
+      confetti({ particleCount: 100, spread: 80, origin: { y: 0.6 } });
+      confetti({ particleCount: 100, spread: 80, origin: { x: 1, y: 0.6 } });
+      playedWinRef.current = true;
+    }
+  }, [match.state, match.winnerIds, playerId]);
 
   useEffect(() => {
     if (
@@ -108,35 +126,6 @@ export function UndercoverAgentGame({
 
   return (
     <div className="undercover-container">
-      {roundOver && (
-        <>
-          {isGameOver && (
-            <div className="undercover-result-winner undercover-result-winner--civilians">
-              {match.winnerIds.length === 1
-                ? `${match.winnerNames[0]} wins the game!`
-                : `${match.winnerNames.join(' and ')} tie for the win!`}
-            </div>
-          )}
-          <UndercoverScoreBoard
-            scores={showScores}
-            roundPoints={match.roundPoints}
-            winningScore={match.winningScore}
-            playerLookup={playerLookup}
-            winnerIds={match.winnerIds}
-          />
-          <UndercoverResultDisplay
-            undercoverPlayerId={match.undercoverPlayerId || ''}
-            undercoverPlayerName={playerLookup[match.undercoverPlayerId || ''] || 'Unknown'}
-            finishReason={match.finishReason}
-            finalGuess={match.finalGuess}
-            submissions={match.submissions}
-            word={match.word}
-          />
-        </>
-      )}
-
-      {!roundOver && match.state === 'idle' && <Panel><VolumeNotice /></Panel>}
-
       <MatchPhaseContent
         match={match}
         playerId={playerId}
@@ -146,6 +135,36 @@ export function UndercoverAgentGame({
         playerLookup={playerLookup}
         isParticipating={isParticipating}
       />
+
+      {isGameOver && (
+        <div className="undercover-result-winner undercover-result-winner--civilians">
+          {buildWinnerMessage(match.winnerNames, playerName || null)}
+        </div>
+      )}
+
+      {(match.state !== 'idle' || roundOver) && (
+        <ScoreBoard
+	  title={isGameOver ? 'Final Scores' : 'Live Scores'}
+          players={serverState.players}
+          scores={showScores}
+          targetScore={match.winningScore}
+	  winnerIds={roundOver ? match.winnerIds : undefined}
+	  roundPoints={roundOver ? match.roundPoints : undefined}
+        />
+      )}
+
+      {roundOver && (
+        <UndercoverResultDisplay
+          undercoverPlayerId={match.undercoverPlayerId || ''}
+          undercoverPlayerName={playerLookup[match.undercoverPlayerId || ''] || 'Unknown'}
+          finishReason={match.finishReason}
+          finalGuess={match.finalGuess}
+          submissions={match.submissions}
+          word={match.word}
+        />
+      )}
+
+      {!roundOver && match.state === 'idle' && <Panel><VolumeNotice /></Panel>}
 
       {isAdmin && match.state === 'idle' && match.winnerIds.length === 0 && (
         <div className="undercover-admin-controls">

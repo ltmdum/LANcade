@@ -15,8 +15,11 @@
     "test": "npm run test -w backend && npm run test -w frontend",
     "validate-config": "node scripts/validate-games-config.js"
   },
-  "dependencies": {},
+  "dependencies": {
+    "canvas-confetti": "^1.9.4"
+  },
   "devDependencies": {
+    "@types/canvas-confetti": "^1.9.0",
     "concurrently": "^8.2.2",
     "word-list": "^4.1.0"
   }

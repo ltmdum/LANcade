@@ -110,6 +110,52 @@ export function playWarningSound(): void {
 }
 
 /**
+ * Play a cheerful ascending major arpeggio for winning the game.
+ */
+export function playWinSound(): void {
+  const audioCtx = getAudioContext();
+  if (!audioCtx) return;
+
+  const now = audioCtx.currentTime;
+
+  const playNote = (freq: number, start: number, duration: number) => {
+    const sine = audioCtx.createOscillator();
+    const harm = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    sine.type = 'sine';
+    harm.type = 'triangle';
+    harm.frequency.value = freq * 2;
+
+    sine.frequency.setValueAtTime(freq, start);
+    harm.frequency.setValueAtTime(freq * 2, start);
+
+    gain.gain.setValueAtTime(0.001, start);
+    gain.gain.exponentialRampToValueAtTime(0.18, start + 0.015);
+    gain.gain.setValueAtTime(0.18, start + duration - 0.04);
+    gain.gain.exponentialRampToValueAtTime(0.001, start + duration);
+
+    const harmGain = audioCtx.createGain();
+    harmGain.gain.setValueAtTime(0.001, start);
+    harmGain.gain.exponentialRampToValueAtTime(0.04, start + 0.015);
+    harmGain.gain.setValueAtTime(0.04, start + duration - 0.04);
+    harmGain.gain.exponentialRampToValueAtTime(0.001, start + duration);
+
+    sine.connect(gain).connect(audioCtx.destination);
+    harm.connect(harmGain).connect(audioCtx.destination);
+
+    sine.start(start);
+    harm.start(start);
+    sine.stop(start + duration);
+    harm.stop(start + duration);
+  };
+
+  playNote(523, now, 0.12);
+  playNote(659, now + 0.14, 0.12);
+  playNote(784, now + 0.28, 0.12);
+  playNote(1047, now + 0.42, 0.35);
+}
+
+/**
  * Play a short tick for countdown warnings (last 3 seconds).
  */
 export function playTickSound(): void {

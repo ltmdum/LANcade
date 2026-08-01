@@ -79,6 +79,10 @@ export interface CategoryClashRoundState {
   anonymousWords?: AnonymousWordEntry[];
   votesSubmittedIds: string[];
   resultsByPlayer: Record<string, PlayerResult> | null;
+  /** Player ids with the highest final score once the round has results. */
+  winnerIds: string[];
+  /** Names of the winning player(s), in the same order as winnerIds. */
+  winnerNames: string[];
 }
 
 export interface CategoryClashState {
@@ -111,9 +115,15 @@ export interface VotesInfo {
   voteEndsAt: number | null;
 }
 
+export interface LastWordStandingRevival {
+  id: number;
+  wordNumber: number;
+  revivedPlayerIds: string[];
+}
+
 export interface LastWordStandingMatchState {
   id: number;
-  state: 'idle' | 'active' | 'voting' | 'finished';
+  state: 'idle' | 'active' | 'voting' | 'finished' | 'revival-ready';
   category: string | null;
   timeLimitMs: number | null;
   order: string[];
@@ -128,7 +138,12 @@ export interface LastWordStandingMatchState {
   votes: VotesInfo | null;
   usedWords: UsedWord[];
   lastOutcome: LastOutcome | null;
+  scores: Record<string, number>;
   winnerId: string | null;
+  winnerIds: string[];
+  winnerNames: string[];
+  lastRevival: LastWordStandingRevival | null;
+  revivalReadyPlayerIds: string[];
 }
 
 export interface LastWordStandingState {

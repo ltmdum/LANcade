@@ -1,0 +1,21 @@
+/* RevivalReadyPanel component styles */
+.wordrush-ready-panel {
+  @apply text-center space-y-4;
+}
+
+.wordrush-ready-message {
+  @apply font-semibold;
+  color: var(--accent);
+}
+
+.wordrush-ready-back-in {
+  color: var(--text-primary);
+}
+
+.wordrush-ready-waiting {
+  color: var(--text-secondary);
+}
+
+.wordrush-ready-status {
+  color: var(--danger);
+}

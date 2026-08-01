@@ -36,6 +36,8 @@ function createBaseState(): CategoryClashState {
       wordsByPlayer: [],
       votesSubmittedIds: [],
       resultsByPlayer: null,
+      winnerIds: [],
+      winnerNames: [],
     },
     game: { id: 'multicat', name: 'Category Clash: Multicat' },
     games: [{ id: 'multicat', name: 'Category Clash: Multicat' }],
@@ -189,11 +191,13 @@ describe('MulticatGame', () => {
   });
 
   describe('results state', () => {
-    it('renders leaderboard and results when player has results', () => {
+    it('renders winner message, final scores and results when player has results', () => {
       const state = createBaseState();
       state.round.state = 'results';
       state.round.letter = 'A';
       state.round.categories = ['Animals', 'Food'];
+      state.round.winnerIds = ['player-1'];
+      state.round.winnerNames = ['Alice'];
       state.round.resultsByPlayer = {
         'player-1': {
           name: 'Alice',
@@ -224,7 +228,9 @@ describe('MulticatGame', () => {
       render(<MulticatGame {...createDefaultProps(state)} />);
 
       expect(screen.getByText('Antelope')).toBeInTheDocument();
-      expect(screen.getByText('Your Results')).toBeInTheDocument();
+      expect(screen.getByText(/Animals/)).toBeInTheDocument();
+      expect(screen.getByText('You won! 🎉')).toBeInTheDocument();
+      expect(screen.getByText('Final Scores')).toBeInTheDocument();
     });
 
     it('renders "no results" message when nobody submitted words', () => {
@@ -368,6 +374,7 @@ describe('MulticatGame', () => {
       state.round.state = 'results';
       state.round.letter = 'A';
       state.round.categories = ['Animals', 'Food'];
+      state.round.participants = ['player-1', 'player-2'];
       // player-1 (Alice) has no entry — she never submitted anything.
       // player-2 (Bob) played and has a result.
       state.round.resultsByPlayer = {
@@ -392,9 +399,9 @@ describe('MulticatGame', () => {
       // Render as Alice (player-1), who has no personal result entry
       render(<MulticatGame {...createDefaultProps(state)} />);
 
-      // Alice should still see the leaderboard with Bob's result, not the
+      // Alice should still see the final scores with Bob's result, not the
       // "nobody submitted" fallback.
-      expect(screen.getByText('Leaderboard')).toBeInTheDocument();
+      expect(screen.getByText('Final Scores')).toBeInTheDocument();
       expect(screen.getByText(/Bob/)).toBeInTheDocument();
       expect(screen.queryByText(/nobody submitted any words/i)).not.toBeInTheDocument();
     });

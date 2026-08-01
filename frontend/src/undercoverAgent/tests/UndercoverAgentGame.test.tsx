@@ -8,6 +8,7 @@ vi.stubGlobal('fetch', vi.fn());
 vi.mock('../../shared/utils/sounds', () => ({
   playOkaySound: vi.fn(),
   playWarningSound: vi.fn(),
+  playWinSound: vi.fn(),
   warmupAudio: vi.fn(),
 }));
 
@@ -83,7 +84,7 @@ describe('UndercoverAgentGame', () => {
 
       render(<UndercoverAgentGame {...createDefaultProps(state)} />);
 
-      expect(screen.getByText(/target: 5/i)).toBeInTheDocument();
+      expect(screen.getByText(/First to 5 wins!/)).toBeInTheDocument();
     });
   });
 
@@ -174,7 +175,7 @@ describe('UndercoverAgentGame', () => {
       render(<UndercoverAgentGame {...createDefaultProps(state)} />);
 
       expect(screen.getByText(/waiting for/i)).toBeInTheDocument();
-      expect(screen.getByText(/Bob/)).toBeInTheDocument();
+      expect(screen.getAllByText(/Bob/).length).toBeGreaterThanOrEqual(1);
     });
 
     it('shows submitted message when player already submitted this round', () => {
@@ -382,7 +383,7 @@ describe('UndercoverAgentGame', () => {
 
       render(<UndercoverAgentGame {...createDefaultProps(state)} />);
 
-      expect(screen.getByText(/Alice wins the game!/)).toBeInTheDocument();
+      expect(screen.getByText(/You won! 🎉/)).toBeInTheDocument();
     });
 
     it('shows the secret word', () => {

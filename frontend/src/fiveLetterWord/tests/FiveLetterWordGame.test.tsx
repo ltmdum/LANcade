@@ -244,7 +244,7 @@ describe('FiveLetterWordGame', () => {
 
       render(<FiveLetterWordGame {...createDefaultProps(state)} />);
 
-      expect(screen.getByText(/Bob won/)).toBeInTheDocument();
+      expect(screen.getByText(/Bob wins/)).toBeInTheDocument();
     });
 
     it('renders admin controls for admin in finished state', () => {

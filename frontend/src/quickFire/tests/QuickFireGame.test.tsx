@@ -34,6 +34,8 @@ function createBaseState(): CategoryClashState {
       wordsByPlayer: [],
       votesSubmittedIds: [],
       resultsByPlayer: null,
+      winnerIds: [],
+      winnerNames: [],
     },
     game: { id: 'quickfire', name: 'Category Clash: Quick Fire' },
     games: [{ id: 'quickfire', name: 'Category Clash: Quick Fire' }],
@@ -186,10 +188,12 @@ describe('QuickFireGame', () => {
   });
 
   describe('results state', () => {
-    it('renders leaderboard and results when player has results', () => {
+    it('renders winner message, final scores and results when player has results', () => {
       const state = createBaseState();
       state.round.state = 'results';
       state.round.letter = 'A';
+      state.round.winnerIds = ['player-1'];
+      state.round.winnerNames = ['Alice'];
       state.round.resultsByPlayer = {
         'player-1': {
           name: 'Alice',
@@ -219,8 +223,39 @@ describe('QuickFireGame', () => {
 
       render(<QuickFireGame {...createDefaultProps(state)} />);
 
+      expect(screen.getByText('You won! 🎉')).toBeInTheDocument();
       expect(screen.getByText('Apple')).toBeInTheDocument();
-      expect(screen.getByText('Your Results')).toBeInTheDocument();
+      expect(screen.getByText('Final Scores')).toBeInTheDocument();
+    });
+
+    it('renders tie winner message when winner names contain multiple players', () => {
+      const state = createBaseState();
+      state.round.state = 'results';
+      state.round.letter = 'A';
+      state.round.winnerIds = ['player-1', 'player-2'];
+      state.round.winnerNames = ['Alice', 'Bob'];
+      state.round.resultsByPlayer = {
+        'player-1': {
+          name: 'Alice',
+          totalSubmitted: 1,
+          rejected: 0,
+          votedOut: 0,
+          finalScore: 1,
+          words: [],
+        },
+        'player-2': {
+          name: 'Bob',
+          totalSubmitted: 1,
+          rejected: 0,
+          votedOut: 0,
+          finalScore: 1,
+          words: [],
+        },
+      };
+
+      render(<QuickFireGame {...createDefaultProps(state)} />);
+
+      expect(screen.getByText('You and Bob won! 🎉')).toBeInTheDocument();
     });
 
     it('renders "no results" message when nobody submitted words', () => {

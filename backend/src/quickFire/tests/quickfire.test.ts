@@ -389,6 +389,71 @@ describe('quickfire', () => {
       const finalState = game.getState();
       expect(finalState.round.state).toBe('results');
       expect(finalState.round.resultsByPlayer).toEqual({});
+      expect(finalState.round.winnerIds).toEqual([]);
+      expect(finalState.round.winnerNames).toEqual([]);
+    });
+  });
+
+  it('declares the winner from the highest final score', async () => {
+    await withFakeTimers((_timers) => {
+      const store = createPlayerStore();
+      const alice = store.joinPlayer({ name: 'Alice' }).playerId!;
+      const bob = store.joinPlayer({ name: 'Bob' }).playerId!;
+
+      const game = createGame({ playerStore: store, clientGraceMs: 0 });
+      const start = game.startRound(5000);
+      const letter = start.letter!;
+      const state = game.getState();
+
+      game.submitWord(alice, `${letter}lpha`);
+      game.submitWord(bob, `${letter}eta`);
+
+      game.finishRound(alice, state.round.id);
+      game.finishRound(bob, state.round.id);
+
+      const votingState = game.getState();
+      const aliceWordId = votingState.round.wordsByPlayer.find((g) => g.playerId === alice)!.words[0].id;
+      const bobWordId = votingState.round.wordsByPlayer.find((g) => g.playerId === bob)!.words[0].id;
+
+      // Bob's word is voted out; Alice's word survives
+      game.submitVotes(alice, [bobWordId]);
+      game.submitVotes(bob, []);
+
+      const resultsState = game.getState();
+      expect(resultsState.round.state).toBe('results');
+      expect(resultsState.round.resultsByPlayer![alice].finalScore).toBe(1);
+      expect(resultsState.round.resultsByPlayer![bob].finalScore).toBe(0);
+      expect(resultsState.round.winnerIds).toEqual([alice]);
+      expect(resultsState.round.winnerNames).toEqual(['Alice']);
+      expect(aliceWordId).toBeTruthy();
+    });
+  });
+
+  it('declares a tie for the win when top scores match', async () => {
+    await withFakeTimers((_timers) => {
+      const store = createPlayerStore();
+      const alice = store.joinPlayer({ name: 'Alice' }).playerId!;
+      const bob = store.joinPlayer({ name: 'Bob' }).playerId!;
+
+      const game = createGame({ playerStore: store, clientGraceMs: 0 });
+      const start = game.startRound(5000);
+      const letter = start.letter!;
+      const state = game.getState();
+
+      game.submitWord(alice, `${letter}lpha`);
+      game.submitWord(bob, `${letter}eta`);
+
+      game.finishRound(alice, state.round.id);
+      game.finishRound(bob, state.round.id);
+
+      // No votes cast, so both words survive and both players tie at 1
+      game.submitVotes(alice, []);
+      game.submitVotes(bob, []);
+
+      const resultsState = game.getState();
+      expect(resultsState.round.state).toBe('results');
+      expect(resultsState.round.winnerIds).toEqual([alice, bob]);
+      expect(resultsState.round.winnerNames).toEqual(['Alice', 'Bob']);
     });
   });
 });

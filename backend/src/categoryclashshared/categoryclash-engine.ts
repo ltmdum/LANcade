@@ -93,6 +93,8 @@ export interface Round {
   submissionsByPlayer: Map<string, Submission[]>;
   votesByPlayer: Map<string, { downvotedWordIds: string[]; submittedAt: number }>;
   resultsByPlayer: Map<string, PlayerResult> | null;
+  winnerIds: string[];
+  winnerNames: string[];
   votingStartedAt: number | null;
   finishedByPlayer: Set<string>;
 }
@@ -201,6 +203,8 @@ export function createEmptyRound(): Round {
     submissionsByPlayer: new Map(),
     votesByPlayer: new Map(),
     resultsByPlayer: null,
+    winnerIds: [],
+    winnerNames: [],
     votingStartedAt: null,
     finishedByPlayer: new Set(),
   };
@@ -421,6 +425,8 @@ export function createCategoryClashEngine(
         anonymousWords: round.state === 'voting' ? buildAnonymousWords() : undefined,
         votesSubmittedIds: round.state === 'voting' ? Array.from(round.votesByPlayer.keys()) : [],
         resultsByPlayer: round.state === 'results' ? buildResultsByPlayerPublic() : null,
+        winnerIds: round.winnerIds,
+        winnerNames: round.winnerNames,
       },
     };
   }
@@ -466,6 +472,8 @@ export function createCategoryClashEngine(
       submissionsByPlayer: new Map(),
       votesByPlayer: new Map(),
       resultsByPlayer: null,
+      winnerIds: [],
+      winnerNames: [],
       votingStartedAt: null,
       finishedByPlayer: new Set(),
     };
@@ -761,6 +769,21 @@ export function createCategoryClashEngine(
         words,
       });
     }
+
+    // Every player with the highest final score shares the win, ties included.
+    let maxScore = -1;
+    const winnerIds: string[] = [];
+    for (const [playerId, result] of resultsByPlayer.entries()) {
+      if (result.finalScore > maxScore) {
+        maxScore = result.finalScore;
+        winnerIds.length = 0;
+        winnerIds.push(playerId);
+      } else if (result.finalScore === maxScore) {
+        winnerIds.push(playerId);
+      }
+    }
+    round.winnerIds = winnerIds;
+    round.winnerNames = winnerIds.map((id) => getPlayerName(id));
 
     round.resultsByPlayer = resultsByPlayer;
     round.state = 'results';

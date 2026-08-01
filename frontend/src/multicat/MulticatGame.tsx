@@ -2,17 +2,18 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { PlayAgainPanel } from '../shared/components/PlayAgainPanel';
 import { Panel } from '../shared/components/Panel';
 import { VolumeNotice } from '../shared/components/VolumeNotice';
-import { Leaderboard } from '../categoryclashshared/components/Leaderboard';
-import { PlayerResultsTable } from '../categoryclashshared/components/PlayerResultsTable';
+import { ScoreBoard } from '../shared/components/ScoreBoard';
+import { PlayerResults } from '../categoryclashshared/components/PlayerResults';
 import { VotingPanel } from '../categoryclashshared/components/VotingPanel';
 import { MulticatActivePanel } from './components/MulticatActivePanel';
 import { toggleVoteSelection } from '../categoryclashshared/utils/voting';
-import { buildScoreboard } from '../categoryclashshared/utils/scoreboard';
 import { formatMs } from '../shared/utils/time';
 import { handleWordSubmission } from '../shared/utils/wordSubmission';
 import { handleVoteSubmit } from '../shared/utils/voting';
 import { handlePlayAgain } from '../shared/utils/roundActions';
-import { playWarningSound, playOkaySound } from '../shared/utils/sounds';
+import { playWarningSound, playOkaySound, playWinSound } from '../shared/utils/sounds';
+import { buildWinnerMessage } from '../shared/utils/winnerMessage';
+import confetti from 'canvas-confetti';
 import {
   useTimerRefs,
   useFlashTrigger,
@@ -37,6 +38,7 @@ export function MulticatGame({
   serverState,
   connection,
   playerId,
+  playerName,
   accessKey,
   isAdmin,
   isParticipating,
@@ -65,12 +67,40 @@ export function MulticatGame({
   useCountdownTick(remainingMs);
 
   const round = serverState.round;
+  const players = serverState.players || [];
   const scoresByPlayer = round.scoresByPlayer || {};
   const myScore = playerId ? scoresByPlayer[playerId] || 0 : 0;
   const hasVoted = round.votesSubmittedIds?.includes(playerId) || false;
   const results = round.resultsByPlayer?.[playerId] || null;
 
-  const scoreboard = useMemo(() => buildScoreboard(round.resultsByPlayer), [round.resultsByPlayer]);
+  const playedWinRef = useRef(false);
+
+  useEffect(() => {
+    if (
+      round.state === 'results' &&
+      round.winnerIds.length > 0 &&
+      round.winnerIds.includes(playerId) &&
+      !playedWinRef.current
+    ) {
+      playWinSound();
+      confetti({ particleCount: 100, spread: 80, origin: { y: 0.6 } });
+      confetti({ particleCount: 100, spread: 80, origin: { x: 1, y: 0.6 } });
+      playedWinRef.current = true;
+    }
+  }, [round.state, round.winnerIds, playerId]);
+
+  useEffect(() => {
+    playedWinRef.current = false;
+  }, [round.id]);
+
+  /** Final scores keyed by player id, derived from the authoritative results. */
+  const finalScores = useMemo(
+    () =>
+      Object.fromEntries(
+        Object.entries(round.resultsByPlayer || {}).map(([id, result]) => [id, result.finalScore])
+      ),
+    [round.resultsByPlayer]
+  );
 
   /** IDs of words that belong to the current player, used to exclude them from the voting list. */
   const myWordIds = useMemo(() => {
@@ -287,20 +317,22 @@ export function MulticatGame({
 
       {round.state === 'results' && (
         <>
-          {scoreboard.length === 0 ? (
+          {Object.keys(round.resultsByPlayer || {}).length === 0 ? (
             <Panel title="Results">
               <p>No results — nobody submitted any words this round.</p>
             </Panel>
           ) : (
             <>
-              <Leaderboard entries={scoreboard} currentPlayerId={playerId} />
-              {results && (
-                <PlayerResultsTable
-                  words={results.words}
-                  showCategory
-                  categories={round.categories}
-                />
-              )}
+              <div className="game-result-winner">
+                {buildWinnerMessage(round.winnerNames, playerName || null)}
+              </div>
+              <ScoreBoard
+                title="Final Scores"
+                players={players.filter((p) => round.participants.includes(p.id))}
+                scores={finalScores}
+                winnerIds={round.winnerIds}
+              />
+              {results && <PlayerResults words={results.words} showCategory />}
             </>
           )}
           {isAdmin && (

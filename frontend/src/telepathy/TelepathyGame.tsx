@@ -4,7 +4,8 @@ import type { GameProps } from '../shared/types/GameProps';
 import { gameAction } from '../shared/utils/api';
 import { Panel } from '../shared/components/Panel';
 import { VolumeNotice } from '../shared/components/VolumeNotice';
-import { playPopSound, warmupAudio } from '../shared/utils/sounds';
+import confetti from 'canvas-confetti';
+import { playPopSound, playWarningSound, playWinSound, warmupAudio } from '../shared/utils/sounds';
 import './TelepathyGame.css';
 
 function cardToFrequency(card: number): number {
@@ -147,9 +148,16 @@ export function TelepathyGame({
     const prevPhase = prevPhaseRef.current;
     prevPhaseRef.current = tp.phase;
 
-    if (prevPhase !== 'playing' && tp.phase === 'playing') {
-      warmupAudio();
-      return;
+    if (prevPhase !== tp.phase) {
+      if (tp.phase === 'playing') {
+        warmupAudio();
+      } else if (tp.phase === 'lost' && tp.lossDetails?.placedByPlayerId === playerId) {
+        playWarningSound();
+      } else if (tp.phase === 'round_complete' || tp.phase === 'won') {
+        playWinSound();
+        confetti({ particleCount: 100, spread: 80, origin: { y: 0.6 } });
+        confetti({ particleCount: 100, spread: 80, origin: { x: 1, y: 0.6 } });
+      }
     }
 
     const prevLastPlaced = prevLastPlacedRef.current;
@@ -158,7 +166,7 @@ export function TelepathyGame({
     if (prevLastPlaced !== tp.lastPlaced && tp.lastPlaced !== null) {
       playPopSound(cardToFrequency(tp.lastPlaced));
     }
-  }, [tp.phase, tp.lastPlaced]);
+  }, [tp.phase, tp.lastPlaced, tp.lossDetails, playerId]);
 
   async function handlePlace() {
     await gameAction(playerId, { type: 'place' }, accessKey);

@@ -30,6 +30,8 @@ function createBaseState(): CategoryClashState {
       wordsByPlayer: [],
       votesSubmittedIds: [],
       resultsByPlayer: null,
+      winnerIds: [],
+      winnerNames: [],
     },
     game: { id: 'ninedash', name: 'Nine Dash' },
     games: [{ id: 'ninedash', name: 'Nine Dash' }],
@@ -255,10 +257,12 @@ describe('NineDashGame', () => {
   });
 
   describe('results state', () => {
-    it('renders the leaderboard and the player results', () => {
+    it('renders the winner message, final scores and the player results', () => {
       const state = createBaseState();
       state.round.state = 'results';
       state.round.letters = TILES;
+      state.round.winnerIds = ['player-1'];
+      state.round.winnerNames = ['Alice'];
       state.round.resultsByPlayer = {
         'player-1': {
           name: 'Alice',
@@ -274,8 +278,8 @@ describe('NineDashGame', () => {
 
       render(<NineDashGame {...createDefaultProps(state)} />);
 
-      expect(screen.getByText('Leaderboard')).toBeInTheDocument();
-      expect(screen.getByText('Your Results')).toBeInTheDocument();
+      expect(screen.getByText('You won! 🎉')).toBeInTheDocument();
+      expect(screen.getByText('Final Scores')).toBeInTheDocument();
       expect(screen.getByText('TRIANGLE')).toBeInTheDocument();
     });
 

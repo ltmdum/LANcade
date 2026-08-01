@@ -2,6 +2,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { TelepathyGame } from '../TelepathyGame';
 import type { TelepathyState } from '@lancade/shared';
+import { playWarningSound, playWinSound } from '../../shared/utils/sounds';
+
+vi.mock('../../shared/utils/sounds', () => ({
+  playPopSound: vi.fn(),
+  playWarningSound: vi.fn(),
+  playWinSound: vi.fn(),
+  warmupAudio: vi.fn(),
+}));
 
 const mockFetch = vi.fn();
 vi.stubGlobal('fetch', mockFetch);
@@ -71,6 +79,7 @@ describe('TelepathyGame', () => {
       ok: true,
       json: () => Promise.resolve({ ok: true }),
     });
+    vi.clearAllMocks();
   });
 
   it('renders the shared pile with placeholder when no card placed', () => {
@@ -251,6 +260,72 @@ describe('TelepathyGame', () => {
         }),
       })
     );
+  });
+
+  it('plays warning sound on the losing player device when the round is lost', () => {
+    const state = createBaseState();
+    const { rerender } = render(<TelepathyGame {...createDefaultProps(state)} />);
+
+    state.telepathy.phase = 'lost';
+    state.telepathy.lossDetails = {
+      placedByPlayerId: 'p1',
+      placedCard: 27,
+      blockedByPlayerId: 'p2',
+      blockedCard: 23,
+      round: 3,
+    };
+
+    rerender(<TelepathyGame {...createDefaultProps(state)} />);
+
+    expect(playWarningSound).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not play warning sound on non-losing devices when the round is lost', () => {
+    const state = createBaseState();
+    const { rerender } = render(<TelepathyGame {...createDefaultProps(state)} />);
+
+    state.telepathy.phase = 'lost';
+    state.telepathy.lossDetails = {
+      placedByPlayerId: 'p2',
+      placedCard: 27,
+      blockedByPlayerId: 'p1',
+      blockedCard: 23,
+      round: 3,
+    };
+
+    rerender(<TelepathyGame {...createDefaultProps(state)} />);
+
+    expect(playWarningSound).not.toHaveBeenCalled();
+  });
+
+  it('plays win sound on every device when a round is completed', () => {
+    const state = createBaseState();
+    const { rerender } = render(<TelepathyGame {...createDefaultProps(state)} />);
+
+    state.telepathy.phase = 'round_complete';
+    state.telepathy.totalPlaced = 2;
+
+    rerender(<TelepathyGame {...createDefaultProps(state)} />);
+
+    expect(playWinSound).toHaveBeenCalledTimes(1);
+  });
+
+  it('plays win sound on every device when the game is won', () => {
+    const state = createBaseState();
+    const { rerender } = render(<TelepathyGame {...createDefaultProps(state)} />);
+
+    state.telepathy.phase = 'won';
+
+    rerender(<TelepathyGame {...createDefaultProps(state)} />);
+
+    expect(playWinSound).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not play win sound on initial round_complete render', () => {
+    const state = createBaseState();
+    state.telepathy.phase = 'round_complete';
+    render(<TelepathyGame {...createDefaultProps(state)} />);
+    expect(playWinSound).not.toHaveBeenCalled();
   });
 
   it('renders round_complete state with success banner', () => {

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import confetti from 'canvas-confetti';
 import { LastWordStandingGame } from '../LastWordStandingGame';
 import type { LastWordStandingState } from '@lancade/shared';
 
@@ -10,10 +11,13 @@ vi.stubGlobal('fetch', vi.fn());
 vi.mock('../../shared/utils/sounds', () => ({
   playOkaySound: vi.fn(),
   playWarningSound: vi.fn(),
+  playWinSound: vi.fn(),
   warmupAudio: vi.fn(),
   playTickSound: vi.fn(),
   playPopSound: vi.fn(),
 }));
+
+import { playWinSound } from '../../shared/utils/sounds';
 
 /**
  * Create a base server state for testing.
@@ -47,7 +51,12 @@ function createBaseState(): LastWordStandingState {
       votes: null,
       usedWords: [],
       lastOutcome: null,
+      scores: {},
       winnerId: null,
+      winnerIds: [],
+      winnerNames: [],
+      lastRevival: null,
+      revivalReadyPlayerIds: [],
     },
     game: { id: 'lastwordstanding', name: 'Last Word Standing' },
     games: [{ id: 'lastwordstanding', name: 'Last Word Standing' }],
@@ -181,18 +190,20 @@ describe('LastWordStandingGame', () => {
       expect(screen.getAllByText(/Bob/).length).toBeGreaterThanOrEqual(1);
     });
 
-    it('renders player tag list showing all players', () => {
+    it('renders live scoreboard with all players', () => {
       const state = createBaseState();
       state.match.state = 'active';
       state.match.currentLetter = 'D';
       state.match.currentPlayerId = 'player-1';
       state.match.turnEndsAt = Date.now() + 10000;
+      state.match.scores = { 'player-1': 2, 'player-2': 1, 'player-3': 1 };
 
       render(<LastWordStandingGame {...createDefaultProps(state)} />);
 
-      expect(screen.getByText('Alice')).toBeInTheDocument();
-      expect(screen.getByText('Bob')).toBeInTheDocument();
-      expect(screen.getByText('Charlie')).toBeInTheDocument();
+      expect(screen.getByText('Live Scores')).toBeInTheDocument();
+      expect(screen.getAllByText(/Alice/).length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText(/Bob/).length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText(/Charlie/).length).toBeGreaterThanOrEqual(1);
     });
 
     it('does not render admin controls during active state', () => {
@@ -210,6 +221,137 @@ describe('LastWordStandingGame', () => {
 
       expect(screen.queryByText(/play again/i)).not.toBeInTheDocument();
       expect(screen.queryByText(/back to config/i)).not.toBeInTheDocument();
+    });
+
+    it('shows that an eliminated player could come back', () => {
+      const state = createBaseState();
+      state.match.state = 'active';
+      state.match.currentLetter = 'F';
+      state.match.currentPlayerId = 'player-2';
+      state.match.eliminatedPlayerIds = ['player-1'];
+      state.match.turnEndsAt = Date.now() + 10000;
+
+      render(<LastWordStandingGame {...createDefaultProps(state)} />);
+
+      expect(screen.getByText(/You're out for now/)).toBeInTheDocument();
+    });
+
+    it('shows permanent elimination message when the top score has moved on', () => {
+      const state = createBaseState();
+      state.match.state = 'active';
+      state.match.currentLetter = 'F';
+      state.match.currentPlayerId = 'player-2';
+      state.match.eliminatedPlayerIds = ['player-1'];
+      state.match.scores = { 'player-1': 2, 'player-2': 3, 'player-3': 3 };
+      state.match.turnEndsAt = Date.now() + 10000;
+
+      render(<LastWordStandingGame {...createDefaultProps(state)} />);
+
+      expect(screen.getByText(/You've been eliminated\. Watching the rest of the game/)).toBeInTheDocument();
+      expect(screen.queryByText(/You're out for now/)).not.toBeInTheDocument();
+    });
+  });
+
+  describe('revival ready phase', () => {
+    it('shows a ready button to revived players who have not readied', () => {
+      const state = createBaseState();
+      state.match.state = 'revival-ready';
+      state.match.activePlayerIds = ['player-1', 'player-3'];
+      state.match.lastRevival = {
+        id: 1,
+        wordNumber: 5,
+        revivedPlayerIds: ['player-1', 'player-3'],
+      };
+      state.match.revivalReadyPlayerIds = [];
+
+      render(<LastWordStandingGame {...createDefaultProps(state)} />);
+
+      expect(screen.getByText(/Everyone failed to get their 5th word/)).toBeInTheDocument();
+      expect(screen.getByText(/You're back in!/)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /ready/i })).toBeInTheDocument();
+      expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+    });
+
+    it('shows a waiting message to revived players who have readied', () => {
+      const state = createBaseState();
+      state.match.state = 'revival-ready';
+      state.match.activePlayerIds = ['player-1', 'player-3'];
+      state.match.lastRevival = {
+        id: 2,
+        wordNumber: 5,
+        revivedPlayerIds: ['player-1', 'player-3'],
+      };
+      state.match.revivalReadyPlayerIds = ['player-1'];
+
+      render(<LastWordStandingGame {...createDefaultProps(state)} />);
+
+      expect(screen.getByText(/Waiting for other players to be ready... \(1\/2\)/)).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /ready/i })).not.toBeInTheDocument();
+    });
+
+    it('shows the waiting message to non-revived players without a ready button', () => {
+      const state = createBaseState();
+      state.match.state = 'revival-ready';
+      state.match.activePlayerIds = ['player-1', 'player-2'];
+      state.match.lastRevival = {
+        id: 3,
+        wordNumber: 3,
+        revivedPlayerIds: ['player-1', 'player-2'],
+      };
+      state.match.revivalReadyPlayerIds = ['player-1'];
+
+      const props = createDefaultProps(state);
+      props.playerId = 'player-3';
+
+      render(<LastWordStandingGame {...props} />);
+
+      expect(screen.getByText(/Everyone failed to get their 3rd word/)).toBeInTheDocument();
+      expect(screen.getByText(/Waiting for players to be ready... \(1\/2\)/)).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /ready/i })).not.toBeInTheDocument();
+      expect(screen.queryByText(/You're back in!/)).not.toBeInTheDocument();
+    });
+
+    it('submits the READY command when the ready button is clicked', async () => {
+      const state = createBaseState();
+      state.match.state = 'revival-ready';
+      state.match.activePlayerIds = ['player-1', 'player-3'];
+      state.match.lastRevival = {
+        id: 4,
+        wordNumber: 5,
+        revivedPlayerIds: ['player-1', 'player-3'],
+      };
+      state.match.revivalReadyPlayerIds = [];
+
+      const fetchMock = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ ok: true }),
+      });
+      vi.stubGlobal('fetch', fetchMock);
+
+      render(<LastWordStandingGame {...createDefaultProps(state)} />);
+
+      fireEvent.click(screen.getByRole('button', { name: /ready/i }));
+
+      await waitFor(() => {
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+      });
+      const body = JSON.parse(fetchMock.mock.calls[0][1].body);
+      expect(body.playerId).toBe('player-1');
+      expect(body.word).toBe('READY');
+      expect(body.key).toBe('KEY123');
+    });
+
+    it('does not show the ready panel when there was no revival', () => {
+      const state = createBaseState();
+      state.match.state = 'active';
+      state.match.currentLetter = 'A';
+      state.match.currentPlayerId = 'player-1';
+      state.match.turnEndsAt = Date.now() + 10000;
+
+      render(<LastWordStandingGame {...createDefaultProps(state)} />);
+
+      expect(screen.queryByText(/Everyone failed/)).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /ready/i })).not.toBeInTheDocument();
     });
   });
 
@@ -279,31 +421,64 @@ describe('LastWordStandingGame', () => {
   });
 
   describe('finished state', () => {
-    it('renders winner display', () => {
+    it('shows winner message and final scores', () => {
       const state = createBaseState();
       state.match.state = 'finished';
       state.match.winnerId = 'player-2';
+      state.match.winnerIds = ['player-2'];
+      state.match.winnerNames = ['Bob'];
+      state.match.eliminatedPlayerIds = ['player-1', 'player-3'];
+      state.match.scores = { 'player-1': 3, 'player-2': 4, 'player-3': 2 };
 
       render(<LastWordStandingGame {...createDefaultProps(state)} />);
 
-      // Podium panel shows winner name
-      expect(screen.getByText(/Podium/i)).toBeInTheDocument();
-      // Bob appears in both podium display and player list
-      expect(screen.getAllByText(/Bob/).length).toBeGreaterThanOrEqual(1);
+      // Winner message and final scoreboard replace the old podium
+      expect(screen.getByText(/Bob wins/)).toBeInTheDocument();
+      expect(screen.getByText('Final Scores')).toBeInTheDocument();
+      expect(screen.queryByText(/Podium/i)).not.toBeInTheDocument();
     });
 
-    it('renders player tag list in finished state', () => {
+    it('renders final scoreboard with all match players', () => {
       const state = createBaseState();
       state.match.state = 'finished';
       state.match.winnerId = 'player-1';
-      state.match.eliminatedPlayerIds = ['player-2', 'player-3'];
+      state.match.winnerIds = ['player-1'];
+      state.match.winnerNames = ['Alice'];
+      state.match.scores = { 'player-1': 2, 'player-2': 1, 'player-3': 1 };
 
       render(<LastWordStandingGame {...createDefaultProps(state)} />);
 
-      // Players appear in both winner display and player list
-      expect(screen.getAllByText('Alice').length).toBeGreaterThanOrEqual(1);
-      expect(screen.getAllByText('Bob').length).toBeGreaterThanOrEqual(1);
-      expect(screen.getAllByText('Charlie').length).toBeGreaterThanOrEqual(1);
+      // Players appear in the final scoreboard
+      expect(screen.getByText(/Alice/)).toBeInTheDocument();
+      expect(screen.getByText(/Bob/)).toBeInTheDocument();
+      expect(screen.getByText(/Charlie/)).toBeInTheDocument();
+    });
+
+    it('plays win sound and confetti when current player wins', () => {
+      const state = createBaseState();
+      state.match.state = 'finished';
+      state.match.winnerId = 'player-1';
+      state.match.winnerIds = ['player-1'];
+      state.match.winnerNames = ['Alice'];
+
+      render(<LastWordStandingGame {...createDefaultProps(state)} />);
+
+      expect(screen.getByText(/You won/)).toBeInTheDocument();
+      expect(playWinSound).toHaveBeenCalledTimes(1);
+      expect(confetti).toHaveBeenCalled();
+    });
+
+    it('does not play win sound when another player wins', () => {
+      const state = createBaseState();
+      state.match.state = 'finished';
+      state.match.winnerId = 'player-2';
+      state.match.winnerIds = ['player-2'];
+      state.match.winnerNames = ['Bob'];
+
+      render(<LastWordStandingGame {...createDefaultProps(state)} />);
+
+      expect(screen.getByText(/Bob wins/)).toBeInTheDocument();
+      expect(playWinSound).not.toHaveBeenCalled();
     });
 
     it('renders admin controls in finished state for admin', () => {
@@ -393,7 +568,7 @@ describe('LastWordStandingGame', () => {
       expect(screen.getByText('Sound On!')).toBeInTheDocument();
     });
 
-    it('only shows match participants in player tag list', () => {
+    it('only shows match participants in live scoreboard', () => {
       const state = createBaseState();
       state.match.state = 'active';
       state.match.currentLetter = 'A';
@@ -408,11 +583,11 @@ describe('LastWordStandingGame', () => {
 
       render(<LastWordStandingGame {...props} />);
 
-      // player-1 (Alice) is NOT in match.order — should not appear in player tags
-      expect(screen.queryByText('Alice')).not.toBeInTheDocument();
+      // player-1 (Alice) is NOT in match.order — should not appear in the scoreboard
+      expect(screen.queryByText(/Alice/)).not.toBeInTheDocument();
       // player-2 and player-3 ARE in match.order — should appear
-      expect(screen.getByText('Bob')).toBeInTheDocument();
-      expect(screen.getByText('Charlie')).toBeInTheDocument();
+      expect(screen.getAllByText(/Bob/).length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText(/Charlie/).length).toBeGreaterThanOrEqual(1);
     });
 
     it('admin sees finished state even when not in match order', () => {

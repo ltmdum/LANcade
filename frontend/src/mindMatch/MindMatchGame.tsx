@@ -1,13 +1,15 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { PlayAgainPanel } from '../shared/components/PlayAgainPanel';
+import { ScoreBoard } from '../shared/components/ScoreBoard';
 import { PromptDisplay } from './components/PromptDisplay';
 import { SubmitPanel } from './components/SubmitPanel';
 import { ClaimPanel } from './components/ClaimPanel';
 import { VotePanel } from './components/VotePanel';
 import { VoteResultsPanel } from './components/VoteResultsPanel';
 import { ResultsPanel } from './components/ResultsPanel';
-import { ScoreBoard } from './components/ScoreBoard';
-import { WinnerDisplay } from './components/WinnerDisplay';
+import confetti from 'canvas-confetti';
+import { playWinSound } from '../shared/utils/sounds';
+import { buildWinnerMessage } from '../shared/utils/winnerMessage';
 import { handlePlayAgain } from '../shared/utils/roundActions';
 import type { GameProps } from '../shared/types/GameProps';
 import type { MindMatchState } from '@lancade/shared';
@@ -25,6 +27,7 @@ interface MindMatchGameProps extends GameProps {
 export function MindMatchGame({
   serverState,
   playerId,
+  playerName,
   accessKey,
   isAdmin,
   isParticipating,
@@ -54,9 +57,25 @@ export function MindMatchGame({
 
   const canMakeClaim = claimableTargets.length > 0;
 
+  const playedWinRef = useRef(false);
+
+  useEffect(() => {
+    if (
+      serverState.winnerIds.length > 0 &&
+      serverState.winnerIds.includes(playerId) &&
+      !playedWinRef.current
+    ) {
+      playWinSound();
+      confetti({ particleCount: 100, spread: 80, origin: { y: 0.6 } });
+      confetti({ particleCount: 100, spread: 80, origin: { x: 1, y: 0.6 } });
+      playedWinRef.current = true;
+    }
+  }, [serverState.winnerIds, playerId]);
+
   // Reset admin status when round changes
   useEffect(() => {
     setAdminStatus('');
+    playedWinRef.current = false;
   }, [round.id, round.state]);
 
   async function onRestart() {
@@ -93,11 +112,9 @@ export function MindMatchGame({
   return (
     <div className="blankslate-container">
       {serverState.winnerIds.length > 0 && (
-        <WinnerDisplay
-          winnerNames={serverState.winnerNames}
-          scores={scores}
-          playerLookup={playerLookup}
-        />
+        <div className="game-result-winner">
+          {buildWinnerMessage(serverState.winnerNames, playerName || null)}
+        </div>
       )}
 
       {round.state === 'submitting' && isParticipating ? (
@@ -154,22 +171,31 @@ export function MindMatchGame({
         <ResultsPanel result={round.result} />
       )}
 
-      {!serverState.winnerIds.length && (
-        <ScoreBoard
-          scores={scores}
-          playerLookup={playerLookup}
-          winnerId={null}
-          winningScore={winningScore}
-        />
+      <ScoreBoard
+        title={serverState.winnerIds.length > 0 ? 'Final Scores' : 'Live Scores'}
+        players={serverState.players}
+        scores={scores}
+        targetScore={winningScore}
+        winnerIds={serverState.winnerIds.length > 0 ? serverState.winnerIds : undefined}
+        roundPoints={round.result?.scoreChanges}
+      />
+
+      {isAdmin && round.state === 'results' && serverState.winnerIds.length === 0 && (
+        <div className="play-again-actions" style={{ justifyContent: 'center', marginTop: '1rem' }}>
+          <button type="button" className="btn btn-primary" onClick={onRestart}>
+            Next Round
+          </button>
+          {adminStatus && <p className="play-again-status">{adminStatus}</p>}
+        </div>
       )}
 
-      {isAdmin && (round.state === 'results' || serverState.winnerIds.length > 0) && (
+      {isAdmin && serverState.winnerIds.length > 0 && (
         <PlayAgainPanel
           onPlayAgain={onRestart}
           onBackToConfig={() => setShowConfig(true)}
           status={adminStatus}
-          playAgainText={serverState.winnerIds.length > 0 ? 'New Game' : 'Next Round'}
-          title={serverState.winnerIds.length > 0 ? 'Game Over' : 'Next Steps'}
+          playAgainText="New Game"
+          title="Game Over"
         />
       )}
     </div>

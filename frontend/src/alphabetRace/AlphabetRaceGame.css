@@ -78,6 +78,14 @@
   @apply opacity-50;
 }
 
+.game-result-winner {
+  text-align: center;
+  font-size: 1.4rem;
+  font-weight: bold;
+  margin: 0.75rem 0;
+  color: var(--accent);
+}
+
 .alphabet-winner-name {
   @apply text-4xl font-bold text-center;
   color: var(--accent);

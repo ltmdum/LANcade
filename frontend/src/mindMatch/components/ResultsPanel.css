@@ -1,12 +1,18 @@
 .results-panel-groups {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  /* Plain 1fr keeps a minimum of min-content, so the word and points columns
+   * never shrink below their text and cannot overlap the names column; the
+   * auto names column slides right as a unit instead. overflow-x contains
+   * the rare case where the three columns together exceed the panel width. */
+  grid-template-columns: 1fr auto 1fr;
   gap: 0.75rem;
+  overflow-x: auto;
 }
 
 .results-panel-group {
-  display: flex;
-  justify-content: space-between;
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: subgrid;
   align-items: center;
   padding: 0.75rem;
   border-radius: 8px;
@@ -31,13 +37,14 @@
 .results-panel-players {
   color: var(--text-secondary);
   font-size: 0.875rem;
-  flex: 1;
-  text-align: center;
+  /* All groups share one grid column, so every name list starts at the same x */
+  text-align: left;
 }
 
 .results-panel-points {
   font-weight: 600;
   color: var(--success);
+  justify-self: end;
 }
 
 .results-panel-group.no-score .results-panel-points {

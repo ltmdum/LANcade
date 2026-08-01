@@ -14,6 +14,7 @@ interface LastWordStandingActivePanelProps {
   connection: string;
   isCurrentPlayer: boolean;
   isEliminated: boolean;
+  canComeBack?: boolean;
   isParticipating?: boolean;
   wordInput: string;
   submitStatus?: 'success' | 'error' | '';
@@ -36,6 +37,7 @@ export function LastWordStandingActivePanel({
   connection,
   isCurrentPlayer,
   isEliminated,
+  canComeBack = false,
   isParticipating = true,
   wordInput,
   submitStatus = '',
@@ -65,7 +67,9 @@ export function LastWordStandingActivePanel({
       )}
       {isParticipating && isEliminated && (
         <p className="wordrush-active-eliminated">
-          You are out. Watching the rest of the game.
+          {canComeBack
+            ? "You're out for now but may come back in if everyone else fails!"
+            : "You've been eliminated. Watching the rest of the game."}
         </p>
       )}
     </Panel>

@@ -1,0 +1,79 @@
+/* PlayerResults component styles */
+.player-results-table-container {
+  overflow-x: auto;
+  /* cqw below is relative to this container's width */
+  container-type: inline-size;
+}
+
+.player-results-table {
+  border-collapse: separate;
+  border-spacing: 0;
+  text-align: center;
+}
+
+.player-results-table th,
+.player-results-table td {
+  padding: 0.375rem 0.5rem;
+  vertical-align: middle;
+  overflow-wrap: anywhere;
+  border-bottom: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+}
+
+.player-results-table th {
+  font-weight: normal;
+}
+
+/* The sticky cells' containing block is the table itself, so the column
+ * stays fixed for the whole horizontal scroll range. */
+.player-results-fixed-col {
+  position: sticky;
+  left: 0;
+  background-color: var(--bg-card);
+  border-left: 1px solid var(--border);
+  box-shadow: 4px 0 8px -6px rgba(0, 0, 0, 0.6);
+  z-index: 1;
+}
+
+/* Chrome sizes sticky table cells to their min-content and ignores width, so
+ * the column width lives on a plain block inside the sticky cell instead.
+ * 33.33cqw caps it at one third of the available width; the first line is
+ * the fallback for browsers without container query units. */
+.player-results-fixed-content {
+  width: 6.5rem;
+  width: min(6.5rem, 33.33cqw);
+}
+
+.player-results-table thead .player-results-fixed-col {
+  z-index: 2;
+}
+
+.player-results-heading {
+  border-top: 1px solid var(--border);
+}
+
+/* Word columns are sized by their min-width so the table stays wider than the
+ * container and scrolls (keeping at least three columns partially visible);
+ * max-width caps long content, wrapping beyond it, and the cqw term ties the
+ * cap to one third of the available width like the fixed column. */
+.player-results-word-heading,
+.player-results-table tbody td {
+  min-width: 6rem;
+  max-width: 10rem;
+  max-width: min(10rem, 33.33cqw);
+}
+
+.player-results-word,
+.player-results-category {
+  white-space: normal;
+}
+
+.player-results-word {
+  display: block;
+  color: var(--accent);
+}
+
+.player-results-category {
+  display: block;
+  color: var(--text-muted);
+}

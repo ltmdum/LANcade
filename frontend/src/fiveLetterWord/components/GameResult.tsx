@@ -63,17 +63,11 @@ export function GameResult({
   return (
     <div className="game-result">
       {hasWinner ? (
-        <div className={`game-result-message ${isWinner ? 'game-result-win' : 'game-result-lose'}`}>
+        <div className="game-result-message">
           {isWinner ? (
-            <>
-              <span className="game-result-emoji">🎉</span>
-              <span>You won!</span>
-            </>
+            <span>You won! 🎉</span>
           ) : (
-            <>
-              <span className="game-result-emoji">👏</span>
-              <span>{winnerName} won!</span>
-            </>
+            <span>{winnerName} wins! 👏</span>
           )}
         </div>
       ) : (

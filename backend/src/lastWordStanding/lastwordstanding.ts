@@ -2,6 +2,7 @@ import {
   categories,
   type LastWordStandingState,
   type LastWordStandingMatchState,
+  type LastWordStandingRevival,
   type UsedWord,
   type LastOutcome,
 } from '@lancade/shared';
@@ -26,7 +27,7 @@ interface PendingWord {
 
 interface Match {
   id: number;
-  state: 'idle' | 'active' | 'voting' | 'finished';
+  state: 'idle' | 'active' | 'voting' | 'finished' | 'revival-ready';
   category: string | null;
   timeLimitMs: number | null;
   order: string[];
@@ -44,7 +45,11 @@ interface Match {
   usedWordKeys: Set<string>;
   usedWords: UsedWord[];
   lastOutcome: LastOutcome | null;
+  scores: Record<string, number>;
   winnerId: string | null;
+  winnerIds: string[];
+  lastRevival: LastWordStandingRevival | null;
+  revivalReadyPlayerIds: Set<string>;
 }
 
 export interface StartRoundResult {
@@ -110,7 +115,11 @@ function createEmptyMatch(): Match {
     usedWordKeys: new Set(),
     usedWords: [],
     lastOutcome: null,
+    scores: {},
     winnerId: null,
+    winnerIds: [],
+    lastRevival: null,
+    revivalReadyPlayerIds: new Set(),
   };
 }
 
@@ -125,6 +134,7 @@ export function createGame(options: LastWordStandingGameOptions = {}): LastWordS
   let match = createEmptyMatch();
   let turnTimeout: ReturnType<typeof setTimeout> | null = null;
   let voteTimeout: ReturnType<typeof setTimeout> | null = null;
+  let nextRevivalId = 1;
 
   /**
    * Notify listeners that state has changed.
@@ -193,23 +203,79 @@ export function createGame(options: LastWordStandingGameOptions = {}): LastWordS
   }
 
   /**
-   * Determine if a winner exists and finalize match if so.
+   * Finish the match with the given winners.
+   * @param winnerIds Player ids that won the match.
+   */
+  function finishMatch(winnerIds: string[]): void {
+    match.state = 'finished';
+    match.winnerIds = winnerIds;
+    match.winnerId = winnerIds[0] ?? null;
+    match.currentPlayerId = winnerIds[0] ?? null;
+    match.currentLetter = null;
+    match.pendingWord = null;
+    match.votesByPlayer = new Map();
+    match.voteEndsAt = null;
+    clearTurnTimer();
+    notifyChange();
+  }
+
+  /**
+   * Determine if the sole active player is strictly ahead of every eliminated
+   * player and finish the match with them as winner if so.
    * @returns True when the match ended with a winner.
    */
-  function markWinnerIfReady(): boolean {
-    if (match.activePlayerIds.size === 1) {
-      const [winnerId] = Array.from(match.activePlayerIds);
-      match.state = 'finished';
-      match.winnerId = winnerId;
-      match.currentPlayerId = winnerId;
-      match.currentLetter = null;
-      match.pendingWord = null;
-      match.votesByPlayer = new Map();
-      clearTurnTimer();
-      notifyChange();
-      return true;
+  function finishIfStrictlyAhead(): boolean {
+    if (match.activePlayerIds.size !== 1) {
+      return false;
     }
-    return false;
+    const [soleId] = Array.from(match.activePlayerIds);
+    const soleScore = match.scores[soleId] || 0;
+    const maxEliminatedScore = Array.from(match.eliminatedPlayerIds)
+      .reduce((max, id) => Math.max(max, match.scores[id] || 0), -1);
+    if (soleScore <= maxEliminatedScore) {
+      return false;
+    }
+    finishMatch([soleId]);
+    return true;
+  }
+
+  /**
+   * Bring back every eliminated player tied on the given score — the failed
+   * player included, since they also made it to that round.
+   * @param score Score that eliminated players must match.
+   */
+  function reviveTiedPlayers(score: number): void {
+    const revived = Array.from(match.eliminatedPlayerIds)
+      .filter((id) => (match.scores[id] || 0) === score);
+    for (const id of revived) {
+      match.eliminatedPlayerIds.delete(id);
+      match.activePlayerIds.add(id);
+    }
+  }
+
+  /**
+   * Mark a revived player as ready and resume play once every revived player
+   * has readied.
+   * @param playerId Player identifier.
+   * @returns Result payload for the ready attempt.
+   */
+  function handleRevivalReady(playerId: string): SubmitWordResult {
+    if (match.state !== 'revival-ready') {
+      return { ok: false, reason: 'not_revival_ready' };
+    }
+    if (!match.lastRevival?.revivedPlayerIds.includes(playerId)) {
+      return { ok: false, reason: 'not_revived' };
+    }
+    if (match.revivalReadyPlayerIds.has(playerId)) {
+      return { ok: false, reason: 'already_ready' };
+    }
+    match.revivalReadyPlayerIds.add(playerId);
+    if (match.revivalReadyPlayerIds.size >= match.lastRevival.revivedPlayerIds.length) {
+      advanceToNextPlayer();
+    } else {
+      notifyChange();
+    }
+    return { ok: true };
   }
 
   /**
@@ -232,10 +298,6 @@ export function createGame(options: LastWordStandingGameOptions = {}): LastWordS
    * Advance to the next active player in the order.
    */
   function advanceToNextPlayer(): void {
-    if (markWinnerIfReady()) {
-      return;
-    }
-
     const order = match.order;
     let index = match.currentIndex;
     for (let step = 0; step < order.length; step += 1) {
@@ -261,10 +323,11 @@ export function createGame(options: LastWordStandingGameOptions = {}): LastWordS
     if (!match.currentPlayerId) {
       return;
     }
-    match.activePlayerIds.delete(match.currentPlayerId);
-    match.eliminatedPlayerIds.add(match.currentPlayerId);
+    const eliminatedId = match.currentPlayerId;
+    match.activePlayerIds.delete(eliminatedId);
+    match.eliminatedPlayerIds.add(eliminatedId);
     match.lastOutcome = {
-      playerId: match.currentPlayerId,
+      playerId: eliminatedId,
       word: match.pendingWord ? match.pendingWord.word : null,
       outcome,
       lastChance: match.lastChance,
@@ -273,9 +336,39 @@ export function createGame(options: LastWordStandingGameOptions = {}): LastWordS
     match.pendingWord = null;
     match.votesByPlayer = new Map();
     clearTurnTimer();
-    if (!markWinnerIfReady()) {
-      advanceToNextPlayer();
+
+    if (match.activePlayerIds.size === 0) {
+      // The last remaining player failed, so no one made it through the
+      // round: the game continues from the highest achieved round with every
+      // player tied on that score back in. All revived players must confirm
+      // they are ready before the next letter is dealt.
+      reviveTiedPlayers(match.scores[eliminatedId] || 0);
+      if (match.activePlayerIds.size === 0) {
+        finishMatch([]);
+        return;
+      }
+      match.lastRevival = {
+        id: nextRevivalId,
+        wordNumber: (match.scores[eliminatedId] || 0) + 1,
+        revivedPlayerIds: Array.from(match.activePlayerIds),
+      };
+      nextRevivalId += 1;
+      match.state = 'revival-ready';
+      match.revivalReadyPlayerIds = new Set();
+      match.currentPlayerId = null;
+      match.currentLetter = null;
+      match.lastChance = false;
+      match.turnStartedAt = null;
+      match.turnEndsAt = null;
+      notifyChange();
+      return;
     }
+
+    if (finishIfStrictlyAhead()) {
+      return;
+    }
+
+    advanceToNextPlayer();
   }
 
   /**
@@ -317,6 +410,7 @@ export function createGame(options: LastWordStandingGameOptions = {}): LastWordS
       word: wordEntry.word,
       playerId: wordEntry.playerId,
     });
+    match.scores[wordEntry.playerId] = (match.scores[wordEntry.playerId] || 0) + 1;
     match.lastOutcome = {
       playerId: wordEntry.playerId,
       word: wordEntry.word,
@@ -327,6 +421,11 @@ export function createGame(options: LastWordStandingGameOptions = {}): LastWordS
     match.pendingWord = null;
     match.votesByPlayer = new Map();
     match.voteEndsAt = null;
+    if (match.activePlayerIds.size === 1) {
+      // The last remaining player accepted a word — the game is over.
+      finishMatch([wordEntry.playerId]);
+      return;
+    }
     advanceToNextPlayer();
   }
 
@@ -410,10 +509,14 @@ export function createGame(options: LastWordStandingGameOptions = {}): LastWordS
       usedWordKeys: new Set(),
       usedWords: [],
       lastOutcome: null,
+      scores: Object.fromEntries(order.map((id) => [id, 0])),
       winnerId: null,
+      winnerIds: [],
+      lastRevival: null,
+      revivalReadyPlayerIds: new Set(),
     };
 
-    if (markWinnerIfReady()) {
+    if (finishIfStrictlyAhead()) {
       return { ok: true, matchId: match.id };
     }
 
@@ -433,6 +536,13 @@ export function createGame(options: LastWordStandingGameOptions = {}): LastWordS
    * @returns Result payload for the submission.
    */
   function submitWord(playerId: string, wordInput: string): SubmitWordResult {
+    if (match.state === 'revival-ready') {
+      const command = (wordInput || '').trim().toUpperCase();
+      if (command !== 'READY') {
+        return { ok: false, reason: 'invalid_command' };
+      }
+      return handleRevivalReady(playerId);
+    }
     if (match.state !== 'active') {
       return { ok: false, reason: 'round_not_active' };
     }
@@ -598,7 +708,12 @@ export function createGame(options: LastWordStandingGameOptions = {}): LastWordS
           : null,
         usedWords: match.usedWords.slice(),
         lastOutcome: match.lastOutcome,
+        scores: { ...match.scores },
         winnerId: match.winnerId,
+        winnerIds: match.winnerIds,
+        winnerNames: match.winnerIds.map((id) => playerStore.getPlayerName(id)),
+        lastRevival: match.lastRevival,
+        revivalReadyPlayerIds: Array.from(match.revivalReadyPlayerIds),
       },
     };
   }

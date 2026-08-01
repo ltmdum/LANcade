@@ -14,10 +14,10 @@ import {
   useNotifyFinish,
 } from '../shared/hooks/useGameUtils';
 import { useCountdownTick } from '../shared/hooks/useCountdownTick';
-import { playWarningSound, playOkaySound } from '../shared/utils/sounds';
+import { playWarningSound, playOkaySound, playWinSound } from '../shared/utils/sounds';
+import confetti from 'canvas-confetti';
 import { Panel } from '../shared/components/Panel';
 import { VolumeNotice } from '../shared/components/VolumeNotice';
-import { buildScoreboard } from '../categoryclashshared/utils/scoreboard';
 import type { GameProps } from '../shared/types/GameProps';
 import type { CategoryClashState } from '@lancade/shared';
 import './NineDashGame.css';
@@ -107,6 +107,7 @@ export function NineDashGame({
   useCountdownTick(remainingMs);
 
   const round = serverState.round;
+  const players = serverState.players || [];
   const letters = round.letters || [];
   const sourceWord = round.sourceWord || '';
   const scoresByPlayer = round.scoresByPlayer || {};
@@ -114,7 +115,34 @@ export function NineDashGame({
   const hasVoted = round.votesSubmittedIds?.includes(playerId) || false;
   const results = round.resultsByPlayer?.[playerId] || null;
 
-  const scoreboard = useMemo(() => buildScoreboard(round.resultsByPlayer), [round.resultsByPlayer]);
+  const playedWinRef = useRef(false);
+
+  useEffect(() => {
+    if (
+      round.state === 'results' &&
+      round.winnerIds.length > 0 &&
+      round.winnerIds.includes(playerId) &&
+      !playedWinRef.current
+    ) {
+      playWinSound();
+      confetti({ particleCount: 100, spread: 80, origin: { y: 0.6 } });
+      confetti({ particleCount: 100, spread: 80, origin: { x: 1, y: 0.6 } });
+      playedWinRef.current = true;
+    }
+  }, [round.state, round.winnerIds, playerId]);
+
+  useEffect(() => {
+    playedWinRef.current = false;
+  }, [round.id]);
+
+  /** Final scores keyed by player id, derived from the authoritative results. */
+  const finalScores = useMemo(
+    () =>
+      Object.fromEntries(
+        Object.entries(round.resultsByPlayer || {}).map(([id, result]) => [id, result.finalScore])
+      ),
+    [round.resultsByPlayer]
+  );
 
   const myWords = useMemo(() => {
     const myGroup = (round.wordsByPlayer || []).find((group) => group.playerId === playerId);
@@ -298,9 +326,13 @@ export function NineDashGame({
 
       {round.state === 'results' && (
         <NineDashResults
-          scoreboard={scoreboard}
+          finalScores={finalScores}
+          players={players}
+          winnerNames={round.winnerNames}
+          winnerIds={round.winnerIds}
+          participants={round.participants}
           results={results}
-          playerId={playerId}
+          playerName={playerName}
           sourceWord={sourceWord}
           isAdmin={isAdmin}
           actionStatus={actionStatus}

@@ -497,6 +497,14 @@
 }
 
 /* Leaderboard */
+.game-result-winner {
+  text-align: center;
+  font-size: 1.4rem;
+  font-weight: bold;
+  margin: 0.75rem 0;
+  color: var(--accent);
+}
+
 .te-leaderboard {
   @apply flex flex-col gap-2;
   padding: 1rem;

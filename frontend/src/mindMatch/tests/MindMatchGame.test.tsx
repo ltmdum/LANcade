@@ -397,7 +397,7 @@ describe('MindMatchGame', () => {
       render(<MindMatchGame {...props} />);
 
       expect(screen.getByRole('button', { name: /next round/i })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /back to config/i })).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /back to config/i })).not.toBeInTheDocument();
     });
   });
 
@@ -422,7 +422,7 @@ describe('MindMatchGame', () => {
       render(<MindMatchGame {...props} />);
 
       expect(screen.getByRole('button', { name: /next round/i })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /back to config/i })).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /back to config/i })).not.toBeInTheDocument();
     });
 
     it('does not render submit panel during submitting state', () => {
@@ -494,8 +494,8 @@ describe('MindMatchGame', () => {
 
       render(<MindMatchGame {...createDefaultProps(state)} />);
 
-      expect(screen.getByText(/Game Over/)).toBeInTheDocument();
-      expect(screen.getByText(/Alice wins!/)).toBeInTheDocument();
+      expect(screen.getByText(/You won!/)).toBeInTheDocument();
+      expect(screen.getByText('Final Scores')).toBeInTheDocument();
     });
 
     it('renders admin controls for new game when there is a winner', () => {
@@ -523,10 +523,12 @@ describe('MindMatchGame', () => {
 
       render(<MindMatchGame {...createDefaultProps(state)} />);
 
-      expect(screen.getByText('Scores')).toBeInTheDocument();
-      expect(screen.getByText(/Alice: 10/)).toBeInTheDocument();
-      expect(screen.getByText(/Bob: 5/)).toBeInTheDocument();
-      expect(screen.getByText(/Charlie: 3/)).toBeInTheDocument();
+      expect(screen.getByText('Live Scores')).toBeInTheDocument();
+      const scores = screen.getAllByText(/^\d+$/);
+      expect(scores).toHaveLength(3);
+      expect(scores[0]).toHaveTextContent('10');
+      expect(scores[1]).toHaveTextContent('5');
+      expect(scores[2]).toHaveTextContent('3');
     });
   });
 });

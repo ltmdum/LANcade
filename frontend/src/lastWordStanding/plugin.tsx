@@ -63,14 +63,15 @@ export const plugin: GamePlugin = {
     id: "lastwordstanding",
     name: "Last Word Standing",
     slogan: "Race the clock and survive the votes.",
-    description: "1 player is chosen to submit a word that fits the category and the assigned letter. Last player standing wins!",
+    description: "1 player is chosen to submit a word that fits the category and the assigned letter. The last player standing wins!",
     instructions: [
       { heading: "Turns", text: "Players get assigned turns. When it's your turn, you get a random letter." },
       { heading: "Submit", text: "Submit a word that fits the category and starts with that letter before time runs out." },
       { heading: "Vote", text: "Other players vote to accept or reject your word." },
       { heading: "Penalty", text: "If rejected, you get one more chance with half the time." },
       { heading: "Elimination", text: "Run out of time or get rejected twice and you're eliminated." },
-      { heading: "Winner", text: "Last player standing wins!" },
+      { heading: "Reactivation", text: "If eliminated, you may come back in if everyone fails on the same round as you." },
+      { heading: "Winner", text: "The last player standing wins." },
     ],
     defaultTimer: {
       minutes: '00',

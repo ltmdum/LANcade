@@ -7,6 +7,8 @@ import { submitWord, startRound } from '../shared/utils/api';
 import { useCountdownTick } from '../shared/hooks/useCountdownTick';
 import { Panel } from '../shared/components/Panel';
 import { VolumeNotice } from '../shared/components/VolumeNotice';
+import confetti from 'canvas-confetti';
+import { playWinSound } from '../shared/utils/sounds';
 import type { GameProps } from '../shared/types/GameProps';
 import type { FiveLetterWordState } from '@lancade/shared';
 import './FiveLetterWordGame.css';
@@ -102,7 +104,24 @@ export function FiveLetterWordGame({
   useEffect(() => {
     setWordInput('');
     setStatus('');
+    playedWinRef.current = false;
   }, [match.id]);
+
+  const playedWinRef = useRef(false);
+
+  useEffect(() => {
+    if (
+      match.state === 'finished' &&
+      match.winnerId !== null &&
+      match.winnerId === playerId &&
+      !playedWinRef.current
+    ) {
+      playWinSound();
+      confetti({ particleCount: 100, spread: 80, origin: { y: 0.6 } });
+      confetti({ particleCount: 100, spread: 80, origin: { x: 1, y: 0.6 } });
+      playedWinRef.current = true;
+    }
+  }, [match.state, match.winnerId, playerId]);
 
   // Tick clock for the grace period countdown
   useEffect(() => {

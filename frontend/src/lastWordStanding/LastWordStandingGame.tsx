@@ -2,17 +2,19 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Panel } from '../shared/components/Panel';
 import { VolumeNotice } from '../shared/components/VolumeNotice';
 import { PlayAgainPanel } from '../shared/components/PlayAgainPanel';
+import { ScoreBoard } from '../shared/components/ScoreBoard';
 import { LastWordStandingActivePanel } from './components/LastWordStandingActivePanel';
 import { LastWordStandingVotingPanel } from './components/LastWordStandingVotingPanel';
-import { PlayerTagList } from './components/PlayerTagList';
-import { WinnerDisplay } from './components/WinnerDisplay';
+import { RevivalReadyPanel } from './components/RevivalReadyPanel';
 import { formatMs } from '../shared/utils/time';
 import { handleWordSubmission } from '../shared/utils/wordSubmission';
 import { handleVoteSubmit } from '../shared/utils/voting';
 import { handlePlayAgain } from '../shared/utils/roundActions';
 import { useTimerRefs, useFlashTrigger, useClearCountdown } from '../shared/hooks/useGameUtils';
 import { useCountdownTick } from '../shared/hooks/useCountdownTick';
-import { playOkaySound, playWarningSound, warmupAudio } from '../shared/utils/sounds';
+import { playOkaySound, playWarningSound, playWinSound, warmupAudio } from '../shared/utils/sounds';
+import { buildWinnerMessage } from '../shared/utils/winnerMessage';
+import confetti from 'canvas-confetti';
 import type { GameProps } from '../shared/types/GameProps';
 import type { LastWordStandingState } from '@lancade/shared';
 import './LastWordStandingGame.css';
@@ -68,6 +70,8 @@ export function LastWordStandingGame({
   const isCurrentPlayer = playerId && match.currentPlayerId === playerId;
   const eliminatedIds = match.eliminatedPlayerIds || [];
   const isEliminated = playerId && eliminatedIds.includes(playerId);
+  const topScore = Math.max(0, ...Object.values(match.scores || {}));
+  const canComeBack = !!isEliminated && (match.scores[playerId] || 0) === topScore;
   const isInMatch = !playerId || match.order.includes(playerId);
   const currentPlayerName = match.currentPlayerId ? playerLookup[match.currentPlayerId] || 'Unknown' : '-';
   const pendingWord = match.pendingWord?.word || '';
@@ -123,6 +127,26 @@ export function LastWordStandingGame({
   useEffect(() => {
     warmupAudio();
   }, []);
+
+  const playedWinRef = useRef(false);
+
+  useEffect(() => {
+    if (
+      match.state === 'finished' &&
+      match.winnerIds.length > 0 &&
+      match.winnerIds.includes(playerId) &&
+      !playedWinRef.current
+    ) {
+      playWinSound();
+      confetti({ particleCount: 100, spread: 80, origin: { y: 0.6 } });
+      confetti({ particleCount: 100, spread: 80, origin: { x: 1, y: 0.6 } });
+      playedWinRef.current = true;
+    }
+  }, [match.state, match.winnerIds, playerId]);
+
+  useEffect(() => {
+    playedWinRef.current = false;
+  }, [match.id]);
 
   const prevCurrentPlayerIdRef = useRef<string | null>(null);
   const prevLastOutcomeRef = useRef<string | null>(null);
@@ -234,16 +258,7 @@ export function LastWordStandingGame({
   }
 
   const statusMessage = status || (timeUp ? 'Time is up. Waiting for update...' : '');
-  const podiumGold = match.winnerId
-    ? { name: playerLookup[match.winnerId] || 'Unknown', medal: '🥇' as const }
-    : null;
-  const elims = match.eliminatedPlayerIds || [];
-  const podiumSilver = elims.length > 0
-    ? { name: playerLookup[elims[elims.length - 1]] || 'Unknown', medal: '🥈' as const }
-    : undefined;
-  const podiumBronze = elims.length > 1
-    ? { name: playerLookup[elims[elims.length - 2]] || 'Unknown', medal: '🥉' as const }
-    : undefined;
+  const matchPlayers = players.filter((p) => match.order.includes(p.id));
 
   return (
     <div className={flash ? `flash-${flash}` : ''}>
@@ -258,6 +273,7 @@ export function LastWordStandingGame({
           connection={connection}
           isCurrentPlayer={!!isCurrentPlayer}
           isEliminated={!!isEliminated}
+          canComeBack={canComeBack}
           isParticipating={isParticipating}
           wordInput={wordInput}
           submitStatus={submitStatus}
@@ -280,11 +296,31 @@ export function LastWordStandingGame({
         />
       )}
 
-      {match.state === 'finished' && podiumGold && (
-        <WinnerDisplay gold={podiumGold} silver={podiumSilver} bronze={podiumBronze} />
+      {match.state === 'revival-ready' && (
+        <RevivalReadyPanel
+          playerId={playerId}
+          accessKey={accessKey}
+          isBackIn={match.lastRevival?.revivedPlayerIds.includes(playerId) || false}
+          hasReadied={match.revivalReadyPlayerIds?.includes(playerId) || false}
+          readyCount={match.revivalReadyPlayerIds?.length || 0}
+          totalCount={match.lastRevival?.revivedPlayerIds.length || 0}
+          wordNumber={match.lastRevival?.wordNumber ?? null}
+        />
       )}
 
-      <PlayerTagList players={players.filter((p) => match.order.includes(p.id))} eliminatedIds={eliminatedIds} />
+      {match.state === 'finished' && (
+        <div className="game-result-winner">
+          {buildWinnerMessage(match.winnerNames, playerName || null)}
+        </div>
+      )}
+
+      <ScoreBoard
+        title={match.state === 'finished' ? 'Final Scores' : 'Live Scores'}
+        players={matchPlayers}
+        scores={match.scores}
+        ineligiblePlayerIds={match.state !== 'finished' ? eliminatedIds : undefined}
+        winnerIds={match.state === 'finished' ? match.winnerIds : undefined}
+      />
 
       {isAdmin && match.state === 'finished' && (
         <PlayAgainPanel

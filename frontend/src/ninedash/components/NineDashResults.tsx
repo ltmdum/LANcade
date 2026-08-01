@@ -1,14 +1,18 @@
 import { Panel } from '../../shared/components/Panel';
 import { PlayAgainPanel } from '../../shared/components/PlayAgainPanel';
-import { Leaderboard } from '../../categoryclashshared/components/Leaderboard';
-import { PlayerResultsTable } from '../../categoryclashshared/components/PlayerResultsTable';
-import type { ScoreboardEntry } from '../../categoryclashshared/utils/scoreboard';
+import { ScoreBoard } from '../../shared/components/ScoreBoard';
+import { PlayerResults } from '../../categoryclashshared/components/PlayerResults';
+import { buildWinnerMessage } from '../../shared/utils/winnerMessage';
 import type { PlayerResult } from '@lancade/shared';
 
 interface NineDashResultsProps {
-  scoreboard: ScoreboardEntry[];
+  finalScores: Record<string, number>;
+  players: { id: string; name: string }[];
+  winnerNames: string[];
+  winnerIds: string[];
+  participants: string[];
   results: PlayerResult | null;
-  playerId: string;
+  playerName: string | null;
   sourceWord: string;
   isAdmin: boolean;
   actionStatus: string;
@@ -16,17 +20,22 @@ interface NineDashResultsProps {
   onBackToConfig: () => void;
 }
 
-/** Results view for Nine Dash — leaderboard, source word, play-again controls. */
+/** Results view for Nine Dash — winner, leaderboard, source word, play-again controls. */
 export function NineDashResults({
-  scoreboard,
+  finalScores,
+  players,
+  winnerNames,
+  winnerIds,
+  participants,
   results,
-  playerId,
+  playerName,
   sourceWord,
   isAdmin,
   actionStatus,
   onPlayAgain,
   onBackToConfig,
 }: NineDashResultsProps) {
+  const hasResults = Object.keys(finalScores).length > 0;
   return (
     <>
       {sourceWord && (
@@ -34,14 +43,22 @@ export function NineDashResults({
           <p className="ninedash-source-word">{sourceWord}</p>
         </Panel>
       )}
-      {scoreboard.length === 0 ? (
+      {!hasResults ? (
         <Panel title="Results">
           <p>No results — nobody submitted any words this round.</p>
         </Panel>
       ) : (
         <>
-          <Leaderboard entries={scoreboard} currentPlayerId={playerId} />
-          {results && <PlayerResultsTable words={results.words} />}
+          <div className="game-result-winner">
+            {buildWinnerMessage(winnerNames, playerName)}
+          </div>
+          <ScoreBoard
+            title="Final Scores"
+            players={players.filter((p) => participants.includes(p.id))}
+            scores={finalScores}
+            winnerIds={winnerIds}
+          />
+          {results && <PlayerResults words={results.words} />}
         </>
       )}
       {isAdmin && (

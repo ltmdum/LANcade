@@ -1,5 +1,6 @@
 import type { GamePlugin, GameFactoryOptions, BaseGame } from '../plugins/types.js';
 import { createGame } from './lastwordstanding.js';
+import { buildPodiumFromScores } from '@lancade/shared';
 
 function factory(options: GameFactoryOptions): BaseGame {
   const game = createGame({
@@ -21,19 +22,14 @@ function factory(options: GameFactoryOptions): BaseGame {
     getOlympicsResult: () => {
       const state = game.getState();
       if (state.match.state !== 'finished') return null;
+      if (state.match.winnerIds.length === 0) return null;
       const nameMap = new Map(state.players.map(p => [p.id, p.name]));
-      const eliminated = state.match.eliminatedPlayerIds;
-      const podium: string[][] = [];
-      if (state.match.winnerId) {
-        podium.push([nameMap.get(state.match.winnerId) || state.match.winnerId]);
+      const scored: [string, number][] = [];
+      for (const playerId of state.match.order) {
+        scored.push([nameMap.get(playerId) || playerId, state.match.scores[playerId] || 0]);
       }
-      if (eliminated.length > 0) {
-        podium.push([nameMap.get(eliminated[eliminated.length - 1]) || eliminated[eliminated.length - 1]]);
-      }
-      if (eliminated.length > 1) {
-        podium.push([nameMap.get(eliminated[eliminated.length - 2]) || eliminated[eliminated.length - 2]]);
-      }
-      return { podium, playerCount: state.players.length };
+      const { podium, playerCount } = buildPodiumFromScores(scored);
+      return { podium, playerCount };
     },
   };
 }
