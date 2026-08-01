@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { createGame } from '../multicat.js';
 import { createPlayerStore } from '../../shared/stores/player-store.js';
+import { createSessionStore } from '../../shared/stores/session-store.js';
 import { withFakeTimers } from '../../shared/tests/helpers.js';
 
 describe('multicat', () => {
@@ -306,6 +307,39 @@ describe('multicat', () => {
       // Re-submitting the same word to the same category is an update, not a self-reuse block
       const update = game.submitWord(alice, `${letter}lpha`, category);
       expect(update.ok).toBe(true);
+    });
+  });
+
+  it('releases a replaced word from the session word-reuse store', async () => {
+    await withFakeTimers((_timers) => {
+      const store = createPlayerStore();
+      const sessionStore = createSessionStore();
+      const alice = store.joinPlayer({ name: 'Alice' }).playerId!;
+      store.joinPlayer({ name: 'Bob' });
+
+      const game = createGame({ playerStore: store, sessionStore, clientGraceMs: 0 });
+      const start = game.startRound(5000);
+      const letter = start.letter!;
+      const state = game.getState();
+      const category = state.round.categories[0];
+
+      const oldWord = `${letter}lpha`;
+      const newWord = `${letter}nt`;
+
+      // Alice submits a word, which is reserved in the session-wide store
+      const first = game.submitWord(alice, oldWord, category);
+      expect(first.ok).toBe(true);
+      let shared = sessionStore.get<Set<string>>('shared:used-words');
+      expect(shared?.has(oldWord.toLowerCase())).toBe(true);
+
+      // Alice changes her mind and updates the word
+      const update = game.submitWord(alice, newWord, category);
+      expect(update.ok).toBe(true);
+
+      // The new word is reserved, and the old one is released for reuse elsewhere
+      shared = sessionStore.get<Set<string>>('shared:used-words');
+      expect(shared?.has(newWord.toLowerCase())).toBe(true);
+      expect(shared?.has(oldWord.toLowerCase())).toBe(false);
     });
   });
 

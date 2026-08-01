@@ -76,6 +76,12 @@ export function createGame(options: MulticatGameOptions = {}): MulticatGame {
         round.acceptedWords.splice(existingIndex, 1);
         round.acceptedWordByKey.delete(existing.key);
         round.acceptedWordById.delete(existing.id);
+        // The replaced word is no longer reserved in this round, so release it
+        // from the session-wide word-reuse store as well.
+        const shared = sessionStore?.get<Set<string>>(SHARED_KEY);
+        if (shared) {
+          shared.delete(existing.key.toLowerCase());
+        }
       }
     },
   };
