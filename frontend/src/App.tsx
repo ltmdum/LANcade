@@ -414,11 +414,15 @@ function App() {
           {serverState && (!gameId || phase === 'idle') && (
             <div className="app-links">
               <p className="app-links-text">
-                Enjoying the games?{' '}
-                <a className="app-links-link" href="https://play.google.com/store/apps/details?id=com.lancade.app" target="_blank" rel="noopener noreferrer">
-                  Download the app
+                Enjoying the games? Download the app from the{' '}
+                <a className="app-links-link" href="https://apps.apple.com/us/app/lancade-server/id6794334690" target="_blank" rel="noopener noreferrer">
+                  Apple App Store
                 </a>
-                {' '}and become a LANcade party host yourself.
+                {' '}or{' '}
+                <a className="app-links-link" href="https://play.google.com/store/apps/details?id=com.lancade.app" target="_blank" rel="noopener noreferrer">
+                  Google Play
+                </a>
+                , and become a LANcade party host yourself.
               </p>
               <p className="app-links-text">
                 Tech savvy? Host the full games suite for free by{' '}

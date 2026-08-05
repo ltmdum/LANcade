@@ -4,6 +4,13 @@ Lightweight LAN-only party game server with a React + TypeScript frontend and Ex
 
 No accounts, no data collection, no ads, no analytics. The server runs entirely on your local network, nothing leaves your WiFi. Designed to bring people together in the same room for sociable, fun party gaming.
 
+## Get the Mobile App
+
+The easiest way to host is the mobile app. Install it and the built-in LAN server starts in one tap, ready for you to pick a game. No Node.js, no setup, fully portable. Grab it from your store:
+
+- **[Apple App Store](https://apps.apple.com/us/app/lancade-server/id6794334690)**
+- **[Google Play](https://play.google.com/store/apps/details?id=com.lancade.app)**
+
 ## Tech Stack
 
 - **Frontend**: React 18, TypeScript, Vite, TailwindCSS
@@ -127,7 +134,7 @@ To avoid browser warnings, generate a trusted LAN certificate and install the lo
 
 ## Privacy & Feedback
 
-- **Privacy policy**: Published at `https://ltmdum.github.io/LANcade/privacypolicy.html` — covers no data collection, local-only gameplay, Google Play Billing handled by Google.
+- **Privacy policy**: Published at `https://ltmdum.github.io/LANcade/privacypolicy.html` — covers no data collection, local-only gameplay, Google Play Billing handled by Google, Apple App Store billing handled by Apple.
 - **Feedback page**: `docs/feedback.html` — embeds a Google Form (categories: Bug, Feature Request, Suggested Improvement, Other) plus a link to GitHub Issues for users with accounts. Published alongside the privacy policy at `https://ltmdum.github.io/LANcade/feedback.html`.
 - **Distribution notice**: `NOTICE.md` clarifies that the MIT license covers server source code only — the mobile app build, branding, and assets may not be redistributed on app stores.
 
