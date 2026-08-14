@@ -9,6 +9,7 @@
  */
 
 import { gameRegistry } from './registry.js';
+import { plugin as telepathyPlugin } from '../telepathy/plugin.js';
 import { plugin as quickFirePlugin } from '../quickFire/plugin.js';
 import { plugin as multicatPlugin } from '../multicat/plugin.js';
 import { plugin as lastWordStandingPlugin } from '../lastWordStanding/plugin.js';
@@ -18,9 +19,9 @@ import { plugin as alphabetRacePlugin } from '../alphabetRace/plugin.js';
 import { plugin as undercoverAgentPlugin } from '../undercoverAgent/plugin.js';
 import { plugin as tradingExchangePlugin } from '../tradingExchange/plugin.js';
 import { plugin as ninedashPlugin } from '../ninedash/plugin.js';
-import { plugin as telepathyPlugin } from '../telepathy/plugin.js';
 
 // Register all available games
+gameRegistry.register(telepathyPlugin);
 gameRegistry.register(quickFirePlugin);
 gameRegistry.register(multicatPlugin);
 gameRegistry.register(lastWordStandingPlugin);
@@ -30,6 +31,5 @@ gameRegistry.register(alphabetRacePlugin);
 gameRegistry.register(undercoverAgentPlugin);
 gameRegistry.register(tradingExchangePlugin);
 gameRegistry.register(ninedashPlugin);
-gameRegistry.register(telepathyPlugin);
 
 export { gameRegistry };

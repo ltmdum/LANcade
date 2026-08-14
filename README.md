@@ -68,6 +68,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for architecture, code standards, testing
 
 | Game ID        | Name             | Description                                       |
 |----------------|------------------|---------------------------------------------------|
+| `telepathy` | [Telepathy](https://ltmdum.github.io/LANcade/games/telepathy.html) | Place cards in ascending order without skipping others    |
 | `quickfire` | [Category Clash: Quick Fire](https://ltmdum.github.io/LANcade/games/quickfire.html) | One letter, one category, most words wins |
 | `multicat` | [Category Clash: Multicat](https://ltmdum.github.io/LANcade/games/multicat.html) | Multiple categories, one shared letter            |
 | `lastwordstanding` | [Last Word Standing](https://ltmdum.github.io/LANcade/games/lastwordstanding.html) | Race the clock and survive the votes              |
@@ -77,7 +78,6 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for architecture, code standards, testing
 | `undercoveragent` | [Undercover Agent](https://ltmdum.github.io/LANcade/games/undercoveragent.html) | Find the imposter among you                    |
 | `tradingexchange` | [Trading Exchange](https://ltmdum.github.io/LANcade/games/tradingexchange.html) | Trade around the hidden sum of all cards        |
 | `ninedash` | [Nine Dash](https://ltmdum.github.io/LANcade/games/ninedash.html) | Build words from a 3x3 grid of jumbled letters          |
-| `telepathy` | [Telepathy](https://ltmdum.github.io/LANcade/games/telepathy.html) | Place cards in ascending order without skipping others    |
 
 Each game has a dedicated tutorial page with detailed rules, gameplay explanation, and screenshots.
 

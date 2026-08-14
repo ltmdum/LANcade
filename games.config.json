@@ -1,5 +1,6 @@
 {
   "games": [
+    { "id": "telepathy", "displayName": "Telepathy" },
     { "id": "quickfire", "displayName": "Category Clash: Quick Fire" },
     { "id": "multicat", "displayName": "Category Clash: Multicat" },
     { "id": "lastwordstanding", "displayName": "Last Word Standing" },
@@ -8,7 +9,6 @@
     { "id": "alphabetrace", "displayName": "Alphabet Race" },
     { "id": "undercoveragent", "displayName": "Undercover Agent" },
     { "id": "tradingexchange", "displayName": "Trading Exchange" },
-    { "id": "ninedash", "displayName": "Nine Dash" },
-    { "id": "telepathy", "displayName": "Telepathy" }
+    { "id": "ninedash", "displayName": "Nine Dash" }
   ]
 }

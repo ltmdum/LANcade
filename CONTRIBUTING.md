@@ -163,7 +163,7 @@ Games are enabled via `games.config.json` in the project root:
 ```json
 {
   "games": [
-    { "id": "quickfire", "displayName": "Category Clash: Quick Fire" },
+    { "id": "telepathy", "displayName": "Telepathy" },
     { "id": "lastwordstanding", "displayName": "Last Word Standing" }
   ]
 }
@@ -329,6 +329,7 @@ Add to `games.config.json`:
 ```json
 {
   "games": [
+    { "id": "telepathy", "displayName": "Telepathy" },
     { "id": "quickfire", "displayName": "Category Clash: Quick Fire" },
     { "id": "multicat", "displayName": "Category Clash: Multicat" },
     { "id": "lastwordstanding", "displayName": "Last Word Standing" },

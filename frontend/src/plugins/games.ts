@@ -9,6 +9,7 @@
  */
 
 import { gamePluginRegistry } from './registry';
+import { plugin as telepathyPlugin } from '../telepathy/plugin';
 import { plugin as quickFirePlugin } from '../quickFire/plugin';
 import { plugin as multicatPlugin } from '../multicat/plugin';
 import { plugin as lastWordStandingPlugin } from '../lastWordStanding/plugin';
@@ -18,9 +19,9 @@ import { plugin as alphabetRacePlugin } from '../alphabetRace/plugin';
 import { plugin as undercoverAgentPlugin } from '../undercoverAgent/plugin';
 import { plugin as tradingExchangePlugin } from '../tradingExchange/plugin';
 import { plugin as ninedashPlugin } from '../ninedash/plugin';
-import { plugin as telepathyPlugin } from '../telepathy/plugin';
 
 // Register all available game plugins
+gamePluginRegistry.register(telepathyPlugin);
 gamePluginRegistry.register(quickFirePlugin);
 gamePluginRegistry.register(multicatPlugin);
 gamePluginRegistry.register(lastWordStandingPlugin);
@@ -30,6 +31,5 @@ gamePluginRegistry.register(alphabetRacePlugin);
 gamePluginRegistry.register(undercoverAgentPlugin);
 gamePluginRegistry.register(tradingExchangePlugin);
 gamePluginRegistry.register(ninedashPlugin);
-gamePluginRegistry.register(telepathyPlugin);
 
 export { gamePluginRegistry };
