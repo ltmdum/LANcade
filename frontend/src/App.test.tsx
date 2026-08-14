@@ -214,4 +214,28 @@ describe('App', () => {
     // The pending-start overlay ends with the round; no fresh countdown.
     expect(document.querySelector('.start-countdown-overlay')).toBeNull();
   });
+
+  it.each(['results', 'finished'])('shows the app download links when the medal tally is displayed (%s phase)', (phase) => {
+    setPathname('/p/ABCDEFGH');
+    mockPhase = phase;
+    mockUseServerState.mockReturnValue({
+      serverState: createFinishedServerState(),
+      connection: 'Connected',
+    });
+
+    render(<App />);
+    expect(screen.getByText(/Enjoying the games/i)).toBeDefined();
+  });
+
+  it('does not show the app download links during an active game phase', () => {
+    setPathname('/p/ABCDEFGH');
+    mockPhase = 'playing';
+    mockUseServerState.mockReturnValue({
+      serverState: createFinishedServerState(),
+      connection: 'Connected',
+    });
+
+    render(<App />);
+    expect(screen.queryByText(/Enjoying the games/i)).toBeNull();
+  });
 });

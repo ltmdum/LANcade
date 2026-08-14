@@ -11,6 +11,7 @@ import { GameInfoModal } from './shared/components/GameInfoModal';
 import { GameSettingsPanel } from './shared/components/GameSettingsPanel';
 import { Panel } from './shared/components/Panel';
 import { OlympicsMedals } from './shared/components/OlympicsMedals';
+import { AppLinks } from './shared/components/AppLinks';
 import { StartCountdown } from './shared/components/StartCountdown';
 import type { StartPending } from '@lancade/shared';
 import { parseAccess } from './shared/utils/accessMode';
@@ -439,33 +440,9 @@ function App() {
             </button>
           )}
 
-          {/* App Links — shown when connected but no game in progress */}
-          {serverState && (!gameId || phase === 'idle') && (
-            <div className="app-links">
-              <p className="app-links-text">
-                Enjoying the games? Download the app from the{' '}
-                <a className="app-links-link" href="https://apps.apple.com/us/app/lancade-server/id6794334690" target="_blank" rel="noopener noreferrer">
-                  Apple App Store
-                </a>
-                {' '}or{' '}
-                <a className="app-links-link" href="https://play.google.com/store/apps/details?id=com.lancade.app" target="_blank" rel="noopener noreferrer">
-                  Google Play
-                </a>
-                , and become a LANcade party host yourself.
-              </p>
-              <p className="app-links-text">
-                Tech savvy? Host the full games suite for free by{' '}
-                <a className="app-links-link" href="https://github.com/ltmdum/LANcade" target="_blank" rel="noopener noreferrer">
-                  cloning the repo
-                </a>.
-              </p>
-              <p className="app-links-text">
-                Help us improve LANcade by leaving{' '}
-                <a className="app-links-link" href="https://ltmdum.github.io/LANcade/feedback.html" target="_blank" rel="noopener noreferrer">
-                  feedback or suggestions
-                </a>.
-              </p>
-            </div>
+          {/* App Links — shown when connected but no game in progress, or after a game finishes (e.g. with the medal tally) */}
+          {serverState && (!gameId || phase === 'idle' || phase === 'results' || phase === 'finished') && (
+            <AppLinks />
           )}
 
           {/* Connection Status */}

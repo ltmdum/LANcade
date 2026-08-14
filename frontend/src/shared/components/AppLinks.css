@@ -1,0 +1,52 @@
+.app-links {
+  @apply border-t text-center;
+  border-color: var(--border);
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+}
+
+.app-links-heading {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+  color: var(--text-primary);
+}
+
+.app-links-subheading {
+  color: var(--text-secondary);
+  margin-bottom: 0;
+}
+
+.app-links-badges {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin: 0.75rem 0 1.25rem;
+}
+
+.app-badge {
+  display: block;
+  line-height: 0;
+}
+.app-badge img {
+  display: block;
+  height: 40px;
+  width: auto;
+}
+.app-badge:hover {
+  opacity: 0.85;
+}
+
+.app-links-secondary {
+  @apply text-sm mb-2;
+  color: var(--text-muted);
+}
+
+.app-links-link {
+  color: var(--accent);
+}
+.app-links-link:hover {
+  text-decoration: underline;
+}
