@@ -15,6 +15,8 @@ interface UseServerStateReturn {
   connection: string;
 }
 
+const ADMIN_CONFLICT_RETRY_MS = 500;
+
 /**
  * Subscribe to server state updates via SSE and HTTP fallback.
  * @param options Hook configuration options.
@@ -69,22 +71,36 @@ export function useServerState(options: UseServerStateOptions): UseServerStateRe
       };
     }
 
+    /**
+     * Fetch the current server state. When the server's single admin slot
+     * is occupied, show the lockout immediately and keep polling so the
+     * admin, whose previous page is tearing down after a refresh, gets
+     * back in as soon as the slot frees.
+     * @returns The successful response, or null once unmounted.
+     */
+    async function fetchState(): Promise<Response | null> {
+      for (let attempt = 0; ; attempt += 1) {
+        const response = await fetch(`/api/state?${query}`);
+        if (cancelled) return null;
+        if (response.status !== 409) return response;
+        if (attempt === 0) {
+          setConnection('Admin already connected. Only one admin at a time.');
+        }
+        await new Promise((resolve) => setTimeout(resolve, ADMIN_CONFLICT_RETRY_MS));
+      }
+    }
+
     async function init() {
       setConnection('Connecting...');
       try {
-        const response = await fetch(`/api/state?${query}`);
-        if (cancelled) return;
+        const response = await fetchState();
+        if (cancelled || !response) return;
 
         if (response.status === 401) {
           if (onUnauthorized) {
             onUnauthorized();
           }
           setConnection('Unauthorized');
-          return;
-        }
-
-        if (response.status === 409) {
-          setConnection('Admin already connected. Only one admin at a time.');
           return;
         }
 
