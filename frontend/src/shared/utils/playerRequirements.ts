@@ -23,7 +23,7 @@ export function checkPlayerRequirements(
   if (playerCount < minimum) {
     return {
       canStart: false,
-      waitingMessage: 'Waiting for more participants.',
+      waitingMessage: 'More players needed.',
     };
   }
 

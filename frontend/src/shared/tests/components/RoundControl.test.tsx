@@ -52,7 +52,7 @@ describe('RoundControl component', () => {
     render(<RoundControl {...defaultProps} playerCount={1} minPlayers={2} />);
 
     expect(screen.getByRole('button', { name: /start/i })).toBeDisabled();
-    expect(screen.getByText(/waiting for more participants/i)).toBeInTheDocument();
+    expect(screen.getByText(/more players needed/i)).toBeInTheDocument();
   });
 
   it('disables start button when admin needs to join as player', () => {
