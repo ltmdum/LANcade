@@ -1,4 +1,5 @@
 import type { GamePlugin, GameFactoryOptions, BaseGame } from '../plugins/types.js';
+import { START_COUNTDOWN_MS } from '@lancade/shared';
 import { createGame } from './multicat.js';
 
 /**
@@ -19,6 +20,7 @@ export const plugin: GamePlugin = {
   definition: {
     id: 'multicat',
     name: 'Category Clash: Multicat',
+    startCountdownMs: START_COUNTDOWN_MS,
     factory,
   },
 };

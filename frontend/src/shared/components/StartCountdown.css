@@ -1,0 +1,65 @@
+/* StartCountdown component styles — brand accent 3-2-1-GO overlay */
+.start-countdown-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(
+    ellipse at center,
+    var(--accent-muted),
+    rgba(15, 23, 42, 0.9) 75%
+  );
+  backdrop-filter: blur(3px);
+  transition: opacity 0.4s ease;
+}
+
+.start-countdown-overlay-fade {
+  opacity: 0;
+}
+
+.start-countdown-digit {
+  font-size: clamp(6rem, 24vw, 12rem);
+  font-weight: 900;
+  line-height: 1;
+  color: var(--accent);
+  text-shadow: 0 0 40px rgba(0, 198, 245, 0.65);
+  animation: start-countdown-pop 0.7s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+
+.start-countdown-go {
+  font-size: clamp(7rem, 28vw, 14rem);
+  font-weight: 900;
+  line-height: 1;
+  color: var(--accent);
+  text-shadow: 0 0 60px rgba(0, 198, 245, 0.8);
+  animation:
+    start-countdown-pop 0.6s cubic-bezier(0.2, 1.4, 0.4, 1) both,
+    start-countdown-pulse 0.5s ease-in-out 0.5s both;
+}
+
+@keyframes start-countdown-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  55% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes start-countdown-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.06);
+  }
+}

@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import App from './App';
+import type { GamePluginConfig } from './plugins/types';
 
 // Mock useServerState to control server state in tests
 const mockUseServerState = vi.fn();
@@ -11,8 +12,17 @@ vi.mock('./shared/hooks/useServerState', () => ({
 // Mock the game plugin registry
 const mockRender = vi.fn(() => <div data-testid="game-view">Game rendered</div>);
 let mockPhase = 'active';
+const baseConfig: GamePluginConfig = {
+  id: 'testgame',
+  name: 'Test Game',
+  slogan: '',
+  description: '',
+  instructions: [],
+  roundControlTitle: 'Round',
+  joinPanelTitle: 'Join',
+};
 const mockPlugin = {
-  config: { id: 'testgame', name: 'Test Game', slogan: '', description: '', instructions: [], roundControlTitle: 'Round', joinPanelTitle: 'Join' },
+  config: { ...baseConfig },
   canRender: () => true,
   getPhase: () => mockPhase,
   getHeaderCategory: () => 'Category',
@@ -63,6 +73,7 @@ describe('App', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockPhase = 'active';
+    mockPlugin.config = { ...baseConfig };
     originalPathname = window.location.pathname;
     localStorage.clear();
   });
@@ -118,5 +129,89 @@ describe('App', () => {
 
     expect(mockRender).not.toHaveBeenCalled();
     expect(screen.queryByTestId('game-view')).not.toBeInTheDocument();
+  });
+
+  it('shows the 3-2-1-GO countdown while a round start is pending', () => {
+    setPathname('/admin/ABCDEFGH');
+    localStorage.setItem('playerId', 'player-1');
+    mockUseServerState.mockReturnValue({
+      serverState: {
+        ...createFinishedServerState(),
+        pendingStart: { startedAt: Date.now(), startsAt: Date.now() + 3000 },
+      },
+      connection: 'Connected',
+    });
+
+    render(<App />);
+
+    const overlay = document.querySelector('.start-countdown-overlay');
+    expect(overlay).not.toBeNull();
+    expect(overlay?.textContent).toBe('3');
+  });
+
+  it('does not show the countdown without a pending start', () => {
+    setPathname('/admin/ABCDEFGH');
+    localStorage.setItem('playerId', 'player-1');
+    mockPhase = 'active';
+    mockUseServerState.mockReturnValue({
+      serverState: createFinishedServerState(),
+      connection: 'Connected',
+    });
+
+    render(<App />);
+
+    expect(document.querySelector('.start-countdown-overlay')).toBeNull();
+  });
+
+  it('plays the countdown when entering a configured phase mid-session', () => {
+    setPathname('/admin/ABCDEFGH');
+    localStorage.setItem('playerId', 'player-1');
+    mockPlugin.config = { ...baseConfig, countdownPhases: ['playing'] };
+    mockPhase = 'round_complete';
+    mockUseServerState.mockReturnValue({
+      serverState: createFinishedServerState(),
+      connection: 'Connected',
+    });
+
+    const { rerender } = render(<App />);
+    expect(document.querySelector('.start-countdown-overlay')).toBeNull();
+
+    mockPhase = 'playing';
+    mockUseServerState.mockReturnValue({
+      serverState: createFinishedServerState(),
+      connection: 'Connected',
+    });
+    rerender(<App />);
+
+    const overlay = document.querySelector('.start-countdown-overlay');
+    expect(overlay).not.toBeNull();
+    expect(overlay?.textContent).toBe('3');
+  });
+
+  it('does not replay the countdown when a round starts after an admin start', () => {
+    setPathname('/admin/ABCDEFGH');
+    localStorage.setItem('playerId', 'player-1');
+    mockPlugin.config = { ...baseConfig, countdownPhases: ['playing'] };
+    mockPhase = 'idle';
+    mockUseServerState.mockReturnValue({
+      serverState: {
+        ...createFinishedServerState(),
+        pendingStart: { startedAt: Date.now(), startsAt: Date.now() + 3000 },
+      },
+      connection: 'Connected',
+    });
+
+    const { rerender } = render(<App />);
+    expect(document.querySelector('.start-countdown-overlay')).not.toBeNull();
+
+    mockPhase = 'playing';
+    mockUseServerState.mockReturnValue({
+      serverState: createFinishedServerState(),
+      connection: 'Connected',
+    });
+    rerender(<App />);
+
+    // The pending-start overlay ends with the round; no fresh countdown.
+    expect(document.querySelector('.start-countdown-overlay')).toBeNull();
   });
 });

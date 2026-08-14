@@ -1,4 +1,5 @@
 import type { GamePlugin, GameFactoryOptions, BaseGame } from '../plugins/types.js';
+import { START_COUNTDOWN_MS } from '@lancade/shared';
 import { createGame } from './lastwordstanding.js';
 import { buildPodiumFromScores } from '@lancade/shared';
 
@@ -38,6 +39,7 @@ export const plugin: GamePlugin = {
   definition: {
     id: 'lastwordstanding',
     name: 'Last Word Standing',
+    startCountdownMs: START_COUNTDOWN_MS,
     factory,
   },
 };

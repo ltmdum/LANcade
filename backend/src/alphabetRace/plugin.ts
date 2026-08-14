@@ -1,6 +1,6 @@
 import type { GamePlugin, GameFactoryOptions, BaseGame } from '../plugins/types.js';
 import { createGame } from './alphabetrace.js';
-import { buildPodiumFromScores } from '@lancade/shared';
+import { START_COUNTDOWN_MS, buildPodiumFromScores } from '@lancade/shared';
 
 function factory(options: GameFactoryOptions): BaseGame {
   const game = createGame({
@@ -36,6 +36,7 @@ export const plugin: GamePlugin = {
   definition: {
     id: 'alphabetrace',
     name: 'Alphabet Race',
+    startCountdownMs: START_COUNTDOWN_MS,
     factory,
   },
 };

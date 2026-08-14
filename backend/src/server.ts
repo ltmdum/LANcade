@@ -10,6 +10,7 @@ import { gameRegistry, initializeGames, BaseGame } from './plugins/index.js';
 import { createPlayerStore, PlayerStore } from './shared/stores/player-store.js';
 import { createSessionStore } from './shared/stores/session-store.js';
 import { awardMedals, mergeMedalTallies, type MedalTally, type PlayerInfo } from '@lancade/shared';
+import { START_COUNTDOWN_TAIL_MS, type StartPending } from '@lancade/shared';
 import { createRateLimiter } from './shared/utils/rate-limiter.js';
 import { resolveBindAddress } from './shared/utils/resolve-bind-addresses.js';
 import { validatePlayerName, validateWord, validateCategory } from './shared/utils/input-validation.js';
@@ -57,6 +58,18 @@ const sseTracker = createConnectionTracker(5, 50);
 const authRateLimiter = createRateLimiter(10, 60_000);
 const sharedPlayerStore = createPlayerStore();
 const sharedSessionStore = createSessionStore();
+
+let pendingStart: StartPending | null = null;
+let pendingStartTimer: ReturnType<typeof setTimeout> | null = null;
+
+/**
+ * Cancel a pending pre-round countdown without broadcasting.
+ */
+function cancelPendingStart(): void {
+  if (pendingStartTimer !== null) clearTimeout(pendingStartTimer);
+  pendingStartTimer = null;
+  pendingStart = null;
+}
 
 /**
  * Ensure a game instance is initialized for the given game id.
@@ -257,6 +270,7 @@ interface PublicState {
   game: { id: string; name: string };
   games: { id: string; name: string }[];
   olympics?: MedalTally;
+  pendingStart: StartPending | null;
 }
 
 /**
@@ -277,6 +291,7 @@ function buildPublicState(): PublicState {
     },
     games: gameRegistry.listEnabledGames(),
     olympics: sharedSessionStore.get<MedalTally>('olympics:tally') || undefined,
+    pendingStart,
   };
 }
 
@@ -643,8 +658,25 @@ app.post('/api/admin/start', (req: Request, res: Response) => {
     return;
   }
 
-  const result = game.startRound(durationMs);
-  res.json(result);
+  const definition = gameRegistry.getGame(selectedGameId);
+  const countdownMs = definition?.startCountdownMs ?? 0;
+
+  if (countdownMs > 0) {
+    cancelPendingStart();
+    const now = Date.now();
+    pendingStart = { startedAt: now, startsAt: now + countdownMs + START_COUNTDOWN_TAIL_MS };
+    pendingStartTimer = setTimeout(() => {
+      pendingStartTimer = null;
+      pendingStart = null;
+      game.startRound(durationMs);
+    }, countdownMs + START_COUNTDOWN_TAIL_MS);
+  } else {
+    cancelPendingStart();
+    game.startRound(durationMs);
+  }
+
+  broadcastState();
+  res.json({ ok: true });
 });
 
 app.post('/api/admin/category', (req: Request, res: Response) => {
@@ -703,6 +735,7 @@ app.post('/api/admin/game', (req: Request, res: Response) => {
     return;
   }
 
+  cancelPendingStart();
   ensureGame(gameId);
   broadcastState();
   res.json({ ok: true, selectedGameId: gameId });

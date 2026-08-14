@@ -77,6 +77,7 @@ export const plugin: GamePlugin = {
       },
     ],
     olympics: false,
+    countdownPhases: ['playing'],
   },
   canRender,
   getPhase,

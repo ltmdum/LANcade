@@ -1,4 +1,5 @@
 import type { GamePlugin, GameFactoryOptions, BaseGame } from '../plugins/types.js';
+import { START_COUNTDOWN_MS } from '@lancade/shared';
 import { createGame } from './fiveletterword.js';
 
 function factory(options: GameFactoryOptions): BaseGame {
@@ -44,6 +45,7 @@ export const plugin: GamePlugin = {
   definition: {
     id: 'fiveletterword',
     name: '5 Letter Word',
+    startCountdownMs: START_COUNTDOWN_MS,
     factory,
   },
 };

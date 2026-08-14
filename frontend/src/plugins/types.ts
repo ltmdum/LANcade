@@ -61,6 +61,12 @@ export interface GamePluginConfig {
   sharesWordPool?: boolean;
   /** Whether this game participates in the session olympics medal system */
   olympics?: boolean;
+  /**
+   * Phases that begin a new round when entered mid-session (games that
+   * advance rounds on their own, without the admin Start button). The
+   * pre-round countdown plays locally when one of these is entered.
+   */
+  countdownPhases?: string[];
 }
 
 /** An option within a select-type game setting. */

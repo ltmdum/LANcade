@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useServerState } from './shared/hooks/useServerState';
 import { AdminPanel } from './shared/components/AdminPanel';
 import { JoinPanel } from './shared/components/JoinPanel';
@@ -11,6 +11,8 @@ import { GameInfoModal } from './shared/components/GameInfoModal';
 import { GameSettingsPanel } from './shared/components/GameSettingsPanel';
 import { Panel } from './shared/components/Panel';
 import { OlympicsMedals } from './shared/components/OlympicsMedals';
+import { StartCountdown } from './shared/components/StartCountdown';
+import type { StartPending } from '@lancade/shared';
 import { parseAccess } from './shared/utils/accessMode';
 import { getSessionData, setSessionData } from './shared/utils/api';
 import { gamePluginRegistry } from './plugins';
@@ -96,6 +98,9 @@ function App() {
 
   const olympics = (serverState as GameState & { olympics?: Record<string, MedalCounts> })?.olympics;
 
+  const pendingStart =
+    (serverState as GameState & { pendingStart?: StartPending | null })?.pendingStart ?? null;
+
   const pluginConfig = useMemo(() => {
     return gamePluginRegistry.getConfig(gameId);
   }, [gameId]);
@@ -140,12 +145,36 @@ function App() {
   }, [isAdmin, phase, showConfig]);
 
   const prevPhaseRef = useMemo(() => ({ current: phase }), []);
+  const lastPendingStartAtRef = useRef<number | null>(null);
+  const [localCountdownKey, setLocalCountdownKey] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (pendingStart) {
+      lastPendingStartAtRef.current = Date.now();
+    }
+  }, [pendingStart]);
+
   useEffect(() => {
     if (showGameInfo && prevPhaseRef.current === 'idle' && phase !== 'idle') {
       setShowGameInfo(false);
     }
+    const prev = prevPhaseRef.current;
+    if (
+      pluginConfig?.countdownPhases?.includes(phase) &&
+      prev !== phase &&
+      !pendingStart &&
+      (lastPendingStartAtRef.current === null || Date.now() - lastPendingStartAtRef.current > 6000)
+    ) {
+      setLocalCountdownKey(Date.now());
+    }
     prevPhaseRef.current = phase;
-  }, [phase, showGameInfo]);
+  }, [phase, showGameInfo, pluginConfig, pendingStart]);
+
+  useEffect(() => {
+    if (localCountdownKey === null) return;
+    const timer = window.setTimeout(() => setLocalCountdownKey(null), 4600);
+    return () => window.clearTimeout(timer);
+  }, [localCountdownKey]);
 
   const isParticipating = isAdmin ? adminIsPlaying && isKnownPlayer : isKnownPlayer;
   const canSeeGame = isParticipating || (isAdmin && !adminIsPlaying);
@@ -457,6 +486,11 @@ function App() {
           gameId={gameId}
           onClose={() => setShowGameInfo(false)}
         />
+      )}
+
+      {/* Pre-round 3-2-1-GO Countdown */}
+      {((pendingStart && Date.now() < pendingStart.startsAt) || localCountdownKey !== null) && (
+        <StartCountdown key={localCountdownKey ?? pendingStart?.startsAt} />
       )}
     </div>
   );

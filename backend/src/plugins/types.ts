@@ -132,6 +132,11 @@ export interface GameDefinition {
   id: string;
   /** Human-readable name for the game */
   name: string;
+  /**
+   * Milliseconds of pre-round 3-2-1-GO countdown before the round clock
+   * starts. Absent or 0 starts rounds immediately.
+   */
+  startCountdownMs?: number;
   /** Factory function to create a new game instance */
   factory: (options: GameFactoryOptions) => BaseGame;
 }
