@@ -117,6 +117,9 @@ export function QuickFireGame({
     if (!playerId || round.state !== 'active' || !round.durationMs) {
       clearCountdown();
       setTimeUp(false);
+      setRoundId(null);
+      finishSentRef.current.clear();
+      setWordInput('');
       return;
     }
     if (roundId !== round.id) {

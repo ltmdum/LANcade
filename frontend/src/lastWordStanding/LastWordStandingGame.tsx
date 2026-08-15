@@ -176,7 +176,14 @@ export function LastWordStandingGame({
   useEffect(() => {
     prevCurrentPlayerIdRef.current = null;
     prevLastOutcomeRef.current = null;
+    setWordInput('');
   }, [match.id]);
+
+  useEffect(() => {
+    if (match.currentPlayerId !== playerId) {
+      setWordInput('');
+    }
+  }, [match.currentPlayerId, playerId]);
 
   useEffect(() => {
     return () => {

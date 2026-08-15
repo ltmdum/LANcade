@@ -115,6 +115,41 @@ describe('MulticatGame', () => {
       expect(screen.queryByText(/play again/i)).not.toBeInTheDocument();
       expect(screen.queryByText(/back to config/i)).not.toBeInTheDocument();
     });
+
+    it('restarts the countdown for the first round of a new game after the previous game ended', () => {
+      const state = createBaseState();
+
+      // Game 1, round 1 goes active
+      state.round.state = 'active';
+      state.round.letter = 'A';
+      state.round.durationMs = 60000;
+      state.round.startedAt = Date.now();
+      state.round.endsAt = Date.now() + 60000;
+
+      const { rerender } = render(<MulticatGame {...createDefaultProps(state)} />);
+      expect(screen.getByText('01:00')).toBeInTheDocument();
+
+      // Admin ends the game — the engine resets to an empty round
+      state.round.state = 'idle';
+      state.round.letter = null;
+      state.round.durationMs = null;
+      state.round.startedAt = null;
+      state.round.endsAt = null;
+
+      rerender(<MulticatGame {...createDefaultProps(state)} />);
+      expect(screen.getByText('Waiting for the game to start...')).toBeInTheDocument();
+
+      // New game, first round becomes active again with the same id
+      state.round.state = 'active';
+      state.round.letter = 'B';
+      state.round.durationMs = 60000;
+      state.round.startedAt = Date.now();
+      state.round.endsAt = Date.now() + 60000;
+
+      rerender(<MulticatGame {...createDefaultProps(state)} />);
+
+      expect(screen.getByText('01:00')).toBeInTheDocument();
+    });
   });
 
   describe('voting state', () => {

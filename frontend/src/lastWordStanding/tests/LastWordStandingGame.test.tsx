@@ -176,6 +176,70 @@ describe('LastWordStandingGame', () => {
       expect(screen.queryByText('Submitted. Waiting for votes...')).not.toBeInTheDocument();
     });
 
+    it('clears the word input when the turn passes to another player', () => {
+      const state = createBaseState();
+      state.match.state = 'active';
+      state.match.currentLetter = 'A';
+      state.match.currentPlayerId = 'player-1';
+      state.match.turnEndsAt = Date.now() + 10000;
+
+      const props = createDefaultProps(state);
+      const { rerender } = render(<LastWordStandingGame {...props} />);
+
+      const input = screen.getByRole('textbox');
+      fireEvent.change(input, { target: { value: 'Apple' } });
+      expect((input as HTMLInputElement).value).toBe('Apple');
+
+      // The turn times out and passes to the next player (same match.id)
+      state.match.currentPlayerId = 'player-2';
+      state.match.turnEndsAt = Date.now() + 10000;
+
+      rerender(<LastWordStandingGame {...props} />);
+      expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+
+      // The turn cycles back to this player — the old input must not be pre-filled
+      state.match.currentPlayerId = 'player-1';
+      state.match.turnEndsAt = Date.now() + 10000;
+
+      rerender(<LastWordStandingGame {...props} />);
+
+      const nextInput = screen.getByRole('textbox');
+      expect((nextInput as HTMLInputElement).value).toBe('');
+    });
+
+    it('clears the word input when a new match starts', () => {
+      const state = createBaseState();
+      state.match.state = 'active';
+      state.match.currentLetter = 'A';
+      state.match.currentPlayerId = 'player-1';
+      state.match.turnEndsAt = Date.now() + 10000;
+
+      const props = createDefaultProps(state);
+      const { rerender } = render(<LastWordStandingGame {...props} />);
+
+      const input = screen.getByRole('textbox');
+      fireEvent.change(input, { target: { value: 'Apple' } });
+
+      // The match ends and a new one begins (new match id)
+      state.match.id = 2;
+      state.match.state = 'idle';
+      state.match.currentLetter = null;
+      state.match.currentPlayerId = null;
+      state.match.turnEndsAt = null;
+
+      rerender(<LastWordStandingGame {...props} />);
+
+      state.match.state = 'active';
+      state.match.currentLetter = 'B';
+      state.match.currentPlayerId = 'player-1';
+      state.match.turnEndsAt = Date.now() + 10000;
+
+      rerender(<LastWordStandingGame {...props} />);
+
+      const nextInput = screen.getByRole('textbox');
+      expect((nextInput as HTMLInputElement).value).toBe('');
+    });
+
     it('shows current player name', () => {
       const state = createBaseState();
       state.match.state = 'active';

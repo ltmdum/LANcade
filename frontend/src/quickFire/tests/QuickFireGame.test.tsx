@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { QuickFireGame } from '../QuickFireGame';
 import type { CategoryClashState } from '@lancade/shared';
 
@@ -111,6 +111,74 @@ describe('QuickFireGame', () => {
 
       expect(screen.queryByText(/play again/i)).not.toBeInTheDocument();
       expect(screen.queryByText(/back to config/i)).not.toBeInTheDocument();
+    });
+
+    it('restarts the countdown for the first round of a new game after the previous game ended', () => {
+      const state = createBaseState();
+
+      // Game 1, round 1 goes active
+      state.round.state = 'active';
+      state.round.letter = 'A';
+      state.round.durationMs = 60000;
+      state.round.startedAt = Date.now();
+      state.round.endsAt = Date.now() + 60000;
+
+      const { rerender } = render(<QuickFireGame {...createDefaultProps(state)} />);
+      expect(screen.getByText('01:00')).toBeInTheDocument();
+
+      // Admin ends the game — the engine resets to an empty round
+      state.round.state = 'idle';
+      state.round.letter = null;
+      state.round.durationMs = null;
+      state.round.startedAt = null;
+      state.round.endsAt = null;
+
+      rerender(<QuickFireGame {...createDefaultProps(state)} />);
+      expect(screen.getByText('Waiting for the game to start...')).toBeInTheDocument();
+
+      // New game, first round becomes active again with the same id
+      state.round.state = 'active';
+      state.round.letter = 'B';
+      state.round.durationMs = 60000;
+      state.round.startedAt = Date.now();
+      state.round.endsAt = Date.now() + 60000;
+
+      rerender(<QuickFireGame {...createDefaultProps(state)} />);
+
+      expect(screen.getByText('01:00')).toBeInTheDocument();
+    });
+
+    it('clears the word input when a new round starts after the previous round expired', () => {
+      const state = createBaseState();
+      state.round.state = 'active';
+      state.round.letter = 'A';
+      state.round.durationMs = 60000;
+      state.round.startedAt = Date.now();
+      state.round.endsAt = Date.now() + 60000;
+
+      const props = createDefaultProps(state);
+      const { rerender } = render(<QuickFireGame {...props} />);
+
+      const input = screen.getByRole('textbox');
+      fireEvent.change(input, { target: { value: 'antelope' } });
+      expect((input as HTMLInputElement).value).toBe('antelope');
+
+      // Timer runs out — the round moves to voting without a submission
+      state.round.state = 'voting';
+      rerender(<QuickFireGame {...props} />);
+
+      // The next round begins
+      state.round.id = 2;
+      state.round.state = 'active';
+      state.round.letter = 'B';
+      state.round.durationMs = 60000;
+      state.round.startedAt = Date.now();
+      state.round.endsAt = Date.now() + 60000;
+
+      rerender(<QuickFireGame {...props} />);
+
+      const nextInput = screen.getByRole('textbox');
+      expect((nextInput as HTMLInputElement).value).toBe('');
     });
   });
 

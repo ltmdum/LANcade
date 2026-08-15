@@ -140,6 +140,8 @@ export function MulticatGame({
     if (!playerId || round.state !== 'active' || !round.durationMs) {
       clearCountdown();
       setTimeUp(false);
+      setRoundId(null);
+      finishSentRef.current.clear();
       return;
     }
     if (roundId !== round.id) {
