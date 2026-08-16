@@ -97,23 +97,22 @@ export function FiveLetterWordGame({
   useEffect(() => {
     setWordInput('');
     setStatus('');
-    playedWinRef.current = false;
   }, [match.id]);
 
-  const playedWinRef = useRef(false);
+  const prevMatchStateRef = useRef(match.state);
 
   useEffect(() => {
     if (
       match.state === 'finished' &&
+      prevMatchStateRef.current !== 'finished' &&
       match.winnerId !== null &&
-      match.winnerId === playerId &&
-      !playedWinRef.current
+      match.winnerId === playerId
     ) {
       playWinSound();
       confetti({ particleCount: 100, spread: 80, origin: { y: 0.6 } });
       confetti({ particleCount: 100, spread: 80, origin: { x: 1, y: 0.6 } });
-      playedWinRef.current = true;
     }
+    prevMatchStateRef.current = match.state;
   }, [match.state, match.winnerId, playerId]);
 
   async function handleSubmit() {

@@ -79,24 +79,20 @@ export function TradingExchangeGame(props: GameComponentProps) {
   const clockSkewMs = Date.now() - state.serverTime;
   const [orderStatus, setOrderStatus] = useState('');
 
-  const playedWinRef = useRef(false);
-
-  useEffect(() => {
-    playedWinRef.current = false;
-  }, [ex.id]);
+  const prevExchangeStateRef = useRef(ex.state);
 
   useEffect(() => {
     if (
       ex.state === 'finished' &&
+      prevExchangeStateRef.current !== 'finished' &&
       ex.winnerIds.length > 0 &&
-      ex.winnerIds.includes(playerId) &&
-      !playedWinRef.current
+      ex.winnerIds.includes(playerId)
     ) {
       playWinSound();
       confetti({ particleCount: 100, spread: 80, origin: { y: 0.6 } });
       confetti({ particleCount: 100, spread: 80, origin: { x: 1, y: 0.6 } });
-      playedWinRef.current = true;
     }
+    prevExchangeStateRef.current = ex.state;
   }, [ex.state, ex.winnerIds, playerId]);
 
   const playerNames = useMemo(() => {

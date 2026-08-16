@@ -12,6 +12,10 @@ vi.mock('../../shared/utils/sounds', () => ({
   warmupAudio: vi.fn(),
 }));
 
+vi.mock('canvas-confetti', () => ({ default: vi.fn() }));
+
+import { playWinSound } from '../../shared/utils/sounds';
+
 function createBaseState(): UndercoverAgentState {
   return {
     serverTime: Date.now(),
@@ -593,6 +597,45 @@ describe('UndercoverAgentGame', () => {
       expect(
         screen.queryByText(/Discuss who you think/i)
       ).not.toBeInTheDocument();
+    });
+  });
+
+  describe('win celebration', () => {
+    it('plays the win celebration when the match transitions to finished', () => {
+      const state = createBaseState();
+      state.match.state = 'idle';
+
+      const { rerender } = render(<UndercoverAgentGame {...createDefaultProps(state)} />);
+
+      state.match.state = 'finished';
+      state.match.undercoverPlayerId = 'player-2';
+      state.match.winnerIsUndercover = false;
+      state.match.word = 'banana';
+      state.match.finishReason = 'wrong_vote';
+      state.match.winnerIds = ['player-1'];
+      state.match.winnerNames = ['Alice'];
+
+      rerender(<UndercoverAgentGame {...createDefaultProps(state)} />);
+
+      expect(playWinSound).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not replay the win celebration when the game view remounts while finished', () => {
+      const state = createBaseState();
+      state.match.state = 'finished';
+      state.match.undercoverPlayerId = 'player-2';
+      state.match.winnerIsUndercover = false;
+      state.match.word = 'banana';
+      state.match.finishReason = 'wrong_vote';
+      state.match.winnerIds = ['player-1'];
+      state.match.winnerNames = ['Alice'];
+
+      const props = createDefaultProps(state);
+      const { unmount } = render(<UndercoverAgentGame {...props} />);
+      unmount();
+      render(<UndercoverAgentGame {...props} />);
+
+      expect(playWinSound).not.toHaveBeenCalled();
     });
   });
 });

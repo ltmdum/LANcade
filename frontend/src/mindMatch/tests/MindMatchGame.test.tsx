@@ -6,6 +6,19 @@ import type { MindMatchState } from '@lancade/shared';
 // Mock fetch globally to prevent API calls
 vi.stubGlobal('fetch', vi.fn());
 
+vi.mock('../../shared/utils/sounds', () => ({
+  playOkaySound: vi.fn(),
+  playWarningSound: vi.fn(),
+  playWinSound: vi.fn(),
+  playTickSound: vi.fn(),
+  playPopSound: vi.fn(),
+  warmupAudio: vi.fn(),
+}));
+
+vi.mock('canvas-confetti', () => ({ default: vi.fn() }));
+
+import { playWinSound } from '../../shared/utils/sounds';
+
 /**
  * Create a base server state for testing.
  */
@@ -529,6 +542,36 @@ describe('MindMatchGame', () => {
       expect(scores[0]).toHaveTextContent('10');
       expect(scores[1]).toHaveTextContent('5');
       expect(scores[2]).toHaveTextContent('3');
+    });
+  });
+
+  describe('win celebration', () => {
+    it('plays the win celebration when the player becomes a winner', () => {
+      const state = createBaseState();
+      state.round.state = 'results';
+      state.winnerIds = [];
+
+      const { rerender } = render(<MindMatchGame {...createDefaultProps(state)} />);
+
+      state.winnerIds = ['player-1'];
+      state.winnerNames = ['Alice'];
+
+      rerender(<MindMatchGame {...createDefaultProps(state)} />);
+
+      expect(playWinSound).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not replay the win celebration when the game view remounts while the player is a winner', () => {
+      const state = createBaseState();
+      state.winnerIds = ['player-1'];
+      state.winnerNames = ['Alice'];
+
+      const props = createDefaultProps(state);
+      const { unmount } = render(<MindMatchGame {...props} />);
+      unmount();
+      render(<MindMatchGame {...props} />);
+
+      expect(playWinSound).not.toHaveBeenCalled();
     });
   });
 });

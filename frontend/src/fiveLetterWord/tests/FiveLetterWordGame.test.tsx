@@ -6,6 +6,19 @@ import type { FiveLetterWordState, PlayerGameState, LetterStatus } from '@lancad
 // Mock fetch globally to prevent API calls
 vi.stubGlobal('fetch', vi.fn());
 
+vi.mock('../../shared/utils/sounds', () => ({
+  playOkaySound: vi.fn(),
+  playWarningSound: vi.fn(),
+  playWinSound: vi.fn(),
+  playTickSound: vi.fn(),
+  playPopSound: vi.fn(),
+  warmupAudio: vi.fn(),
+}));
+
+vi.mock('canvas-confetti', () => ({ default: vi.fn() }));
+
+import { playWinSound } from '../../shared/utils/sounds';
+
 /**
  * Create a player state for testing.
  * @param id Player id.
@@ -522,6 +535,40 @@ describe('FiveLetterWordGame', () => {
 
       const backButton = screen.getByText('⌫').closest('button');
       expect(backButton!.className).toContain('word-keyboard-key-back');
+    });
+  });
+
+  describe('win celebration', () => {
+    it('plays the win celebration when the match transitions to finished', () => {
+      const state = createBaseState();
+      state.match.state = 'active';
+      state.match.targetWord = null;
+
+      const { rerender } = render(<FiveLetterWordGame {...createDefaultProps(state)} />);
+
+      state.match.state = 'finished';
+      state.match.winnerId = 'player-1';
+      state.match.winnerName = 'Alice';
+      state.match.targetWord = 'APPLE';
+
+      rerender(<FiveLetterWordGame {...createDefaultProps(state)} />);
+
+      expect(playWinSound).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not replay the win celebration when the game view remounts while finished', () => {
+      const state = createBaseState();
+      state.match.state = 'finished';
+      state.match.winnerId = 'player-1';
+      state.match.winnerName = 'Alice';
+      state.match.targetWord = 'APPLE';
+
+      const props = createDefaultProps(state);
+      const { unmount } = render(<FiveLetterWordGame {...props} />);
+      unmount();
+      render(<FiveLetterWordGame {...props} />);
+
+      expect(playWinSound).not.toHaveBeenCalled();
     });
   });
 });

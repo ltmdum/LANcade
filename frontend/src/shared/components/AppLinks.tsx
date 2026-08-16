@@ -37,7 +37,7 @@ export function AppLinks() {
         </a>
       </div>
       <p className="app-links-secondary">
-        Host the full games suite for free on PC by{' '}
+        Host the full games suite on PC by{' '}
         <a className="app-links-link" href={GITHUB_URL} target="_blank" rel="noopener noreferrer">
           cloning the repo
         </a>

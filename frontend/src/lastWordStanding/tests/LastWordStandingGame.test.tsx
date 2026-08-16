@@ -19,6 +19,8 @@ vi.mock('../../shared/utils/sounds', () => ({
 
 import { playWinSound } from '../../shared/utils/sounds';
 
+vi.mock('canvas-confetti', () => ({ default: vi.fn() }));
+
 /**
  * Create a base server state for testing.
  */
@@ -520,12 +522,19 @@ describe('LastWordStandingGame', () => {
 
     it('plays win sound and confetti when current player wins', () => {
       const state = createBaseState();
+      state.match.state = 'active';
+      state.match.currentLetter = 'A';
+      state.match.currentPlayerId = 'player-1';
+      state.match.turnEndsAt = Date.now() + 10000;
+
+      const { rerender } = render(<LastWordStandingGame {...createDefaultProps(state)} />);
+
       state.match.state = 'finished';
       state.match.winnerId = 'player-1';
       state.match.winnerIds = ['player-1'];
       state.match.winnerNames = ['Alice'];
 
-      render(<LastWordStandingGame {...createDefaultProps(state)} />);
+      rerender(<LastWordStandingGame {...createDefaultProps(state)} />);
 
       expect(screen.getByText(/You won/)).toBeInTheDocument();
       expect(playWinSound).toHaveBeenCalledTimes(1);
@@ -739,6 +748,40 @@ describe('LastWordStandingGame', () => {
 
       expect(screen.getByRole('button', { name: /play again/i })).toBeInTheDocument();
       expect(screen.queryByText(/waiting for next game/i)).not.toBeInTheDocument();
+    });
+  });
+
+  describe('win celebration', () => {
+    it('plays the win celebration when the match transitions to finished', () => {
+      const state = createBaseState();
+      state.match.state = 'active';
+      state.match.currentLetter = 'A';
+      state.match.currentPlayerId = 'player-1';
+      state.match.turnEndsAt = Date.now() + 10000;
+
+      const { rerender } = render(<LastWordStandingGame {...createDefaultProps(state)} />);
+
+      state.match.state = 'finished';
+      state.match.winnerIds = ['player-1'];
+      state.match.winnerNames = ['Alice'];
+
+      rerender(<LastWordStandingGame {...createDefaultProps(state)} />);
+
+      expect(playWinSound).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not replay the win celebration when the game view remounts while finished', () => {
+      const state = createBaseState();
+      state.match.state = 'finished';
+      state.match.winnerIds = ['player-1'];
+      state.match.winnerNames = ['Alice'];
+
+      const props = createDefaultProps(state);
+      const { unmount } = render(<LastWordStandingGame {...props} />);
+      unmount();
+      render(<LastWordStandingGame {...props} />);
+
+      expect(playWinSound).not.toHaveBeenCalled();
     });
   });
 });

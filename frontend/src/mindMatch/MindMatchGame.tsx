@@ -57,25 +57,24 @@ export function MindMatchGame({
 
   const canMakeClaim = claimableTargets.length > 0;
 
-  const playedWinRef = useRef(false);
+  const prevWinnerIdsRef = useRef<string[]>(serverState.winnerIds);
 
   useEffect(() => {
     if (
       serverState.winnerIds.length > 0 &&
       serverState.winnerIds.includes(playerId) &&
-      !playedWinRef.current
+      !prevWinnerIdsRef.current.includes(playerId)
     ) {
       playWinSound();
       confetti({ particleCount: 100, spread: 80, origin: { y: 0.6 } });
       confetti({ particleCount: 100, spread: 80, origin: { x: 1, y: 0.6 } });
-      playedWinRef.current = true;
     }
+    prevWinnerIdsRef.current = serverState.winnerIds;
   }, [serverState.winnerIds, playerId]);
 
   // Reset admin status when round changes
   useEffect(() => {
     setAdminStatus('');
-    playedWinRef.current = false;
   }, [round.id, round.state]);
 
   async function onRestart() {

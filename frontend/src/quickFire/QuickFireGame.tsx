@@ -72,25 +72,21 @@ export function QuickFireGame({
   const hasVoted = round.votesSubmittedIds?.includes(playerId) || false;
   const results = round.resultsByPlayer?.[playerId] || null;
 
-  const playedWinRef = useRef(false);
+  const prevRoundStateRef = useRef(round.state);
 
   useEffect(() => {
     if (
       round.state === 'results' &&
+      prevRoundStateRef.current !== 'results' &&
       round.winnerIds.length > 0 &&
-      round.winnerIds.includes(playerId) &&
-      !playedWinRef.current
+      round.winnerIds.includes(playerId)
     ) {
       playWinSound();
       confetti({ particleCount: 100, spread: 80, origin: { y: 0.6 } });
       confetti({ particleCount: 100, spread: 80, origin: { x: 1, y: 0.6 } });
-      playedWinRef.current = true;
     }
+    prevRoundStateRef.current = round.state;
   }, [round.state, round.winnerIds, playerId]);
-
-  useEffect(() => {
-    playedWinRef.current = false;
-  }, [round.id]);
 
   /** Final scores keyed by player id, derived from the authoritative results. */
   const finalScores = useMemo(

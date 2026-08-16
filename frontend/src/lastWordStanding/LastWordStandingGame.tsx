@@ -128,25 +128,21 @@ export function LastWordStandingGame({
     warmupAudio();
   }, []);
 
-  const playedWinRef = useRef(false);
+  const prevMatchStateRef = useRef(match.state);
 
   useEffect(() => {
     if (
       match.state === 'finished' &&
+      prevMatchStateRef.current !== 'finished' &&
       match.winnerIds.length > 0 &&
-      match.winnerIds.includes(playerId) &&
-      !playedWinRef.current
+      match.winnerIds.includes(playerId)
     ) {
       playWinSound();
       confetti({ particleCount: 100, spread: 80, origin: { y: 0.6 } });
       confetti({ particleCount: 100, spread: 80, origin: { x: 1, y: 0.6 } });
-      playedWinRef.current = true;
     }
+    prevMatchStateRef.current = match.state;
   }, [match.state, match.winnerIds, playerId]);
-
-  useEffect(() => {
-    playedWinRef.current = false;
-  }, [match.id]);
 
   const prevCurrentPlayerIdRef = useRef<string | null>(null);
   const prevLastOutcomeRef = useRef<string | null>(null);

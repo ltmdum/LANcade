@@ -5,6 +5,19 @@ import type { CategoryClashState } from '@lancade/shared';
 
 vi.stubGlobal('fetch', vi.fn());
 
+vi.mock('../../shared/utils/sounds', () => ({
+  playOkaySound: vi.fn(),
+  playWarningSound: vi.fn(),
+  playWinSound: vi.fn(),
+  playTickSound: vi.fn(),
+  playPopSound: vi.fn(),
+  warmupAudio: vi.fn(),
+}));
+
+vi.mock('canvas-confetti', () => ({ default: vi.fn() }));
+
+import { playWinSound } from '../../shared/utils/sounds';
+
 const TILES = ['T', 'R', 'I', 'A', 'N', 'G', 'L', 'E', 'S'];
 
 function createBaseState(): CategoryClashState {
@@ -292,6 +305,45 @@ describe('NineDashGame', () => {
       render(<NineDashGame {...createDefaultProps(state)} />);
 
       expect(screen.getByText(/nobody submitted any words/i)).toBeInTheDocument();
+    });
+  });
+
+  describe('win celebration', () => {
+    it('plays the win celebration when the round transitions to results', () => {
+      const state = createBaseState();
+      state.round.state = 'active';
+      state.round.letters = TILES;
+      state.round.durationMs = 60000;
+      state.round.startedAt = Date.now();
+      state.round.endsAt = Date.now() + 60000;
+
+      const { rerender } = render(<NineDashGame {...createDefaultProps(state)} />);
+
+      state.round.state = 'results';
+      state.round.letters = TILES;
+      state.round.winnerIds = ['player-1'];
+      state.round.winnerNames = ['Alice'];
+      state.round.resultsByPlayer = {};
+
+      rerender(<NineDashGame {...createDefaultProps(state)} />);
+
+      expect(playWinSound).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not replay the win celebration when the game view remounts while results are showing', () => {
+      const state = createBaseState();
+      state.round.state = 'results';
+      state.round.letters = TILES;
+      state.round.winnerIds = ['player-1'];
+      state.round.winnerNames = ['Alice'];
+      state.round.resultsByPlayer = {};
+
+      const props = createDefaultProps(state);
+      const { unmount } = render(<NineDashGame {...props} />);
+      unmount();
+      render(<NineDashGame {...props} />);
+
+      expect(playWinSound).not.toHaveBeenCalled();
     });
   });
 });

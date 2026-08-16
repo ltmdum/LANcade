@@ -5,6 +5,19 @@ import type { AlphabetRaceState } from '@lancade/shared';
 
 vi.stubGlobal('fetch', vi.fn());
 
+vi.mock('../../shared/utils/sounds', () => ({
+  playOkaySound: vi.fn(),
+  playWarningSound: vi.fn(),
+  playWinSound: vi.fn(),
+  playTickSound: vi.fn(),
+  playPopSound: vi.fn(),
+  warmupAudio: vi.fn(),
+}));
+
+vi.mock('canvas-confetti', () => ({ default: vi.fn() }));
+
+import { playWinSound } from '../../shared/utils/sounds';
+
 /**
  * Create a base server state for testing.
  * @returns Default AlphabetRaceState with three players and idle match.
@@ -431,6 +444,41 @@ describe('AlphabetRaceGame', () => {
       render(<AlphabetRaceGame {...props} />);
 
       expect(screen.getByText(/Waiting for next game/i)).toBeInTheDocument();
+    });
+  });
+
+  describe('win celebration', () => {
+    it('plays the win celebration when the match transitions to finished', () => {
+      const state = createBaseState();
+      state.match.state = 'racing';
+      state.match.currentLetter = 'A';
+      state.match.currentLetterIndex = 0;
+
+      const { rerender } = render(<AlphabetRaceGame {...createDefaultProps(state)} />);
+
+      state.match.state = 'finished';
+      state.match.winnerIds = ['player-1'];
+      state.match.winnerNames = ['Alice'];
+      state.match.completedCount = 26;
+
+      rerender(<AlphabetRaceGame {...createDefaultProps(state)} />);
+
+      expect(playWinSound).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not replay the win celebration when the game view remounts while finished', () => {
+      const state = createBaseState();
+      state.match.state = 'finished';
+      state.match.winnerIds = ['player-1'];
+      state.match.winnerNames = ['Alice'];
+      state.match.completedCount = 26;
+
+      const props = createDefaultProps(state);
+      const { unmount } = render(<AlphabetRaceGame {...props} />);
+      unmount();
+      render(<AlphabetRaceGame {...props} />);
+
+      expect(playWinSound).not.toHaveBeenCalled();
     });
   });
 });

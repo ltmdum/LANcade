@@ -6,6 +6,19 @@ import type { CategoryClashState } from '@lancade/shared';
 // Mock fetch globally to prevent API calls
 vi.stubGlobal('fetch', vi.fn());
 
+vi.mock('../../shared/utils/sounds', () => ({
+  playOkaySound: vi.fn(),
+  playWarningSound: vi.fn(),
+  playWinSound: vi.fn(),
+  playTickSound: vi.fn(),
+  playPopSound: vi.fn(),
+  warmupAudio: vi.fn(),
+}));
+
+vi.mock('canvas-confetti', () => ({ default: vi.fn() }));
+
+import { playWinSound } from '../../shared/utils/sounds';
+
 /**
  * Create a base server state for testing.
  */
@@ -470,6 +483,41 @@ describe('QuickFireGame', () => {
 
       expect(screen.queryByRole('button', { name: /play again/i })).not.toBeInTheDocument();
       expect(screen.queryByRole('button', { name: /back to config/i })).not.toBeInTheDocument();
+    });
+  });
+
+  describe('win celebration', () => {
+    it('plays the win celebration when the round transitions to results', () => {
+      const state = createBaseState();
+      state.round.state = 'active';
+      state.round.letter = 'A';
+      state.round.durationMs = 60000;
+      state.round.startedAt = Date.now();
+      state.round.endsAt = Date.now() + 60000;
+
+      const { rerender } = render(<QuickFireGame {...createDefaultProps(state)} />);
+
+      state.round.state = 'results';
+      state.round.winnerIds = ['player-1'];
+      state.round.winnerNames = ['Alice'];
+
+      rerender(<QuickFireGame {...createDefaultProps(state)} />);
+
+      expect(playWinSound).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not replay the win celebration when the game view remounts while results are showing', () => {
+      const state = createBaseState();
+      state.round.state = 'results';
+      state.round.winnerIds = ['player-1'];
+      state.round.winnerNames = ['Alice'];
+
+      const props = createDefaultProps(state);
+      const { unmount } = render(<QuickFireGame {...props} />);
+      unmount();
+      render(<QuickFireGame {...props} />);
+
+      expect(playWinSound).not.toHaveBeenCalled();
     });
   });
 });

@@ -47,7 +47,6 @@ export function UndercoverAgentGame({
 
   useEffect(() => {
     setMyRole(null);
-    playedWinRef.current = false;
   }, [match.id]);
 
   useEffect(() => {
@@ -77,19 +76,19 @@ export function UndercoverAgentGame({
   }, [match.id]);
 
   const prevStateRef = useRef<UndercoverAgentState['match']['state'] | null>(null);
-  const playedWinRef = useRef(false);
+  const prevMatchStateRef = useRef(match.state);
   useEffect(() => {
     if (
       match.state === 'finished' &&
+      prevMatchStateRef.current !== 'finished' &&
       match.winnerIds.length > 0 &&
-      match.winnerIds.includes(playerId) &&
-      !playedWinRef.current
+      match.winnerIds.includes(playerId)
     ) {
       playWinSound();
       confetti({ particleCount: 100, spread: 80, origin: { y: 0.6 } });
       confetti({ particleCount: 100, spread: 80, origin: { x: 1, y: 0.6 } });
-      playedWinRef.current = true;
     }
+    prevMatchStateRef.current = match.state;
   }, [match.state, match.winnerIds, playerId]);
 
   useEffect(() => {
