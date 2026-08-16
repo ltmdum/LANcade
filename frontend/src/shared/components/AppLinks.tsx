@@ -1,6 +1,7 @@
 import './AppLinks.css';
 import appStoreBadge from '../../assets/badges/app-store.svg';
 import googlePlayBadge from '../../assets/badges/google-play.png';
+import githubMarkBadge from '../../assets/badges/github-mark.svg';
 
 const APP_STORE_URL = 'https://apps.apple.com/us/app/lancade-server/id6794334690';
 const GOOGLE_PLAY_URL = 'https://play.google.com/store/apps/details?id=com.lancade.app';
@@ -37,11 +38,16 @@ export function AppLinks() {
         </a>
       </div>
       <p className="app-links-secondary">
-        Host the full games suite on PC by{' '}
-        <a className="app-links-link" href={GITHUB_URL} target="_blank" rel="noopener noreferrer">
-          cloning the repo
+        Host the full games suite on PC{' '}
+        <a
+          className="app-links-github"
+          aria-label="Get the LANcade source code on GitHub"
+          href={GITHUB_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <img src={githubMarkBadge} alt="" />
         </a>
-        .
       </p>
       <p className="app-links-secondary">
         Help us improve LANcade by leaving{' '}

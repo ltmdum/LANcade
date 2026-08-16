@@ -39,6 +39,20 @@
   opacity: 0.85;
 }
 
+.app-links-github {
+  display: inline-block;
+  line-height: 0;
+  vertical-align: top;
+}
+.app-links-github img {
+  display: block;
+  height: 16px;
+  width: auto;
+}
+.app-links-github:hover {
+  opacity: 0.85;
+}
+
 .app-links-secondary {
   @apply text-sm mb-2;
   color: var(--text-muted);
