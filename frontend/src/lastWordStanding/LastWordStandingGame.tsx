@@ -330,7 +330,6 @@ export function LastWordStandingGame({
           onPlayAgain={onRestart}
           onBackToConfig={() => setShowConfig(true)}
           status={adminStatus}
-          playAgainText="Play Again (Same Config)"
           title="Next Steps"
         />
       )}

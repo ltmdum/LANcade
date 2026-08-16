@@ -169,7 +169,7 @@ describe('TelepathyGame', () => {
     const props = createDefaultProps(state);
     props.isAdmin = true;
     render(<TelepathyGame {...props} />);
-    expect(screen.getByRole('button', { name: /back to config/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /back to menu/i })).toBeInTheDocument();
   });
 
   it('renders lost state with loss details', () => {

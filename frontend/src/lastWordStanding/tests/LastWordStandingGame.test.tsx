@@ -286,7 +286,7 @@ describe('LastWordStandingGame', () => {
       render(<LastWordStandingGame {...props} />);
 
       expect(screen.queryByText(/play again/i)).not.toBeInTheDocument();
-      expect(screen.queryByText(/back to config/i)).not.toBeInTheDocument();
+      expect(screen.queryByText(/back to menu/i)).not.toBeInTheDocument();
     });
 
     it('shows that an eliminated player could come back', () => {
@@ -482,7 +482,7 @@ describe('LastWordStandingGame', () => {
       render(<LastWordStandingGame {...props} />);
 
       expect(screen.queryByText(/play again/i)).not.toBeInTheDocument();
-      expect(screen.queryByText(/back to config/i)).not.toBeInTheDocument();
+      expect(screen.queryByText(/back to menu/i)).not.toBeInTheDocument();
     });
   });
 
@@ -567,7 +567,7 @@ describe('LastWordStandingGame', () => {
       render(<LastWordStandingGame {...props} />);
 
       expect(screen.getByRole('button', { name: /play again/i })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /back to config/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /back to menu/i })).toBeInTheDocument();
     });
 
     it('does not render admin controls for non-admin in finished state', () => {
@@ -578,7 +578,7 @@ describe('LastWordStandingGame', () => {
       render(<LastWordStandingGame {...createDefaultProps(state)} />);
 
       expect(screen.queryByRole('button', { name: /play again/i })).not.toBeInTheDocument();
-      expect(screen.queryByRole('button', { name: /back to config/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /back to menu/i })).not.toBeInTheDocument();
     });
   });
 

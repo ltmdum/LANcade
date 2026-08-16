@@ -5,7 +5,6 @@ interface PlayAgainPanelProps {
   onPlayAgain: () => void;
   onBackToConfig: () => void;
   status?: string;
-  playAgainText?: string;
   title?: string;
 }
 
@@ -18,17 +17,16 @@ export function PlayAgainPanel({
   onPlayAgain,
   onBackToConfig,
   status,
-  playAgainText = 'Play Again (Same Timer)',
   title = 'Next Round',
 }: PlayAgainPanelProps) {
   return (
     <Panel title={title}>
       <div className="play-again-actions">
         <button type="button" className="btn btn-primary" onClick={onPlayAgain}>
-          {playAgainText}
+          Play Again
         </button>
         <button type="button" className="btn btn-secondary" onClick={onBackToConfig}>
-          Back to Configuration
+          Back to Menu
         </button>
       </div>
       {status && <p className="play-again-status">{status}</p>}

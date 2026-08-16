@@ -39,7 +39,7 @@ function WonPhase({ targetRound, isAdmin, onBack }: {
       </p>
       {isAdmin && (
         <button type="button" className="btn btn-primary telepathy-won-button" onClick={onBack}>
-          Back to Config
+          Back to Menu
         </button>
       )}
     </div>

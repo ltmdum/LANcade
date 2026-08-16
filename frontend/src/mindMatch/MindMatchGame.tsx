@@ -193,7 +193,6 @@ export function MindMatchGame({
           onPlayAgain={onRestart}
           onBackToConfig={() => setShowConfig(true)}
           status={adminStatus}
-          playAgainText="New Game"
           title="Game Over"
         />
       )}

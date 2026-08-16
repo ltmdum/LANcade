@@ -123,7 +123,7 @@ describe('QuickFireGame', () => {
       render(<QuickFireGame {...createDefaultProps(state)} />);
 
       expect(screen.queryByText(/play again/i)).not.toBeInTheDocument();
-      expect(screen.queryByText(/back to config/i)).not.toBeInTheDocument();
+      expect(screen.queryByText(/back to menu/i)).not.toBeInTheDocument();
     });
 
     it('restarts the countdown for the first round of a new game after the previous game ended', () => {
@@ -264,7 +264,7 @@ describe('QuickFireGame', () => {
       render(<QuickFireGame {...props} />);
 
       expect(screen.queryByText(/play again/i)).not.toBeInTheDocument();
-      expect(screen.queryByText(/back to config/i)).not.toBeInTheDocument();
+      expect(screen.queryByText(/back to menu/i)).not.toBeInTheDocument();
     });
   });
 
@@ -374,7 +374,7 @@ describe('QuickFireGame', () => {
       render(<QuickFireGame {...props} />);
 
       expect(screen.getByRole('button', { name: /play again/i })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /back to config/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /back to menu/i })).toBeInTheDocument();
     });
 
     it('renders admin controls even when no results exist', () => {
@@ -392,7 +392,7 @@ describe('QuickFireGame', () => {
 
       expect(screen.getByText(/no results/i)).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /play again/i })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /back to config/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /back to menu/i })).toBeInTheDocument();
     });
 
     it('non-participating admin sees controls in results state', () => {
@@ -412,7 +412,7 @@ describe('QuickFireGame', () => {
       render(<QuickFireGame {...props} />);
 
       expect(screen.getByRole('button', { name: /play again/i })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /back to config/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /back to menu/i })).toBeInTheDocument();
     });
 
     it('non-participating admin sees active panel without word input', () => {
@@ -482,7 +482,7 @@ describe('QuickFireGame', () => {
       render(<QuickFireGame {...createDefaultProps(state)} />);
 
       expect(screen.queryByRole('button', { name: /play again/i })).not.toBeInTheDocument();
-      expect(screen.queryByRole('button', { name: /back to config/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /back to menu/i })).not.toBeInTheDocument();
     });
   });
 

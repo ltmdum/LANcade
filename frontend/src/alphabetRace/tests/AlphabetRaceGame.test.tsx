@@ -313,7 +313,7 @@ describe('AlphabetRaceGame', () => {
       render(<AlphabetRaceGame {...props} />);
 
       expect(screen.getByRole('button', { name: /play again/i })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /back to configuration/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /back to menu/i })).toBeInTheDocument();
     });
   });
 
@@ -335,7 +335,7 @@ describe('AlphabetRaceGame', () => {
       render(<AlphabetRaceGame {...props} />);
 
       expect(screen.getByRole('button', { name: /play again/i })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /back to configuration/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /back to menu/i })).toBeInTheDocument();
     });
 
     it('does not render word submit form during racing', () => {

@@ -410,7 +410,7 @@ describe('MindMatchGame', () => {
       render(<MindMatchGame {...props} />);
 
       expect(screen.getByRole('button', { name: /next round/i })).toBeInTheDocument();
-      expect(screen.queryByRole('button', { name: /back to config/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /back to menu/i })).not.toBeInTheDocument();
     });
   });
 
@@ -435,7 +435,7 @@ describe('MindMatchGame', () => {
       render(<MindMatchGame {...props} />);
 
       expect(screen.getByRole('button', { name: /next round/i })).toBeInTheDocument();
-      expect(screen.queryByRole('button', { name: /back to config/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /back to menu/i })).not.toBeInTheDocument();
     });
 
     it('does not render submit panel during submitting state', () => {
@@ -523,7 +523,7 @@ describe('MindMatchGame', () => {
 
       render(<MindMatchGame {...props} />);
 
-      expect(screen.getByRole('button', { name: /new game/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /play again/i })).toBeInTheDocument();
     });
   });
 

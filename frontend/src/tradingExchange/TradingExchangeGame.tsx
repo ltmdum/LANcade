@@ -330,7 +330,6 @@ function FinishedSection({
         <PlayAgainPanel
           onPlayAgain={onPlayAgain}
           onBackToConfig={onBackToConfig}
-          playAgainText="Play Again (Same Settings)"
           title="Next Game"
         />
       )}

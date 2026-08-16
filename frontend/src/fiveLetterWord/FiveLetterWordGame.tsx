@@ -297,7 +297,6 @@ export function FiveLetterWordGame({
               onPlayAgain={handlePlayAgain}
               onBackToConfig={() => setShowConfig(true)}
               status={adminStatus}
-              playAgainText="Play Again"
               title="Next Steps"
             />
           )}

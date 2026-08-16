@@ -314,7 +314,7 @@ describe('FiveLetterWordGame', () => {
       render(<FiveLetterWordGame {...props} />);
 
       expect(screen.getByRole('button', { name: /play again/i })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /back to config/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /back to menu/i })).toBeInTheDocument();
     });
 
     it('does not render admin controls for non-admin', () => {
@@ -345,7 +345,7 @@ describe('FiveLetterWordGame', () => {
       render(<FiveLetterWordGame {...props} />);
 
       expect(screen.getByRole('button', { name: /play again/i })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /back to config/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /back to menu/i })).toBeInTheDocument();
       // Non-playing admin sees the game result (Alice won), not their own result
       expect(screen.queryByText(/You won/)).not.toBeInTheDocument();
     });

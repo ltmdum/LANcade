@@ -422,10 +422,10 @@ describe('UndercoverAgentGame', () => {
       render(<UndercoverAgentGame {...props} />);
 
       expect(
-        screen.getByRole('button', { name: /new game/i })
+        screen.getByRole('button', { name: /play again/i })
       ).toBeInTheDocument();
       expect(
-        screen.getByRole('button', { name: /back to configuration/i })
+        screen.getByRole('button', { name: /back to menu/i })
       ).toBeInTheDocument();
     });
   });
@@ -512,7 +512,7 @@ describe('UndercoverAgentGame', () => {
       render(<UndercoverAgentGame {...props} />);
 
       expect(
-        screen.getByRole('button', { name: /new game/i })
+        screen.getByRole('button', { name: /play again/i })
       ).toBeInTheDocument();
       expect(screen.getAllByText('Game Over').length).toBeGreaterThanOrEqual(1);
     });

@@ -374,7 +374,6 @@ function AlphabetRaceLayout(props: AlphabetRaceLayoutProps) {
             onPlayAgain={props.onRestart}
             onBackToConfig={() => props.setShowConfig(true)}
             status={props.adminStatus}
-            playAgainText="Play Again (Same Config)"
             title="Next Steps"
           />
         )}
