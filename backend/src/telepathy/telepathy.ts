@@ -167,20 +167,27 @@ export function createGame(options: TelepathyOptions) {
 
       const placedCard = hand[0];
 
+      let blockedByPlayerId: string | null = null;
+      let blockedCard = Infinity;
       for (const [pid, otherHand] of Object.entries(hands)) {
         if (pid === playerId || otherHand.length === 0) continue;
         const theirLowest = Math.min(...otherHand);
-        if (theirLowest < placedCard) {
-          phase = 'lost';
-          lossDetails = {
-            placedByPlayerId: playerId,
-            placedCard,
-            blockedByPlayerId: pid,
-            blockedCard: theirLowest,
-          };
-          notify();
-          return { ok: false as const, reason: 'round_lost' };
+        if (theirLowest < placedCard && theirLowest < blockedCard) {
+          blockedByPlayerId = pid;
+          blockedCard = theirLowest;
         }
+      }
+
+      if (blockedByPlayerId !== null) {
+        phase = 'lost';
+        lossDetails = {
+          placedByPlayerId: playerId,
+          placedCard,
+          blockedByPlayerId,
+          blockedCard,
+        };
+        notify();
+        return { ok: false as const, reason: 'round_lost' };
       }
 
       hand.shift();

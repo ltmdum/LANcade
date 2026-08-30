@@ -152,6 +152,35 @@ describe('Telepathy', () => {
       expect(afterState.telepathy.lossDetails!.blockedCard).toBe(3);
     });
 
+    it('reports the holder of the lowest outstanding card as the blocker', () => {
+      const game = createGame({});
+      game.joinPlayer({ name: 'Alice' });
+      game.joinPlayer({ name: 'Bob' });
+      game.joinPlayer({ name: 'Charlie' });
+
+      game.startRound(0);
+
+      const state = getState(game);
+      const aliceId = state.players[0].id;
+      const bobId = state.players[1].id;
+      const charlieId = state.players[2].id;
+
+      // Alice and Bob both hold lower cards than Charlie's played card.
+      // Bob holds the lowest overall, so Bob is who should have gone next.
+      game.hands = {
+        [aliceId]: [44],
+        [bobId]: [40],
+        [charlieId]: [45],
+      };
+
+      const result = game.handleAction(charlieId, { type: 'place' });
+      expect(result.reason).toBe('round_lost');
+
+      const afterState = getState(game);
+      expect(afterState.telepathy.lossDetails!.blockedByPlayerId).toBe(bobId);
+      expect(afterState.telepathy.lossDetails!.blockedCard).toBe(40);
+    });
+
     it('does not trigger loss when no one has a lower card', () => {
       const game = createGame({});
       game.joinPlayer({ name: 'Alice' });
