@@ -765,7 +765,7 @@ export function createGame(options: DoubleBluffGameOptions = {}) {
    * @returns End result.
    */
   function endGame(): EndGameResult {
-    if (match.state === 'idle' && winnerIds.length === 0) {
+    if (match.state === 'idle' && match.finishReason === null && winnerIds.length === 0) {
       return { ok: false, reason: 'not_active' };
     }
     match = createEmptyMatch();

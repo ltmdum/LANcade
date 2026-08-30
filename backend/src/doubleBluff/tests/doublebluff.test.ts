@@ -968,6 +968,28 @@ describe('doubleBluff', () => {
       });
     });
 
+    it('can end game between rounds', async () => {
+      await withFakeTimers(() =>
+        withStubbedRandom(0, () => {
+          const { game, alice, bob, charlie } = setupThreePlayerGame();
+          game.startRound(1000);
+          advanceToVoting(game, [alice, bob, charlie]);
+          voteAllFor(game, bob);
+
+          const betweenRounds = game.getState();
+          expect(betweenRounds.match.state).toBe('idle');
+          expect(betweenRounds.match.finishReason).not.toBeNull();
+
+          const result = game.endGame();
+          expect(result.ok).toBe(true);
+
+          const state = game.getState();
+          expect(state.match.state).toBe('idle');
+          expect(state.match.scores).toEqual({});
+        })
+      );
+    });
+
     it('can end game during submitting phase', async () => {
       await withFakeTimers(() => {
         const { game, alice, bob, charlie } = setupThreePlayerGame();

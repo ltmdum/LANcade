@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import App from './App';
 import type { GamePluginConfig } from './plugins/types';
 
@@ -10,7 +10,18 @@ vi.mock('./shared/hooks/useServerState', () => ({
 }));
 
 // Mock the game plugin registry
-const mockRender = vi.fn(() => <div data-testid="game-view">Game rendered</div>);
+const mockRender = vi.fn(
+  (props: { isAdmin?: boolean; setShowConfig: (show: boolean) => void }) => (
+    <div data-testid="game-view">
+      Game rendered
+      {props.isAdmin && (
+        <button type="button" onClick={() => props.setShowConfig(true)}>
+          Back to Menu
+        </button>
+      )}
+    </div>
+  )
+);
 let mockPhase = 'active';
 const baseConfig: GamePluginConfig = {
   id: 'testgame',
@@ -79,6 +90,7 @@ describe('App', () => {
   });
 
   afterEach(() => {
+    vi.unstubAllGlobals();
     setPathname(originalPathname);
   });
 
@@ -237,5 +249,72 @@ describe('App', () => {
 
     render(<App />);
     expect(screen.queryByText(/Enjoying the games/i)).toBeNull();
+  });
+
+  it('recreates a fresh instance of the same game when going back to the menu after finishing', async () => {
+    setPathname('/admin/ABCDEFGH');
+    localStorage.setItem('playerId', 'player-1');
+
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue({ ok: true, status: 200, json: async () => ({ ok: true }) });
+    vi.stubGlobal('fetch', fetchMock);
+
+    // Mount during an active phase so the config auto-closes and the game view shows.
+    mockPhase = 'active';
+    mockUseServerState.mockReturnValue({
+      serverState: createFinishedServerState(),
+      connection: 'Connected',
+    });
+    const { rerender } = render(<App />);
+
+    // The game finishes and the admin returns to the menu.
+    mockPhase = 'finished';
+    mockUseServerState.mockReturnValue({
+      serverState: { ...createFinishedServerState() },
+      connection: 'Connected',
+    });
+    rerender(<App />);
+
+    fireEvent.click(screen.getByRole('button', { name: /back to menu/i }));
+
+    await waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith(
+        '/api/admin/game',
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify({ gameId: 'testgame', key: 'ABCDEFGH' }),
+        })
+      )
+    );
+  });
+
+  it('does not wipe the game when going back to the menu before it has finished', async () => {
+    setPathname('/admin/ABCDEFGH');
+    localStorage.setItem('playerId', 'player-1');
+    mockPhase = 'active';
+    mockUseServerState.mockReturnValue({
+      serverState: createFinishedServerState(),
+      connection: 'Connected',
+    });
+
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue({ ok: true, status: 200, json: async () => ({ ok: true }) });
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('button', { name: /back to menu/i }));
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled());
+
+    expect(fetchMock).not.toHaveBeenCalledWith(
+      '/api/admin/game',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ gameId: 'testgame', key: 'ABCDEFGH' }),
+      })
+    );
   });
 });

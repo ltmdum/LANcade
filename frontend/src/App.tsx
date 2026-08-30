@@ -15,7 +15,7 @@ import { AppLinks } from './shared/components/AppLinks';
 import { StartCountdown } from './shared/components/StartCountdown';
 import type { StartPending } from '@lancade/shared';
 import { parseAccess } from './shared/utils/accessMode';
-import { getSessionData, setSessionData } from './shared/utils/api';
+import { getSessionData, selectGame, setSessionData } from './shared/utils/api';
 import { gamePluginRegistry } from './plugins';
 import type { GameState, MedalCounts } from '@lancade/shared';
 import iconImg from './assets/icon.png';
@@ -145,6 +145,29 @@ function App() {
     }
   }, [isAdmin, phase, showConfig]);
 
+  /**
+   * Show/hide the config panel. Returning to the config after a game has
+   * finished wipes that game and opens a fresh instance of the same game,
+   * exactly as if the admin had re-selected it from the menu.
+   * @param show Whether the config panel should be shown.
+   */
+  const requestShowConfig = useCallback(
+    (show: boolean) => {
+      if (show && isAdmin && (phase === 'finished' || phase === 'won') && gameId && accessKey) {
+        selectGame(gameId, accessKey)
+          .then(({ response }) => {
+            if (response.status === 401) {
+              handleUnauthorized();
+            }
+          })
+          .finally(() => setShowConfig(true));
+        return;
+      }
+      setShowConfig(show);
+    },
+    [isAdmin, phase, gameId, accessKey, handleUnauthorized, setShowConfig]
+  );
+
   const prevPhaseRef = useMemo(() => ({ current: phase }), []);
   const lastPendingStartAtRef = useRef<number | null>(null);
   const [localCountdownKey, setLocalCountdownKey] = useState<number | null>(null);
@@ -191,7 +214,7 @@ function App() {
       accessKey,
       isAdmin,
       isParticipating,
-      setShowConfig,
+      setShowConfig: requestShowConfig,
     });
   };
 
