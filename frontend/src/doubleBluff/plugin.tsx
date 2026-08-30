@@ -1,9 +1,9 @@
 import type { GamePlugin, GameComponentProps } from '../plugins/types';
-import type { UndercoverAgentState, GameState } from '@lancade/shared';
-import { UndercoverAgentGame } from './UndercoverAgentGame';
+import type { DoubleBluffState, GameState } from '@lancade/shared';
+import { DoubleBluffGame } from './DoubleBluffGame';
 
 function canRender(serverState: GameState, gameId: string): boolean {
-  if (gameId !== 'undercoveragent') return false;
+  if (gameId !== 'doublebluff') return false;
   return serverState !== null && typeof serverState === 'object' && 'match' in serverState;
 }
 
@@ -11,7 +11,7 @@ function getPhase(serverState: GameState): string {
   if (!serverState || typeof serverState !== 'object' || !('match' in serverState)) {
     return 'idle';
   }
-  const match = (serverState as UndercoverAgentState).match;
+  const match = (serverState as DoubleBluffState).match;
   if (match.winnerIds?.length > 0) return 'finished';
   // Keep EndGameButton visible while showing round results between rounds
   if (match.state === 'idle' && match.finishReason !== null) return 'active';
@@ -19,13 +19,13 @@ function getPhase(serverState: GameState): string {
 }
 
 function getHeaderCategory(_serverState: GameState): string {
-  return 'Undercover Agent';
+  return 'Undercover Agent: Double Bluff';
 }
 
 function render(props: GameComponentProps) {
   return (
-    <UndercoverAgentGame
-      serverState={props.serverState as UndercoverAgentState}
+    <DoubleBluffGame
+      serverState={props.serverState as DoubleBluffState}
       connection={props.connection}
       playerId={props.playerId}
       playerName={props.playerName}
@@ -39,13 +39,15 @@ function render(props: GameComponentProps) {
 
 export const plugin: GamePlugin = {
   config: {
-    id: "undercoveragent",
-    name: "Undercover Agent",
-    slogan: "Find the imposter among you!",
-    description: "Earn points by bluffing or catching the undercover agent.",
+    id: "doublebluff",
+    name: "Undercover Agent: Double Bluff",
+    slogan: "Find the imposter among you! Two simultaneous clues each.",
+    description: "Everyone submits two clues at the same time, but only one is revealed. Can you spot the impostor?",
     instructions: [
       { heading: "Roles", text: "Everyone is shown the same secret word, except the undercover agent." },
-      { heading: "Clues", text: "Take turns submitting a clue word related to the secret word. The agent must bluff!" },
+      { heading: "First Clue", text: "All players submit a clue at the same time. The agent writes whatever they like, it won't be used." },
+      { heading: "Second Clue", text: "All players submit a second clue while the agent is also shown everyone's first clues." },
+      { heading: "Reveal", text: "One random clue from each civilian pair is displayed. Only the agent's second clue is shown." },
       { heading: "Danger", text: "If anyone submits the actual secret word, the agent wins the round immediately." },
       { heading: "Vote", text: "Vote for who you think the agent is. The player with the most votes is the result. If there is a tie, everyone votes again." },
       { heading: "Guess", text: "If the agent is voted out, they get one final guess at the secret word to earn points." },

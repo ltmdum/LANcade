@@ -297,6 +297,11 @@ describe('UndercoverAgentGame', () => {
             { playerId: 'player-3', playerName: 'Charlie', count: 1 },
           ],
           votedPlayerIds: ['player-1', 'player-2', 'player-3'],
+          votes: [
+            { playerId: 'player-1', targetPlayerId: 'player-2' },
+            { playerId: 'player-2', targetPlayerId: 'player-3' },
+            { playerId: 'player-3', targetPlayerId: 'player-1' },
+          ],
           isTie: true,
           targetPlayerId: null,
         },
@@ -358,6 +363,48 @@ describe('UndercoverAgentGame', () => {
       expect(screen.getAllByText('Bob').length).toBeGreaterThanOrEqual(1);
     });
 
+    it('shows heading row and who each player voted for', () => {
+      const state = createBaseState();
+      state.match.state = 'finished';
+      state.match.undercoverPlayerId = 'player-2';
+      state.match.winnerIsUndercover = false;
+      state.match.word = 'banana';
+      state.match.submissions = [
+        { playerId: 'player-1', playerName: 'Alice', words: ['fruit'] },
+        { playerId: 'player-2', playerName: 'Bob', words: ['yellow'] },
+        { playerId: 'player-3', playerName: 'Charlie', words: ['peel'] },
+      ];
+      state.match.voteRounds = [
+        {
+          tally: [
+            { playerId: 'player-2', playerName: 'Bob', count: 2 },
+            { playerId: 'player-3', playerName: 'Charlie', count: 1 },
+            { playerId: 'player-1', playerName: 'Alice', count: 0 },
+          ],
+          votedPlayerIds: ['player-1', 'player-2', 'player-3'],
+          votes: [
+            { playerId: 'player-1', targetPlayerId: 'player-2' },
+            { playerId: 'player-2', targetPlayerId: 'player-3' },
+            { playerId: 'player-3', targetPlayerId: 'player-2' },
+          ],
+          isTie: false,
+          targetPlayerId: 'player-2',
+        },
+      ];
+      state.match.finishReason = 'wrong_vote';
+
+      const { container } = render(<UndercoverAgentGame {...createDefaultProps(state)} />);
+
+      const headerTexts = Array.from(
+        container.querySelectorAll('.round-result-table th')
+      ).map((el) => el.textContent);
+      expect(headerTexts).toEqual(['Player', 'Clue', 'Voted For']);
+
+      const rows = container.querySelectorAll('.round-result-table tbody tr');
+      expect(rows[0]?.textContent).toContain('Bob');
+      expect(rows[1]?.textContent).toContain('Charlie');
+    });
+
     it('shows round result message', () => {
       const state = createBaseState();
       state.match.state = 'finished';
@@ -370,7 +417,7 @@ describe('UndercoverAgentGame', () => {
       render(<UndercoverAgentGame {...createDefaultProps(state)} />);
 
       expect(
-        screen.getByText(/Civilians who voted for the Agent earn 2 points/i)
+        screen.getByText(/The Undercover Agent guessed ❌/)
       ).toBeInTheDocument();
     });
 

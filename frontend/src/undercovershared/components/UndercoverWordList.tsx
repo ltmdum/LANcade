@@ -1,3 +1,4 @@
+import '../undercovershared.css';
 import type { UndercoverSubmission } from '@lancade/shared';
 
 interface UndercoverWordListProps {

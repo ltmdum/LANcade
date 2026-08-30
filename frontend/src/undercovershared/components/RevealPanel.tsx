@@ -1,15 +1,15 @@
 import { useState } from 'react';
 import { Panel } from '../../shared/components/Panel';
 import { submitWord } from '../../shared/utils/api';
+import '../undercovershared.css';
 
 interface RevealPanelProps {
   playerId: string;
   accessKey: string;
   hasRevealed: boolean;
-  myRole: string | null;
+  isUndercover: boolean;
   word: string | null;
   hasReadied: boolean;
-  onReveal: (role: string) => void;
 }
 
 /**
@@ -22,10 +22,9 @@ export function RevealPanel({
   playerId,
   accessKey,
   hasRevealed,
-  myRole,
+  isUndercover,
   word,
   hasReadied,
-  onReveal,
 }: RevealPanelProps) {
   const [status, setStatus] = useState('');
 
@@ -35,12 +34,10 @@ export function RevealPanel({
   async function handleReveal() {
     setStatus('');
     try {
-      const { response, data } = await submitWord(playerId, 'REVEAL', accessKey);
+      const { response } = await submitWord(playerId, 'REVEAL', accessKey);
       if (!response.ok) {
         setStatus('Could not reveal your role.');
-        return;
       }
-      onReveal(data.role);
     } catch {
       setStatus('Could not reveal your role.');
     }
@@ -74,7 +71,7 @@ export function RevealPanel({
 
   return (
     <Panel title="Your Role">
-      {myRole === 'undercover' ? (
+      {isUndercover ? (
         <div className="undercover-role-box undercover-role-box--undercover">
           You are the Undercover Agent!
         </div>

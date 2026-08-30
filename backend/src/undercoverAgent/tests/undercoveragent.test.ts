@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { createGame } from '../undercoveragent.js';
 import { createPlayerStore } from '../../shared/stores/player-store.js';
 import { withFakeTimers, withStubbedRandom } from '../../shared/tests/helpers.js';
@@ -512,6 +512,51 @@ describe('undercoverAgent', () => {
       );
     });
 
+    it('broadcasts the new vote round when the last vote creates a tie', async () => {
+      await withFakeTimers(() =>
+        withStubbedRandom(0, () => {
+          const store = createPlayerStore();
+          const alice = store.joinPlayer({ name: 'Alice' }).playerId!;
+          const bob = store.joinPlayer({ name: 'Bob' }).playerId!;
+          const charlie = store.joinPlayer({ name: 'Charlie' }).playerId!;
+          const notifySpy = vi.fn();
+          const game = createGame({ playerStore: store, onStateChange: notifySpy });
+
+          game.startRound(1000);
+          revealAndReadyAll(game, [alice, bob, charlie]);
+          submitAllInTurnOrder(game, (i) => `word${i}`);
+          advanceThroughDiscussion(game, [alice, bob, charlie]);
+
+          const beforeVotes = notifySpy.mock.calls.length;
+          game.submitVotes(alice, { targetPlayerId: bob });
+          game.submitVotes(bob, { targetPlayerId: charlie });
+          game.submitVotes(charlie, { targetPlayerId: alice });
+
+          expect(notifySpy.mock.calls.length).toBeGreaterThan(beforeVotes + 2);
+        })
+      );
+    });
+
+    it('records who each player voted for in the vote round', async () => {
+      await withFakeTimers(() =>
+        withStubbedRandom(0, () => {
+          const { game, alice, bob, charlie } = setupVotingPhase();
+
+          game.submitVotes(alice, { targetPlayerId: bob });
+          game.submitVotes(bob, { targetPlayerId: alice });
+          game.submitVotes(charlie, { targetPlayerId: alice });
+
+          const state = game.getState();
+          const round = state.match.voteRounds[0];
+          expect(round.votes).toEqual([
+            { playerId: alice, targetPlayerId: bob },
+            { playerId: bob, targetPlayerId: alice },
+            { playerId: charlie, targetPlayerId: alice },
+          ]);
+        })
+      );
+    });
+
     it('majority vote for undercover agent transitions to guessing', async () => {
       await withFakeTimers(() =>
         withStubbedRandom(0, () => {
@@ -614,12 +659,12 @@ describe('undercoverAgent', () => {
       );
     });
 
-    it('hides the secret word during guessing phase', async () => {
+    it('publishes the secret word during guessing phase', async () => {
       await withFakeTimers(() =>
         withStubbedRandom(0, () => {
           const { game } = setupGuessingPhase();
           const state = game.getState();
-          expect(state.match.word).toBeNull();
+          expect(state.match.word).not.toBeNull();
         })
       );
     });
@@ -702,7 +747,7 @@ describe('undercoverAgent', () => {
         withStubbedRandom(0, () => {
           const { game, undercover, secretWord } = setupGuessingPhase();
 
-          expect(game.getState().match.word).toBeNull();
+          expect(game.getState().match.word).not.toBeNull();
 
           game.submitWord(undercover, 'wrong');
 
@@ -1061,18 +1106,21 @@ describe('undercoverAgent', () => {
     });
   });
 
-  describe('public state hides undercover until needed', () => {
-    it('undercoverPlayerId is null in reveal/submitting/discussion', async () => {
+  describe('public state publishes role and word', () => {
+    it('undercoverPlayerId is set in reveal/submitting/discussion', async () => {
       await withFakeTimers(() =>
         withStubbedRandom(0, () => {
           const { game, alice, bob, charlie } = setupThreePlayerGame();
           game.startRound(1000);
 
-          expect(game.getState().match.undercoverPlayerId).toBeNull();
+          const startState = game.getState();
+          expect(startState.match.undercoverPlayerId).not.toBeNull();
 
           revealAndReadyAll(game, [alice, bob, charlie]);
 
-          expect(game.getState().match.undercoverPlayerId).toBeNull();
+          expect(game.getState().match.undercoverPlayerId).toBe(
+            startState.match.undercoverPlayerId
+          );
         })
       );
     });

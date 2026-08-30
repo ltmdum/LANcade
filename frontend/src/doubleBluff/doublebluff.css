@@ -1,0 +1,48 @@
+.double-bluff-clue-table td {
+  vertical-align: top;
+}
+
+.double-bluff-clue {
+  display: inline-block;
+  margin-right: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.double-bluff-clue--displayed {
+  font-weight: bold;
+  color: var(--text-primary);
+}
+
+.double-bluff-agent-tag {
+  font-size: 0.85rem;
+  color: var(--danger);
+}
+
+.double-bluff-first-clues {
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin: 0.5rem 0;
+}
+
+.double-bluff-first-clues-title {
+  font-weight: bold;
+  margin-bottom: 0.25rem;
+}
+
+.double-bluff-first-clues ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.double-bluff-first-clues li {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.25rem 0.6rem;
+}

@@ -5,20 +5,27 @@ import {
   resolveVoteTarget,
   type RoundResultRow,
 } from '../../undercovershared/components/RoundResultTable';
-import type { UndercoverSubmission, UndercoverVoteRound } from '@lancade/shared';
+import type { DoubleBluffSubmission, UndercoverVoteRound } from '@lancade/shared';
 
-interface UndercoverResultDisplayProps {
+interface DoubleBluffResultDisplayProps {
   undercoverPlayerId: string;
   undercoverPlayerName: string;
   finishReason: string | null;
   finalGuess: string | null;
-  submissions: UndercoverSubmission[];
+  submissions: DoubleBluffSubmission[];
   voteRounds: UndercoverVoteRound[];
   playerLookup: Record<string, string>;
   word: string | null;
 }
 
-export function UndercoverResultDisplay({
+/**
+ * Round summary for Double Bluff: shows the agent, the secret word, the
+ * outcome and every player's clue pair with the displayed clue highlighted,
+ * plus who each player voted for in the deciding round.
+ * @param props Result display props.
+ * @returns Result display element.
+ */
+export function DoubleBluffResultDisplay({
   undercoverPlayerId,
   undercoverPlayerName,
   finishReason,
@@ -27,13 +34,16 @@ export function UndercoverResultDisplay({
   voteRounds,
   playerLookup,
   word,
-}: UndercoverResultDisplayProps) {
+}: DoubleBluffResultDisplayProps) {
   const finalRound = voteRounds[voteRounds.length - 1];
   const rows: RoundResultRow[] = submissions.map((sub) => ({
     id: sub.playerId,
     name: sub.playerName,
     isUndercover: sub.playerId === undercoverPlayerId,
-    clues: [{ text: sub.words[0] || '-', displayed: true }],
+    clues: sub.clues.map((clue) => ({
+      text: clue,
+      displayed: clue === sub.displayedClue,
+    })),
     votedFor: resolveVoteTarget(sub.playerId, finalRound, playerLookup),
   }));
 

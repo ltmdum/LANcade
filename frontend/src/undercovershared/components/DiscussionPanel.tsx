@@ -1,3 +1,4 @@
+import '../undercovershared.css';
 import { Panel } from '../../shared/components/Panel';
 import { submitWord } from '../../shared/utils/api';
 

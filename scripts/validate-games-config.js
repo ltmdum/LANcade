@@ -29,6 +29,7 @@ const KNOWN_GAMES = new Set([
   'mindmatch',
   'alphabetrace',
   'undercoveragent',
+  'doublebluff',
   'tradingexchange',
   'ninedash',
   'telepathy',

@@ -1,6 +1,6 @@
 import type {
-  UndercoverAgentState,
-  UndercoverSubmission,
+  DoubleBluffState,
+  DoubleBluffSubmission,
   UndercoverVoteRound,
 } from '@lancade/shared';
 import { PlayerStore } from '../shared/stores/player-store.js';
@@ -27,10 +27,10 @@ import type {
   SubmitWordResult,
 } from '../undercovershared/index.js';
 
-const USED_WORDS_KEY = 'undercoveragent:used-words';
+const USED_WORDS_KEY = 'doublebluff:used-words';
 const DEFAULT_WINNING_SCORE = 5;
 
-export interface UndercoverAgentGameOptions {
+export interface DoubleBluffGameOptions {
   onStateChange?: () => void;
   playerStore?: PlayerStore;
   sessionStore?: SessionStore;
@@ -49,11 +49,11 @@ export interface EndGameResult {
   reason?: string;
 }
 
-export interface UndercoverAgentGame {
+export interface DoubleBluffGame {
   id: string;
   name: string;
   getPhase(): string;
-  getState(): Omit<UndercoverAgentState, 'game' | 'games'>;
+  getState(): Omit<DoubleBluffState, 'game' | 'games'>;
   startRound(durationMs: number): StartRoundResult;
   submitWord(playerId: string, wordInput: string): SubmitWordResult;
   submitVotes(playerId: string, payload: unknown): SubmitVotesResult;
@@ -70,16 +70,16 @@ export interface UndercoverAgentGame {
 interface Match {
   id: number;
   state: 'idle' | 'reveal' | 'submitting' | 'discussion' | 'voting' | 'guessing' | 'finished';
+  cluePhase: 0 | 1 | 2;
   word: string | null;
   undercoverPlayerId: string | null;
   revealedPlayerIds: Set<string>;
   readyPlayerIds: Set<string>;
-  turnOrder: string[];
-  currentTurnIndex: number;
-  currentTurnPlayerId: string | null;
-  submissions: Map<string, string[]>;
-  usedWords: Set<string>;
-  roundSubmittedPlayerIds: Set<string>;
+  firstSubmissions: Map<string, string>;
+  secondSubmissions: Map<string, string>;
+  displayedClues: Map<string, string>;
+  firstClues: string[];
+  submittedPlayerIds: Set<string>;
   discussionReadyPlayerIds: Set<string>;
   voteRounds: UndercoverVoteRound[];
   currentVoteRound: number;
@@ -99,16 +99,16 @@ function createEmptyMatch(): Match {
   return {
     id: 0,
     state: 'idle',
+    cluePhase: 0,
     word: null,
     undercoverPlayerId: null,
     revealedPlayerIds: new Set(),
     readyPlayerIds: new Set(),
-    turnOrder: [],
-    currentTurnIndex: 0,
-    currentTurnPlayerId: null,
-    submissions: new Map(),
-    usedWords: new Set(),
-    roundSubmittedPlayerIds: new Set(),
+    firstSubmissions: new Map(),
+    secondSubmissions: new Map(),
+    displayedClues: new Map(),
+    firstClues: [],
+    submittedPlayerIds: new Set(),
     discussionReadyPlayerIds: new Set(),
     voteRounds: [],
     currentVoteRound: 0,
@@ -122,11 +122,11 @@ function createEmptyMatch(): Match {
 }
 
 /**
- * Create an Undercover Agent game instance.
+ * Create an Undercover Agent: Double Bluff game instance.
  * @param options Game configuration options.
- * @returns Undercover Agent game instance.
+ * @returns Double Bluff game instance.
  */
-export function createGame(options: UndercoverAgentGameOptions = {}) {
+export function createGame(options: DoubleBluffGameOptions = {}) {
   const onStateChange = options.onStateChange || (() => {});
   const playerStore = options.playerStore;
   const sessionStore = options.sessionStore;
@@ -163,16 +163,38 @@ export function createGame(options: UndercoverAgentGameOptions = {}) {
   }
 
   /**
-   * Build the public submissions list from internal state.
-   * @returns Array of submissions showing each player's words.
+   * Whether both clues should be exposed for each player (after the reveal).
+   * @returns True when full clue information is public.
    */
-  function buildPublicSubmissions(): UndercoverSubmission[] {
-    const result: UndercoverSubmission[] = [];
-    for (const [playerId, words] of match.submissions.entries()) {
+  function shouldExposeAllClues(): boolean {
+    if (match.state === 'discussion' || match.state === 'voting' || match.state === 'guessing') {
+      return true;
+    }
+    return match.finishReason !== null && (match.state === 'idle' || match.state === 'finished');
+  }
+
+  /**
+   * Build the public submissions list from internal state.
+   * @returns Array of submissions for each player who has submitted clues.
+   */
+  function buildPublicSubmissions(): DoubleBluffSubmission[] {
+    const includeAll = shouldExposeAllClues();
+    const result: DoubleBluffSubmission[] = [];
+    for (const pid of match.participants) {
+      const first = match.firstSubmissions.get(pid);
+      const second = match.secondSubmissions.get(pid);
+      const displayed = match.displayedClues.get(pid) ?? null;
+      if (!first && !second) continue;
+      const clues = includeAll
+        ? (pid === match.undercoverPlayerId
+            ? (second ? [second] : [])
+            : [first, second].filter((w): w is string => Boolean(w)))
+        : (displayed ? [displayed] : []);
       result.push({
-        playerId,
-        playerName: getPlayerName(playerId),
-        words: [...words],
+        playerId: pid,
+        playerName: getPlayerName(pid),
+        clues,
+        displayedClue: displayed,
       });
     }
     return result;
@@ -191,7 +213,7 @@ export function createGame(options: UndercoverAgentGameOptions = {}) {
    * Build the public game state.
    * @returns Full game state without metadata.
    */
-  function getState(): Omit<UndercoverAgentState, 'game' | 'games'> {
+  function getState(): Omit<DoubleBluffState, 'game' | 'games'> {
     return {
       serverTime: Date.now(),
       players: playerStore ? playerStore.listPlayers() : [],
@@ -200,16 +222,14 @@ export function createGame(options: UndercoverAgentGameOptions = {}) {
       match: {
         id: match.id,
         state: winnerIds.length > 0 ? 'finished' : match.state,
+        cluePhase: match.state === 'submitting' ? match.cluePhase : 0,
         word: match.word,
         undercoverPlayerId: match.undercoverPlayerId,
         revealedPlayerIds: [...match.revealedPlayerIds],
         readyPlayerIds: [...match.readyPlayerIds],
-        turnOrder: match.turnOrder,
-        currentTurnIndex: match.currentTurnIndex,
-        currentTurnPlayerId: match.currentTurnPlayerId,
+        firstClues: match.state === 'submitting' && match.cluePhase === 2 ? [...match.firstClues] : [],
         submissions: buildPublicSubmissions(),
-        usedWords: [...match.usedWords],
-        roundSubmittedPlayerIds: [...match.roundSubmittedPlayerIds],
+        submittedPlayerIds: [...match.submittedPlayerIds],
         discussionReadyPlayerIds: [...match.discussionReadyPlayerIds],
         voteRounds: match.voteRounds.map(vr => ({ ...vr })),
         currentVoteRound: match.currentVoteRound,
@@ -241,14 +261,12 @@ export function createGame(options: UndercoverAgentGameOptions = {}) {
   }
 
   /**
-   * Transition from reveal to submitting phase.
+   * Transition from reveal to the first clue submission wave.
    */
   function transitionToSubmitting(): void {
     match.state = 'submitting';
-    match.turnOrder = shuffle(match.participants);
-    match.currentTurnIndex = 0;
-    match.currentTurnPlayerId = match.turnOrder[0];
-    match.roundSubmittedPlayerIds = new Set();
+    match.cluePhase = 1;
+    match.submittedPlayerIds = new Set();
     notifyChange();
   }
 
@@ -297,7 +315,230 @@ export function createGame(options: UndercoverAgentGameOptions = {}) {
   }
 
   /**
-   * Handle the READY FOR DISCUSSION action during discussion phase.
+   * Build the anonymous list of civilian first clues shown to the agent in wave 2.
+   */
+  function buildAnonymousFirstClues(): void {
+    match.firstClues = shuffle(
+      match.participants
+        .filter(pid => pid !== match.undercoverPlayerId)
+        .map(pid => match.firstSubmissions.get(pid)!)
+    );
+  }
+
+  /**
+   * Transition from clue wave 1 to clue wave 2.
+   */
+  function transitionToWaveTwo(): void {
+    match.cluePhase = 2;
+    match.submittedPlayerIds = new Set();
+    buildAnonymousFirstClues();
+    notifyChange();
+  }
+
+  /**
+   * Pick the displayed clue for each player: a random one of their two clues
+   * for civilians, the second clue for the agent. Where possible, orientations
+   * are adjusted to avoid presenting the same word more than once.
+   */
+  function buildDisplayedClues(): void {
+    const displayed = chooseDisplayedOrientations();
+    for (const pid of match.participants) {
+      match.displayedClues.set(pid, displayed.get(pid)!);
+    }
+  }
+
+  /**
+   * Choose which clue to display for each player, minimizing duplicate words
+   * shown at voting time. The agent's second clue is always displayed, so it is
+   * included when counting duplicate words; a civilian whose displayed clue
+   * would repeat another is flipped to their other clue. Among equally-optimal
+   * orientations, the one closest to the random baseline (fewest civilians
+   * flipped) is preferred.
+   * @returns Map of player to displayed clue.
+   */
+  function chooseDisplayedOrientations(): Map<string, string> {
+    const civilians: Array<{ pid: string; first: string; second: string }> = [];
+    const base = new Map<string, string>();
+    for (const pid of match.participants) {
+      if (pid === match.undercoverPlayerId) {
+        base.set(pid, match.secondSubmissions.get(pid)!);
+      } else {
+        const first = match.firstSubmissions.get(pid)!;
+        const second = match.secondSubmissions.get(pid)!;
+        base.set(pid, pickRandom([first, second]) === first ? first : second);
+        civilians.push({ pid, first, second });
+      }
+    }
+
+    const masks = Array.from({ length: 1 << civilians.length }, (_, mask) => mask)
+      .sort((a, b) => countSetBits(a) - countSetBits(b));
+
+    const baseScore = countDuplicateWords(base);
+    if (baseScore === 0) {
+      return base;
+    }
+
+    let best = base;
+    let bestScore = baseScore;
+    let bestFlips = 0;
+    for (const mask of masks) {
+      const flips = countSetBits(mask);
+      const candidate = new Map(base);
+      for (let i = 0; i < civilians.length; i++) {
+        if (((mask >> i) & 1) === 1) {
+          const civ = civilians[i];
+          const current = candidate.get(civ.pid)!;
+          candidate.set(civ.pid, current === civ.first ? civ.second : civ.first);
+        }
+      }
+      const score = countDuplicateWords(candidate);
+      if (score < bestScore || (score === bestScore && flips < bestFlips)) {
+        bestScore = score;
+        bestFlips = flips;
+        best = candidate;
+        if (score === 0) {
+          break;
+        }
+      }
+    }
+    return best;
+  }
+
+  /**
+   * Count the number of set bits in a non-negative integer.
+   * @param value Integer to inspect.
+   * @returns Number of set bits.
+   */
+  function countSetBits(value: number): number {
+    let count = 0;
+    for (let n = value; n > 0; n &= n - 1) {
+      count += 1;
+    }
+    return count;
+  }
+
+  /**
+   * Count how many duplicate words occur across the displayed clues.
+   * @param displayed Map of player to displayed clue.
+   * @returns Number of extra occurrences beyond the first per word.
+   */
+  function countDuplicateWords(displayed: Map<string, string>): number {
+    const seen = new Set<string>();
+    let duplicates = 0;
+    for (const word of displayed.values()) {
+      const normalized = normalizeWord(word);
+      if (seen.has(normalized)) {
+        duplicates += 1;
+      } else {
+        seen.add(normalized);
+      }
+    }
+    return duplicates;
+  }
+
+  /**
+   * Transition from submitting to discussion phase.
+   */
+  function transitionToDiscussion(): void {
+    match.state = 'discussion';
+    match.cluePhase = 0;
+    match.firstClues = [];
+    match.discussionReadyPlayerIds = new Set();
+    notifyChange();
+  }
+
+  /**
+   * Handle a clue submission during either wave of the submitting phase.
+   * @param playerId Player identifier.
+   * @param wordInput The clue being submitted.
+   * @returns Submission result.
+   */
+  function handleSubmittingPhase(playerId: string, wordInput: string): SubmitWordResult {
+    if (!match.participants.includes(playerId)) {
+      return { ok: false, reason: 'not_participant' };
+    }
+    if (match.submittedPlayerIds.has(playerId)) {
+      return { ok: false, reason: 'already_submitted' };
+    }
+
+    const trimmed = wordInput.trim();
+    if (!trimmed) {
+      return { ok: false, reason: 'empty' };
+    }
+
+    if (match.cluePhase === 1) {
+      const isSecretWord = match.word !== null
+        && normalizeWord(trimmed) === normalizeWord(match.word);
+      if (isSecretWord) {
+        finishOnSecretWord(playerId);
+        notifyChange();
+        return { ok: true };
+      }
+      match.firstSubmissions.set(playerId, trimmed);
+      match.submittedPlayerIds.add(playerId);
+      if (match.submittedPlayerIds.size >= match.participants.length) {
+        transitionToWaveTwo();
+      } else {
+        notifyChange();
+      }
+      return { ok: true };
+    }
+
+    const normalized = normalizeWord(trimmed);
+    const isSecretWord = match.word !== null
+      && normalized === normalizeWord(match.word);
+
+    if (!isSecretWord && isDuplicateOfOwnFirst(normalized, playerId)) {
+      return { ok: false, reason: 'duplicate_first_clue' };
+    }
+    if (!isSecretWord
+      && playerId === match.undercoverPlayerId
+      && isDuplicateOfShownFirstClue(normalized)
+    ) {
+      return { ok: false, reason: 'duplicate_first_clue' };
+    }
+
+    match.secondSubmissions.set(playerId, trimmed);
+    match.submittedPlayerIds.add(playerId);
+
+    if (isSecretWord) {
+      finishOnSecretWord(playerId);
+      notifyChange();
+      return { ok: true };
+    }
+
+    if (match.secondSubmissions.size >= match.participants.length) {
+      buildDisplayedClues();
+      transitionToDiscussion();
+    } else {
+      notifyChange();
+    }
+    return { ok: true };
+  }
+
+  /**
+   * Check whether a player's wave-2 word repeats the word they submitted in wave 1.
+   * @param word Normalized word to check.
+   * @param playerId Submitter to check.
+   * @returns True if the word matches the player's own wave-1 clue.
+   */
+  function isDuplicateOfOwnFirst(word: string, playerId: string): boolean {
+    const ownFirst = match.firstSubmissions.get(playerId);
+    return ownFirst !== undefined && normalizeWord(ownFirst) === word;
+  }
+
+  /**
+   * Check whether the agent's wave-2 word repeats one of the anonymous civilian
+   * first clues presented to them before wave 2.
+   * @param word Normalized word to check.
+   * @returns True if the word matches any presented first clue.
+   */
+  function isDuplicateOfShownFirstClue(word: string): boolean {
+    return match.firstClues.some(clue => normalizeWord(clue) === word);
+  }
+
+  /**
+   * Handle the READY FOR VOTE action during discussion phase.
    * @param playerId Player identifier.
    * @param _wordInput Unused input for signature compatibility.
    * @returns Result of the ready action.
@@ -313,97 +554,6 @@ export function createGame(options: UndercoverAgentGameOptions = {}) {
       notifyChange();
     }
     return result;
-  }
-
-  /**
-   * Advance to the next turn in the submitting phase.
-   */
-  function advanceTurn(): void {
-    if (match.roundSubmittedPlayerIds.size >= match.participants.length) {
-      transitionToDiscussion();
-      return;
-    }
-
-    match.currentTurnIndex += 1;
-    match.currentTurnPlayerId = match.turnOrder[match.currentTurnIndex];
-    notifyChange();
-  }
-
-  /**
-   * Check if a word has already been submitted by any player.
-   * @param word Normalized word to check.
-   * @returns True if the word was previously submitted.
-   */
-  function isWordAlreadySubmitted(word: string): boolean {
-    for (const words of match.submissions.values()) {
-      if (words.some(w => normalizeWord(w) === word)) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  /**
-   * Finish the round immediately because someone submitted the secret word.
-   * @param revealerId Player who submitted the secret word.
-   */
-  function finishOnSecretWord(revealerId: string): void {
-    const outcome = computeSecretWordOutcome({
-      participants: match.participants,
-      undercoverPlayerId: match.undercoverPlayerId!,
-      currentVotes: match.currentVotes,
-      scores,
-      revealerId,
-    });
-    applyOutcome(outcome);
-  }
-
-  /**
-   * Handle word submission during the submitting phase.
-   * @param playerId Player identifier.
-   * @param wordInput The word being submitted.
-   * @returns Submission result.
-   */
-  function handleSubmittingPhase(playerId: string, wordInput: string): SubmitWordResult {
-    if (playerId !== match.currentTurnPlayerId) {
-      return { ok: false, reason: 'not_your_turn' };
-    }
-
-    const trimmed = wordInput.trim();
-    if (!trimmed) {
-      return { ok: false, reason: 'empty' };
-    }
-
-    const normalized = normalizeWord(trimmed);
-    const isSecretWord = match.word !== null
-      && normalized === normalizeWord(match.word);
-
-    if (!isSecretWord && isWordAlreadySubmitted(normalized)) {
-      return { ok: false, reason: 'duplicate' };
-    }
-
-    const existing = match.submissions.get(playerId) || [];
-    existing.push(trimmed);
-    match.submissions.set(playerId, existing);
-    match.roundSubmittedPlayerIds.add(playerId);
-
-    if (isSecretWord) {
-      finishOnSecretWord(playerId);
-      notifyChange();
-      return { ok: true };
-    }
-
-    advanceTurn();
-    return { ok: true };
-  }
-
-  /**
-   * Transition from submitting to discussion phase.
-   */
-  function transitionToDiscussion(): void {
-    match.state = 'discussion';
-    match.discussionReadyPlayerIds = new Set();
-    notifyChange();
   }
 
   /**
@@ -485,6 +635,21 @@ export function createGame(options: UndercoverAgentGameOptions = {}) {
   }
 
   /**
+   * Finish the round immediately because someone submitted the secret word.
+   * @param revealerId Player who submitted the secret word.
+   */
+  function finishOnSecretWord(revealerId: string): void {
+    const outcome = computeSecretWordOutcome({
+      participants: match.participants,
+      undercoverPlayerId: match.undercoverPlayerId!,
+      currentVotes: match.currentVotes,
+      scores,
+      revealerId,
+    });
+    applyOutcome(outcome);
+  }
+
+  /**
    * Resolve the round with scoring and winner check.
    * @param agentWasCaught Whether the agent was caught by vote.
    * @param agentGuessedCorrectly Whether the agent guessed the word (null if no guess phase).
@@ -504,7 +669,7 @@ export function createGame(options: UndercoverAgentGameOptions = {}) {
 
   /**
    * Start a new word round.
-   * @param _durationMs Unused (rounds are fixed at 1 submission round per word).
+   * @param _durationMs Unused (rounds are fixed at one clue pair per word).
    * @returns Start result.
    */
   function startRound(_durationMs: number): StartRoundResult {
@@ -647,8 +812,8 @@ export function createGame(options: UndercoverAgentGameOptions = {}) {
   }
 
   return {
-    id: 'undercoveragent',
-    name: 'Undercover Agent',
+    id: 'doublebluff',
+    name: 'Undercover Agent: Double Bluff',
     getPhase,
     getState,
     startRound,

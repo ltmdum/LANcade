@@ -1,3 +1,4 @@
+import '../undercovershared.css';
 import React, { useState, useEffect } from 'react';
 import { Panel } from '../../shared/components/Panel';
 import { submitWord } from '../../shared/utils/api';

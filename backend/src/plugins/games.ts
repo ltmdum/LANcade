@@ -17,6 +17,7 @@ import { plugin as fiveLetterWordPlugin } from '../fiveLetterWord/plugin.js';
 import { plugin as mindMatchPlugin } from '../mindMatch/plugin.js';
 import { plugin as alphabetRacePlugin } from '../alphabetRace/plugin.js';
 import { plugin as undercoverAgentPlugin } from '../undercoverAgent/plugin.js';
+import { plugin as doubleBluffPlugin } from '../doubleBluff/plugin.js';
 import { plugin as tradingExchangePlugin } from '../tradingExchange/plugin.js';
 import { plugin as ninedashPlugin } from '../ninedash/plugin.js';
 
@@ -29,6 +30,7 @@ gameRegistry.register(fiveLetterWordPlugin);
 gameRegistry.register(mindMatchPlugin);
 gameRegistry.register(alphabetRacePlugin);
 gameRegistry.register(undercoverAgentPlugin);
+gameRegistry.register(doubleBluffPlugin);
 gameRegistry.register(tradingExchangePlugin);
 gameRegistry.register(ninedashPlugin);
 

@@ -8,6 +8,7 @@
     { "id": "mindmatch", "displayName": "Mind Match" },
     { "id": "alphabetrace", "displayName": "Alphabet Race" },
     { "id": "undercoveragent", "displayName": "Undercover Agent" },
+    { "id": "doublebluff", "displayName": "Undercover Agent: Double Bluff" },
     { "id": "tradingexchange", "displayName": "Trading Exchange" },
     { "id": "ninedash", "displayName": "Nine Dash" }
   ]

@@ -328,8 +328,15 @@ export interface UndercoverVoteTally {
 export interface UndercoverVoteRound {
   tally: UndercoverVoteTally[];
   votedPlayerIds: string[];
+  votes: UndercoverVote[];
   isTie: boolean;
   targetPlayerId: string | null;
+}
+
+/** A single player's vote targeting another player within a vote round. */
+export interface UndercoverVote {
+  playerId: string;
+  targetPlayerId: string;
 }
 
 export interface UndercoverAgentMatchState {
@@ -366,6 +373,54 @@ export interface UndercoverAgentState {
   settings: CategorySettings;
   gameSettings: Record<string, number>;
   match: UndercoverAgentMatchState;
+  game: GameInfo;
+  games: GameInfo[];
+}
+
+// Undercover Agent: Double Bluff types
+export interface DoubleBluffSubmission {
+  playerId: string;
+  playerName: string;
+  /** Clues shown for this player. One displayed clue during play; both clues once the round is over (agent always has one). */
+  clues: string[];
+  /** The clue chosen to be displayed for this player, or null before clues are revealed. */
+  displayedClue: string | null;
+}
+
+export interface DoubleBluffMatchState {
+  id: number;
+  state: 'idle' | 'reveal' | 'submitting' | 'discussion' | 'voting' | 'guessing' | 'finished';
+  /** Which clue submission wave is running while state is 'submitting' (0 otherwise). */
+  cluePhase: 0 | 1 | 2;
+  word: string | null;
+  undercoverPlayerId: string | null;
+  revealedPlayerIds: string[];
+  readyPlayerIds: string[];
+  /** Anonymous first-round clues from civilians, shown to the agent during wave 2. */
+  firstClues: string[];
+  submissions: DoubleBluffSubmission[];
+  submittedPlayerIds: string[];
+  discussionReadyPlayerIds: string[];
+  voteRounds: UndercoverVoteRound[];
+  currentVoteRound: number;
+  votedPlayerIds: string[];
+  winnerIsUndercover: boolean;
+  finishReason: string | null;
+  finalGuess: string | null;
+  participants: string[];
+  scores: Record<string, number>;
+  roundPoints: Record<string, number>;
+  winnerIds: string[];
+  winnerNames: string[];
+  winningScore: number;
+}
+
+export interface DoubleBluffState {
+  serverTime: number;
+  players: PlayerInfo[];
+  settings: CategorySettings;
+  gameSettings: Record<string, number>;
+  match: DoubleBluffMatchState;
   game: GameInfo;
   games: GameInfo[];
 }
@@ -460,7 +515,7 @@ export interface TelepathyState {
 }
 
 // Union type for any game state
-export type GameState = CategoryClashState | LastWordStandingState | FiveLetterWordState | MindMatchState | AlphabetRaceState | UndercoverAgentState | TradingExchangeState | TelepathyState;
+export type GameState = CategoryClashState | LastWordStandingState | FiveLetterWordState | MindMatchState | AlphabetRaceState | UndercoverAgentState | DoubleBluffState | TradingExchangeState | TelepathyState;
 
 // API response types
 export interface ApiResult {

@@ -1,3 +1,4 @@
+import '../undercovershared.css';
 import React, { useState, useEffect, useRef } from 'react';
 import { Panel } from '../../shared/components/Panel';
 import { UndercoverWordList } from './UndercoverWordList';
@@ -27,8 +28,10 @@ export function UndercoverVotePanel({
   const [selectedTarget, setSelectedTarget] = useState('');
   const [status, setStatus] = useState('');
   const voteRoundAtFetch = useRef(currentVoteRound);
+  const submittingRef = useRef(false);
 
   useEffect(() => {
+    submittingRef.current = false;
     setStatus('');
     setSelectedTarget('');
   }, [currentVoteRound]);
@@ -39,6 +42,10 @@ export function UndercoverVotePanel({
 
   async function handleVote(e: React.FormEvent) {
     e.preventDefault();
+
+    if (submittingRef.current) {
+      return;
+    }
     setStatus('');
 
     if (!selectedTarget) {
@@ -46,6 +53,7 @@ export function UndercoverVotePanel({
       return;
     }
 
+    submittingRef.current = true;
     try {
       const response = await fetch('/api/round/votes', {
         method: 'POST',
@@ -58,6 +66,7 @@ export function UndercoverVotePanel({
       });
       const data = await response.json();
       if (!response.ok) {
+        submittingRef.current = false;
         setStatus(data.reason === 'already_voted' ? 'You have already voted.' : 'Could not submit vote.');
         return;
       }
@@ -65,6 +74,7 @@ export function UndercoverVotePanel({
         setStatus('Vote submitted!');
       }
     } catch {
+      submittingRef.current = false;
       if (voteRoundAtFetch.current === currentVoteRound) {
         setStatus('Could not submit vote.');
       }

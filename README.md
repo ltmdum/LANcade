@@ -76,6 +76,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for architecture, code standards, testing
 | `mindmatch`   | [Mind Match](https://ltmdum.github.io/LANcade/games/mindmatch.html)       | Match minds with your fellow players              |
 | `alphabetrace` | [Alphabet Race](https://ltmdum.github.io/LANcade/games/alphabetrace.html)  | A race through all 26 letters                     |
 | `undercoveragent` | [Undercover Agent](https://ltmdum.github.io/LANcade/games/undercoveragent.html) | Find the imposter among you                    |
+| `doublebluff` | [Undercover Agent: Double Bluff](https://ltmdum.github.io/LANcade/games/doublebluff.html) | Two clues each, one revealed — find the impostor |
 | `tradingexchange` | [Trading Exchange](https://ltmdum.github.io/LANcade/games/tradingexchange.html) | Trade around the hidden sum of all cards        |
 | `ninedash` | [Nine Dash](https://ltmdum.github.io/LANcade/games/ninedash.html) | Build words from a 3x3 grid of jumbled letters          |
 
