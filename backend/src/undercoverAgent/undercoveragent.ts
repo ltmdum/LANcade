@@ -11,7 +11,6 @@ import {
   computeRoundOutcome,
   computeSecretWordOutcome,
   finalizeVoteRound,
-  handleDiscussionReadyAction,
   handleReadyAction,
   handleRevealAction,
   loadUsedWords,
@@ -69,7 +68,7 @@ export interface UndercoverAgentGame {
 
 interface Match {
   id: number;
-  state: 'idle' | 'reveal' | 'submitting' | 'discussion' | 'voting' | 'guessing' | 'finished';
+  state: 'idle' | 'reveal' | 'submitting' | 'voting' | 'guessing' | 'finished';
   word: string | null;
   undercoverPlayerId: string | null;
   revealedPlayerIds: Set<string>;
@@ -80,7 +79,6 @@ interface Match {
   submissions: Map<string, string[]>;
   usedWords: Set<string>;
   roundSubmittedPlayerIds: Set<string>;
-  discussionReadyPlayerIds: Set<string>;
   voteRounds: UndercoverVoteRound[];
   currentVoteRound: number;
   votedPlayerIds: Set<string>;
@@ -109,7 +107,6 @@ function createEmptyMatch(): Match {
     submissions: new Map(),
     usedWords: new Set(),
     roundSubmittedPlayerIds: new Set(),
-    discussionReadyPlayerIds: new Set(),
     voteRounds: [],
     currentVoteRound: 0,
     votedPlayerIds: new Set(),
@@ -210,7 +207,6 @@ export function createGame(options: UndercoverAgentGameOptions = {}) {
         submissions: buildPublicSubmissions(),
         usedWords: [...match.usedWords],
         roundSubmittedPlayerIds: [...match.roundSubmittedPlayerIds],
-        discussionReadyPlayerIds: [...match.discussionReadyPlayerIds],
         voteRounds: match.voteRounds.map(vr => ({ ...vr })),
         currentVoteRound: match.currentVoteRound,
         votedPlayerIds: [...match.votedPlayerIds],
@@ -297,30 +293,11 @@ export function createGame(options: UndercoverAgentGameOptions = {}) {
   }
 
   /**
-   * Handle the READY FOR DISCUSSION action during discussion phase.
-   * @param playerId Player identifier.
-   * @param _wordInput Unused input for signature compatibility.
-   * @returns Result of the ready action.
-   */
-  function handleDiscussionReady(playerId: string, _wordInput: string): SubmitWordResult {
-    if (match.state !== 'discussion') {
-      return { ok: false, reason: 'not_discussion' };
-    }
-    const result = handleDiscussionReadyAction(match, playerId, _wordInput, () =>
-      transitionToVoting()
-    );
-    if (result.ok && match.state === 'discussion') {
-      notifyChange();
-    }
-    return result;
-  }
-
-  /**
    * Advance to the next turn in the submitting phase.
    */
   function advanceTurn(): void {
     if (match.roundSubmittedPlayerIds.size >= match.participants.length) {
-      transitionToDiscussion();
+      transitionToVoting();
       return;
     }
 
@@ -398,16 +375,7 @@ export function createGame(options: UndercoverAgentGameOptions = {}) {
   }
 
   /**
-   * Transition from submitting to discussion phase.
-   */
-  function transitionToDiscussion(): void {
-    match.state = 'discussion';
-    match.discussionReadyPlayerIds = new Set();
-    notifyChange();
-  }
-
-  /**
-   * Transition from discussion to voting phase.
+   * Transition from submitting to voting phase.
    */
   function transitionToVoting(): void {
     match.state = 'voting';
@@ -549,9 +517,6 @@ export function createGame(options: UndercoverAgentGameOptions = {}) {
     }
     if (match.state === 'guessing') {
       return handleGuessingPhase(playerId, wordInput);
-    }
-    if (match.state === 'discussion') {
-      return handleDiscussionReady(playerId, wordInput);
     }
     return { ok: false, reason: 'invalid_state' };
   }

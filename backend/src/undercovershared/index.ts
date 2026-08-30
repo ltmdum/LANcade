@@ -21,10 +21,8 @@ export type { RoundOutcome } from './scoring.js';
 export {
   handleRevealAction,
   handleReadyAction,
-  handleDiscussionReadyAction,
 } from './phases.js';
 export type {
   SubmitWordResult,
   RevealSlice,
-  DiscussionSlice,
 } from './phases.js';

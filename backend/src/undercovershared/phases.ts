@@ -13,12 +13,6 @@ export interface RevealSlice {
   readyPlayerIds: Set<string>;
 }
 
-/** Structural slice of a match that the discussion phase operates on. */
-export interface DiscussionSlice {
-  participants: string[];
-  discussionReadyPlayerIds: Set<string>;
-}
-
 /**
  * Handle the REVEAL action during the reveal phase.
  * @param slice Match slice holding the reveal state.
@@ -60,35 +54,6 @@ export function handleReadyAction(
 
   const allReady = slice.participants.every(pid => slice.readyPlayerIds.has(pid));
   if (allReady) {
-    onAllReady();
-  }
-  return { ok: true };
-}
-
-/**
- * Handle the READY_FOR_VOTE action during the discussion phase.
- * Calls onAllReady when every participant is ready.
- * @param slice Match slice holding the discussion state.
- * @param playerId Player identifier.
- * @param _wordInput Unused input for signature compatibility.
- * @param onAllReady Callback invoked once all players are ready.
- * @returns Result of the ready action.
- */
-export function handleDiscussionReadyAction(
-  slice: DiscussionSlice,
-  playerId: string,
-  _wordInput: string,
-  onAllReady: () => void
-): SubmitWordResult {
-  if (!slice.participants.includes(playerId)) {
-    return { ok: false, reason: 'not_participant' };
-  }
-  if (slice.discussionReadyPlayerIds.has(playerId)) {
-    return { ok: false, reason: 'already_acted' };
-  }
-  slice.discussionReadyPlayerIds.add(playerId);
-
-  if (slice.discussionReadyPlayerIds.size >= slice.participants.length) {
     onAllReady();
   }
   return { ok: true };

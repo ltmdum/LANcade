@@ -36,17 +36,7 @@ function submitWaveAll(
   });
 }
 
-function readyAllForDiscussion(
-  game: ReturnType<typeof createGame>,
-  playerIds: string[]
-): void {
-  for (const pid of playerIds) {
-    game.submitWord(pid, 'READY_FOR_VOTE');
-  }
-}
-
-function voteAllFor(
-  game: ReturnType<typeof createGame>,
+function voteAllFor(  game: ReturnType<typeof createGame>,
   targetId: string,
   targetVoteFor?: string
 ): void {
@@ -72,7 +62,6 @@ function advanceToVoting(
 ): void {
   advanceToWaveTwo(game, playerIds);
   submitWaveAll(game, playerIds, (i) => `second${i}`);
-  readyAllForDiscussion(game, playerIds);
 }
 
 function advanceToGuessing(
@@ -483,7 +472,7 @@ describe('doubleBluff', () => {
           expect(game.submitWord(charlie, 'apple').ok).toBe(true);
           expect(game.submitWord(bob, 'grape').ok).toBe(true);
           expect(game.submitWord(alice, 'zebra').ok).toBe(true);
-          expect(game.getState().match.state).toBe('discussion');
+          expect(game.getState().match.state).toBe('voting');
         })
       );
     });
@@ -528,7 +517,7 @@ describe('doubleBluff', () => {
       );
     });
 
-    it('builds displayed clues and transitions to discussion when all submitted', async () => {
+    it('builds displayed clues and transitions to voting when all submitted', async () => {
       await withFakeTimers(() =>
         withStubbedRandom(0, () => {
           const { game, alice, bob, charlie } = setupThreePlayerGame();
@@ -538,7 +527,7 @@ describe('doubleBluff', () => {
           submitWaveAll(game, [alice, bob, charlie], (i) => `second${i}`);
 
           const state = game.getState();
-          expect(state.match.state).toBe('discussion');
+          expect(state.match.state).toBe('voting');
           expect(state.match.firstClues).toEqual([]);
           for (const sub of state.match.submissions) {
             expect(sub.displayedClue).toBeTruthy();
@@ -600,7 +589,7 @@ describe('doubleBluff', () => {
           game.submitWord(charlie, 'charlie');
 
           const state = game.getState();
-          expect(state.match.state).toBe('discussion');
+          expect(state.match.state).toBe('voting');
           const bobSub = state.match.submissions.find(s => s.playerId === bob)!;
           const charlieSub = state.match.submissions.find(s => s.playerId === charlie)!;
 
@@ -631,7 +620,7 @@ describe('doubleBluff', () => {
           game.submitWord(charlie, 'apple');
 
           const state = game.getState();
-          expect(state.match.state).toBe('discussion');
+          expect(state.match.state).toBe('voting');
 
           const agentSub = state.match.submissions.find(
             s => s.playerId === state.match.undercoverPlayerId
@@ -663,7 +652,7 @@ describe('doubleBluff', () => {
           game.submitWord(charlie, 'apple');
 
           const state = game.getState();
-          expect(state.match.state).toBe('discussion');
+          expect(state.match.state).toBe('voting');
           const bobSub = state.match.submissions.find(s => s.playerId === bob)!;
           const charlieSub = state.match.submissions.find(s => s.playerId === charlie)!;
 
@@ -728,36 +717,6 @@ describe('doubleBluff', () => {
           expect(flippedToSecond).toBe(1);
         })
       );
-    });
-  });
-
-  describe('discussion phase', () => {
-    it('transitions to voting when all players ready', async () => {
-      await withFakeTimers(() => {
-        const { game, alice, bob, charlie } = setupThreePlayerGame();
-        game.startRound(1000);
-        advanceToWaveTwo(game, [alice, bob, charlie]);
-        submitWaveAll(game, [alice, bob, charlie], (i) => `second${i}`);
-        readyAllForDiscussion(game, [alice, bob, charlie]);
-
-        expect(game.getState().match.state).toBe('voting');
-      });
-    });
-
-    it('tracks ready players during discussion', async () => {
-      await withFakeTimers(() => {
-        const { game, alice, bob, charlie } = setupThreePlayerGame();
-        game.startRound(1000);
-        advanceToWaveTwo(game, [alice, bob, charlie]);
-        submitWaveAll(game, [alice, bob, charlie], (i) => `second${i}`);
-
-        game.submitWord(alice, 'READY_FOR_VOTE');
-        const state = game.getState();
-        expect(state.match.discussionReadyPlayerIds).toEqual([alice]);
-        expect(state.match.state).toBe('discussion');
-        void bob;
-        void charlie;
-      });
     });
   });
 

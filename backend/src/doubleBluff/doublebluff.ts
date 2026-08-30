@@ -11,7 +11,6 @@ import {
   computeRoundOutcome,
   computeSecretWordOutcome,
   finalizeVoteRound,
-  handleDiscussionReadyAction,
   handleReadyAction,
   handleRevealAction,
   loadUsedWords,
@@ -69,7 +68,7 @@ export interface DoubleBluffGame {
 
 interface Match {
   id: number;
-  state: 'idle' | 'reveal' | 'submitting' | 'discussion' | 'voting' | 'guessing' | 'finished';
+  state: 'idle' | 'reveal' | 'submitting' | 'voting' | 'guessing' | 'finished';
   cluePhase: 0 | 1 | 2;
   word: string | null;
   undercoverPlayerId: string | null;
@@ -80,7 +79,6 @@ interface Match {
   displayedClues: Map<string, string>;
   firstClues: string[];
   submittedPlayerIds: Set<string>;
-  discussionReadyPlayerIds: Set<string>;
   voteRounds: UndercoverVoteRound[];
   currentVoteRound: number;
   votedPlayerIds: Set<string>;
@@ -109,7 +107,6 @@ function createEmptyMatch(): Match {
     displayedClues: new Map(),
     firstClues: [],
     submittedPlayerIds: new Set(),
-    discussionReadyPlayerIds: new Set(),
     voteRounds: [],
     currentVoteRound: 0,
     votedPlayerIds: new Set(),
@@ -167,7 +164,7 @@ export function createGame(options: DoubleBluffGameOptions = {}) {
    * @returns True when full clue information is public.
    */
   function shouldExposeAllClues(): boolean {
-    if (match.state === 'discussion' || match.state === 'voting' || match.state === 'guessing') {
+    if (match.state === 'voting' || match.state === 'guessing') {
       return true;
     }
     return match.finishReason !== null && (match.state === 'idle' || match.state === 'finished');
@@ -230,7 +227,6 @@ export function createGame(options: DoubleBluffGameOptions = {}) {
         firstClues: match.state === 'submitting' && match.cluePhase === 2 ? [...match.firstClues] : [],
         submissions: buildPublicSubmissions(),
         submittedPlayerIds: [...match.submittedPlayerIds],
-        discussionReadyPlayerIds: [...match.discussionReadyPlayerIds],
         voteRounds: match.voteRounds.map(vr => ({ ...vr })),
         currentVoteRound: match.currentVoteRound,
         votedPlayerIds: [...match.votedPlayerIds],
@@ -437,17 +433,6 @@ export function createGame(options: DoubleBluffGameOptions = {}) {
   }
 
   /**
-   * Transition from submitting to discussion phase.
-   */
-  function transitionToDiscussion(): void {
-    match.state = 'discussion';
-    match.cluePhase = 0;
-    match.firstClues = [];
-    match.discussionReadyPlayerIds = new Set();
-    notifyChange();
-  }
-
-  /**
    * Handle a clue submission during either wave of the submitting phase.
    * @param playerId Player identifier.
    * @param wordInput The clue being submitted.
@@ -509,7 +494,7 @@ export function createGame(options: DoubleBluffGameOptions = {}) {
 
     if (match.secondSubmissions.size >= match.participants.length) {
       buildDisplayedClues();
-      transitionToDiscussion();
+      transitionToVoting();
     } else {
       notifyChange();
     }
@@ -538,29 +523,12 @@ export function createGame(options: DoubleBluffGameOptions = {}) {
   }
 
   /**
-   * Handle the READY FOR VOTE action during discussion phase.
-   * @param playerId Player identifier.
-   * @param _wordInput Unused input for signature compatibility.
-   * @returns Result of the ready action.
-   */
-  function handleDiscussionReady(playerId: string, _wordInput: string): SubmitWordResult {
-    if (match.state !== 'discussion') {
-      return { ok: false, reason: 'not_discussion' };
-    }
-    const result = handleDiscussionReadyAction(match, playerId, _wordInput, () =>
-      transitionToVoting()
-    );
-    if (result.ok && match.state === 'discussion') {
-      notifyChange();
-    }
-    return result;
-  }
-
-  /**
-   * Transition from discussion to voting phase.
+   * Transition from submitting to voting phase.
    */
   function transitionToVoting(): void {
     match.state = 'voting';
+    match.cluePhase = 0;
+    match.firstClues = [];
     match.currentVoteRound = 1;
     match.votedPlayerIds = new Set();
     match.currentVotes = new Map();
@@ -714,9 +682,6 @@ export function createGame(options: DoubleBluffGameOptions = {}) {
     }
     if (match.state === 'guessing') {
       return handleGuessingPhase(playerId, wordInput);
-    }
-    if (match.state === 'discussion') {
-      return handleDiscussionReady(playerId, wordInput);
     }
     return { ok: false, reason: 'invalid_state' };
   }

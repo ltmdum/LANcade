@@ -341,7 +341,7 @@ export interface UndercoverVote {
 
 export interface UndercoverAgentMatchState {
   id: number;
-  state: 'idle' | 'reveal' | 'submitting' | 'discussion' | 'voting' | 'guessing' | 'finished';
+  state: 'idle' | 'reveal' | 'submitting' | 'voting' | 'guessing' | 'finished';
   word: string | null;
   undercoverPlayerId: string | null;
   revealedPlayerIds: string[];
@@ -352,7 +352,6 @@ export interface UndercoverAgentMatchState {
   submissions: UndercoverSubmission[];
   usedWords: string[];
   roundSubmittedPlayerIds: string[];
-  discussionReadyPlayerIds: string[];
   voteRounds: UndercoverVoteRound[];
   currentVoteRound: number;
   votedPlayerIds: string[];
@@ -389,7 +388,7 @@ export interface DoubleBluffSubmission {
 
 export interface DoubleBluffMatchState {
   id: number;
-  state: 'idle' | 'reveal' | 'submitting' | 'discussion' | 'voting' | 'guessing' | 'finished';
+  state: 'idle' | 'reveal' | 'submitting' | 'voting' | 'guessing' | 'finished';
   /** Which clue submission wave is running while state is 'submitting' (0 otherwise). */
   cluePhase: 0 | 1 | 2;
   word: string | null;
@@ -400,7 +399,6 @@ export interface DoubleBluffMatchState {
   firstClues: string[];
   submissions: DoubleBluffSubmission[];
   submittedPlayerIds: string[];
-  discussionReadyPlayerIds: string[];
   voteRounds: UndercoverVoteRound[];
   currentVoteRound: number;
   votedPlayerIds: string[];

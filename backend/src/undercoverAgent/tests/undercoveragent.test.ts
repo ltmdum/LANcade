@@ -43,15 +43,6 @@ function submitAllInTurnOrder(
   }
 }
 
-function readyAllForDiscussion(
-  game: ReturnType<typeof createGame>,
-  playerIds: string[]
-): void {
-  for (const pid of playerIds) {
-    game.submitWord(pid, 'READY_FOR_VOTE');
-  }
-}
-
 function voteAllFor(
   game: ReturnType<typeof createGame>,
   targetId: string,
@@ -64,13 +55,6 @@ function voteAllFor(
     game.submitVotes(pid, { targetPlayerId: targetId });
   }
   game.submitVotes(targetId, { targetPlayerId: targetVoteFor || others[0] });
-}
-
-function advanceThroughDiscussion(
-  game: ReturnType<typeof createGame>,
-  playerIds: string[]
-): void {
-  readyAllForDiscussion(game, playerIds);
 }
 
 describe('undercoverAgent', () => {
@@ -364,7 +348,7 @@ describe('undercoverAgent', () => {
       );
     });
 
-    it('transitions to discussion after all submit', async () => {
+    it('transitions to voting after all submit', async () => {
       await withFakeTimers(() =>
         withStubbedRandom(0, () => {
           const { game, alice, bob, charlie } = setupThreePlayerGame();
@@ -374,7 +358,7 @@ describe('undercoverAgent', () => {
           submitAllInTurnOrder(game, (i) => `word${i}`);
 
           const state = game.getState();
-          expect(state.match.state).toBe('discussion');
+          expect(state.match.state).toBe('voting');
         })
       );
     });
@@ -390,48 +374,12 @@ describe('undercoverAgent', () => {
     });
   });
 
-  describe('discussion phase', () => {
-    it('transitions to voting when all players ready', async () => {
-      await withFakeTimers(() =>
-        withStubbedRandom(0, () => {
-          const { game, alice, bob, charlie } = setupThreePlayerGame();
-          game.startRound(1000);
-          revealAndReadyAll(game, [alice, bob, charlie]);
-          submitAllInTurnOrder(game, (i) => `w${i}`);
-
-          expect(game.getState().match.state).toBe('discussion');
-
-          advanceThroughDiscussion(game, [alice, bob, charlie]);
-
-          expect(game.getState().match.state).toBe('voting');
-        })
-      );
-    });
-
-    it('tracks ready players', async () => {
-      await withFakeTimers(() =>
-        withStubbedRandom(0, () => {
-          const { game, alice, bob, charlie } = setupThreePlayerGame();
-          game.startRound(1000);
-          revealAndReadyAll(game, [alice, bob, charlie]);
-          submitAllInTurnOrder(game, (i) => `w${i}`);
-
-          game.submitWord(alice, 'READY_FOR_VOTE');
-          const state = game.getState();
-          expect(state.match.discussionReadyPlayerIds).toContain(alice);
-          expect(state.match.discussionReadyPlayerIds).not.toContain(bob);
-        })
-      );
-    });
-  });
-
   describe('voting phase', () => {
     function setupVotingPhase() {
       const { game, alice, bob, charlie } = setupThreePlayerGame();
       game.startRound(1000);
       revealAndReadyAll(game, [alice, bob, charlie]);
       submitAllInTurnOrder(game, (i) => `word${i}`);
-      advanceThroughDiscussion(game, [alice, bob, charlie]);
       return { game, alice, bob, charlie };
     }
 
@@ -525,7 +473,6 @@ describe('undercoverAgent', () => {
           game.startRound(1000);
           revealAndReadyAll(game, [alice, bob, charlie]);
           submitAllInTurnOrder(game, (i) => `word${i}`);
-          advanceThroughDiscussion(game, [alice, bob, charlie]);
 
           const beforeVotes = notifySpy.mock.calls.length;
           game.submitVotes(alice, { targetPlayerId: bob });
@@ -628,7 +575,6 @@ describe('undercoverAgent', () => {
       game.startRound(1000);
       revealAndReadyAll(game, [alice, bob, charlie]);
       submitAllInTurnOrder(game, (i) => `clue${i}`);
-      advanceThroughDiscussion(game, [alice, bob, charlie]);
 
       const state = game.getState();
       const participants = state.match.participants;
@@ -767,7 +713,6 @@ describe('undercoverAgent', () => {
           game.startRound(1000);
           revealAndReadyAll(game, [alice, bob, charlie]);
           submitAllInTurnOrder(game, (i) => `w${i}`);
-          advanceThroughDiscussion(game, [alice, bob, charlie]);
 
           const state = game.getState();
           const undercover = state.match.participants[0];
@@ -791,7 +736,6 @@ describe('undercoverAgent', () => {
           game.startRound(1000);
           revealAndReadyAll(game, game.getState().match.participants);
           submitAllInTurnOrder(game, (i) => `w${i}`);
-          advanceThroughDiscussion(game, game.getState().match.participants);
 
           const state = game.getState();
           const undercover = state.match.participants[0];
@@ -815,7 +759,6 @@ describe('undercoverAgent', () => {
           game.startRound(1000);
           revealAndReadyAll(game, [alice, bob, charlie]);
           submitAllInTurnOrder(game, (i) => `r1w${i}`);
-          advanceThroughDiscussion(game, [alice, bob, charlie]);
           let state = game.getState();
           let undercover = state.match.participants[0];
           voteAllFor(game, state.match.participants[1]);
@@ -829,7 +772,6 @@ describe('undercoverAgent', () => {
           game.startRound(1000);
           revealAndReadyAll(game, [alice, bob, charlie]);
           submitAllInTurnOrder(game, (i) => `r2w${i}`);
-          advanceThroughDiscussion(game, [alice, bob, charlie]);
           state = game.getState();
           voteAllFor(game, state.match.participants[1]);
 
@@ -971,7 +913,6 @@ describe('undercoverAgent', () => {
           game.startRound(1000);
           revealAndReadyAll(game, [alice, bob, charlie]);
           submitAllInTurnOrder(game, (i) => `w${i}`);
-          advanceThroughDiscussion(game, [alice, bob, charlie]);
 
           expect(game.getState().match.state).toBe('voting');
 
@@ -1081,7 +1022,6 @@ describe('undercoverAgent', () => {
           const players = game.getState().match.participants;
           revealAndReadyAll(game, players);
           submitAllInTurnOrder(game, (i) => `w${i}`);
-          advanceThroughDiscussion(game, players);
 
           const undercover = game.getState().match.participants[0];
           const others = players.filter((p: string) => p !== undercover);
@@ -1107,7 +1047,7 @@ describe('undercoverAgent', () => {
   });
 
   describe('public state publishes role and word', () => {
-    it('undercoverPlayerId is set in reveal/submitting/discussion', async () => {
+    it('undercoverPlayerId is set in reveal/submitting', async () => {
       await withFakeTimers(() =>
         withStubbedRandom(0, () => {
           const { game, alice, bob, charlie } = setupThreePlayerGame();

@@ -7,7 +7,6 @@ import { UndercoverWordList } from '../undercovershared/components/UndercoverWor
 import { UndercoverVotePanel } from '../undercovershared/components/UndercoverVotePanel';
 import { UndercoverGuessPanel } from '../undercovershared/components/UndercoverGuessPanel';
 import { UndercoverResultDisplay } from './components/UndercoverResultDisplay';
-import { DiscussionPanel } from '../undercovershared/components/DiscussionPanel';
 import { ScoreBoard } from '../shared/components/ScoreBoard';
 import { handlePlayAgain } from '../shared/utils/roundActions';
 import { VolumeNotice } from '../shared/components/VolumeNotice';
@@ -226,23 +225,6 @@ function MatchPhaseContent({
             isMyTurn={match.currentTurnPlayerId === playerId}
             currentTurnPlayerName={currentTurnPlayerName}
             hasSubmittedThisRound={match.roundSubmittedPlayerIds.includes(playerId)}
-          />
-        )}
-        <UndercoverWordList submissions={match.submissions} />
-      </>
-    );
-  }
-
-  if (match.state === 'discussion') {
-    return (
-      <>
-        {isParticipating && (
-          <DiscussionPanel
-            playerId={playerId}
-            accessKey={accessKey}
-            isReady={match.discussionReadyPlayerIds.includes(playerId)}
-            readyCount={match.discussionReadyPlayerIds.length}
-            totalCount={match.participants.length}
           />
         )}
         <UndercoverWordList submissions={match.submissions} />

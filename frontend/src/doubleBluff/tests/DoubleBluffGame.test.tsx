@@ -41,7 +41,6 @@ function createBaseState(): DoubleBluffState {
       firstClues: [],
       submissions: [],
       submittedPlayerIds: [],
-      discussionReadyPlayerIds: [],
       voteRounds: [],
       currentVoteRound: 0,
       votedPlayerIds: [],
@@ -214,7 +213,7 @@ describe('DoubleBluffGame', () => {
 
       render(<DoubleBluffGame {...createDefaultProps(state)} />);
 
-      expect(screen.getByText(/other players' first clues/i)).toBeInTheDocument();
+      expect(screen.getByText(/civilians' first clues:/i)).toBeInTheDocument();
       expect(screen.getByText('apple')).toBeInTheDocument();
       expect(screen.getByText('cherry')).toBeInTheDocument();
       expect(screen.getByText(/craft a clue/i)).toBeInTheDocument();
@@ -229,7 +228,7 @@ describe('DoubleBluffGame', () => {
       render(<DoubleBluffGame {...createDefaultProps(state)} />);
 
       expect(
-        screen.queryByText(/other players' first clues/i)
+        screen.queryByText(/civilians' first clues:/i)
       ).not.toBeInTheDocument();
     });
 
@@ -256,46 +255,6 @@ describe('DoubleBluffGame', () => {
         await screen.findByText(/already submitted that word in the first round/i)
       ).toBeInTheDocument();
       await waitFor(() => expect(fetchMock).toHaveBeenCalled());
-    });
-  });
-
-  describe('discussion state', () => {
-    it('shows ready to vote button with progress', () => {
-      const state = createBaseState();
-      state.match.state = 'discussion';
-      state.match.discussionReadyPlayerIds = ['player-2'];
-
-      const props = createDefaultProps(state);
-      const { unmount } = render(<DoubleBluffGame {...props} />);
-      expect(screen.getByRole('button', { name: /ready to vote/i })).toBeInTheDocument();
-      unmount();
-
-      state.match.discussionReadyPlayerIds = ['player-1', 'player-2', 'player-3'].filter(
-        (id) => id !== 'player-3'
-      );
-      render(<DoubleBluffGame {...createDefaultProps(state)} />);
-      expect(
-        screen.getByText(/waiting for all players/i).textContent
-      ).toContain('(2/3)');
-    });
-
-    it('shows the revealed clue list', () => {
-      const state = createBaseState();
-      state.match.state = 'discussion';
-      state.match.submissions = [
-        {
-          playerId: 'player-1',
-          playerName: 'Alice',
-          clues: ['first0', 'second0'],
-          displayedClue: 'first0',
-        },
-      ];
-
-      render(<DoubleBluffGame {...createDefaultProps(state)} />);
-
-      expect(screen.getByText('Alice')).toBeInTheDocument();
-      expect(screen.getByText('first0')).toBeInTheDocument();
-      expect(screen.queryByText('second0')).not.toBeInTheDocument();
     });
   });
 
@@ -328,6 +287,27 @@ describe('DoubleBluffGame', () => {
       expect(voteButtons.length).toBe(2);
       expect(screen.getAllByText('Bob').length).toBeGreaterThanOrEqual(1);
       expect(screen.getAllByText('Charlie').length).toBeGreaterThanOrEqual(1);
+    });
+
+    it('reveals only each player displayed clue before voting', () => {
+      const state = createBaseState();
+      state.match.state = 'voting';
+      state.match.currentVoteRound = 1;
+      state.match.votedPlayerIds = [];
+      state.match.submissions = [
+        {
+          playerId: 'player-1',
+          playerName: 'Alice',
+          clues: ['first0', 'second0'],
+          displayedClue: 'first0',
+        },
+      ];
+
+      render(<DoubleBluffGame {...createDefaultProps(state)} />);
+
+      expect(screen.getByText('Alice')).toBeInTheDocument();
+      expect(screen.getByText('first0')).toBeInTheDocument();
+      expect(screen.queryByText('second0')).not.toBeInTheDocument();
     });
 
     it('shows waiting message after voting', () => {
@@ -563,17 +543,6 @@ describe('DoubleBluffGame', () => {
 
       expect(
         screen.queryByText(/who do you think is the undercover agent/i)
-      ).not.toBeInTheDocument();
-    });
-
-    it('does not render the discussion panel during discussion', () => {
-      const state = createBaseState();
-      state.match.state = 'discussion';
-
-      render(<DoubleBluffGame {...adminProps(state)} />);
-
-      expect(
-        screen.queryByText(/discuss who you think/i)
       ).not.toBeInTheDocument();
     });
   });

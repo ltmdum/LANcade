@@ -41,7 +41,6 @@ function createBaseState(): UndercoverAgentState {
       submissions: [],
       usedWords: [],
       roundSubmittedPlayerIds: [],
-      discussionReadyPlayerIds: [],
       voteRounds: [],
       currentVoteRound: 0,
       votedPlayerIds: [],
@@ -209,28 +208,6 @@ describe('UndercoverAgentGame', () => {
 
       expect(screen.getByText('Alice')).toBeInTheDocument();
       expect(screen.getByText('apple')).toBeInTheDocument();
-    });
-  });
-
-  describe('discussion state', () => {
-    it('shows discussion prompt', () => {
-      const state = createBaseState();
-      state.match.state = 'discussion';
-      state.match.discussionReadyPlayerIds = [];
-      state.match.submissions = [
-        { playerId: 'player-1', playerName: 'Alice', words: ['apple'] },
-        { playerId: 'player-2', playerName: 'Bob', words: ['boat'] },
-        { playerId: 'player-3', playerName: 'Charlie', words: ['car'] },
-      ];
-
-      render(<UndercoverAgentGame {...createDefaultProps(state)} />);
-
-      expect(
-        screen.getByText(/Discuss who you think the Undercover Agent is!/i)
-      ).toBeInTheDocument();
-      expect(
-        screen.getByRole('button', { name: /ready to vote/i })
-      ).toBeInTheDocument();
     });
   });
 
@@ -625,24 +602,6 @@ describe('UndercoverAgentGame', () => {
 
       expect(
         screen.queryByText(/who do you think is the undercover agent/i)
-      ).not.toBeInTheDocument();
-    });
-  });
-
-  describe('discussion phase non-participating', () => {
-    it('does not render discussion panel for non-participating admin', () => {
-      const state = createBaseState();
-      state.match.state = 'discussion';
-
-      const props = createDefaultProps(state);
-      props.playerId = 'non-player-admin';
-      props.isAdmin = true;
-      props.isParticipating = false;
-
-      render(<UndercoverAgentGame {...props} />);
-
-      expect(
-        screen.queryByText(/Discuss who you think/i)
       ).not.toBeInTheDocument();
     });
   });

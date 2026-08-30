@@ -6,7 +6,6 @@ import { DoubleBluffSubmitPanel } from './components/DoubleBluffSubmitPanel';
 import { UndercoverWordList } from '../undercovershared/components/UndercoverWordList';
 import { UndercoverVotePanel } from '../undercovershared/components/UndercoverVotePanel';
 import { UndercoverGuessPanel } from '../undercovershared/components/UndercoverGuessPanel';
-import { DiscussionPanel } from '../undercovershared/components/DiscussionPanel';
 import { DoubleBluffResultDisplay } from './components/DoubleBluffResultDisplay';
 import { ScoreBoard } from '../shared/components/ScoreBoard';
 import { handlePlayAgain } from '../shared/utils/roundActions';
@@ -250,23 +249,6 @@ function MatchPhaseContent({
         totalCount={match.participants.length}
         firstClues={isUndercover && match.cluePhase === 2 ? match.firstClues : []}
       />
-    );
-  }
-
-  if (match.state === 'discussion') {
-    return (
-      <>
-        {isParticipating && (
-          <DiscussionPanel
-            playerId={playerId}
-            accessKey={accessKey}
-            isReady={match.discussionReadyPlayerIds.includes(playerId)}
-            readyCount={match.discussionReadyPlayerIds.length}
-            totalCount={match.participants.length}
-          />
-        )}
-        <UndercoverWordList submissions={toUndercoverSubmissions(match.submissions)} />
-      </>
     );
   }
 
